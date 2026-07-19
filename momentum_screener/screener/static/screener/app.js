@@ -554,8 +554,8 @@ const App = (function() {
 
     // Fetch data using the Django CORS-proxy views for Zerodha historical endpoint
     async function fetchZerodhaData(symbol, customToken = null) {
-        const apiKey = sessionStorage.getItem('zerodha_api_key');
-        const accessToken = sessionStorage.getItem('zerodha_access_token');
+        const apiKey = sessionStorage.getItem('zerodha_api_key') || (typeof SERVER_HAS_ZERODHA !== 'undefined' && SERVER_HAS_ZERODHA ? 'SERVER_PRECONFIGURED' : '');
+        const accessToken = sessionStorage.getItem('zerodha_access_token') || (typeof SERVER_HAS_ZERODHA !== 'undefined' && SERVER_HAS_ZERODHA ? 'SERVER_PRECONFIGURED' : '');
 
         if (!apiKey || !accessToken) {
             alert('Zerodha API Key or Access Token is missing. Please authorize in the Credentials Panel first.');
@@ -635,7 +635,7 @@ const App = (function() {
 
     // Call the Gemini API via Django backend to generate a quantitative finance campaign
     async function generateAICampaign() {
-        const geminiKey = sessionStorage.getItem('gemini_api_key');
+        const geminiKey = sessionStorage.getItem('gemini_api_key') || (typeof SERVER_HAS_GEMINI !== 'undefined' && SERVER_HAS_GEMINI ? 'SERVER_PRECONFIGURED' : '');
         if (!geminiKey) {
             alert('Please enter your Gemini API Key in the "API Setup" drawer first.');
             document.getElementById('credentials-drawer').classList.remove('hidden');
@@ -783,8 +783,9 @@ const App = (function() {
             showScanProgress(false);
         } else {
             // Zerodha Mode
-            const apiConfig = getCredentials();
-            if (!apiConfig.api_key || !apiConfig.access_token) {
+            const apiKey = sessionStorage.getItem('zerodha_api_key') || (typeof SERVER_HAS_ZERODHA !== 'undefined' && SERVER_HAS_ZERODHA ? 'SERVER_PRECONFIGURED' : '');
+            const accessToken = sessionStorage.getItem('zerodha_access_token') || (typeof SERVER_HAS_ZERODHA !== 'undefined' && SERVER_HAS_ZERODHA ? 'SERVER_PRECONFIGURED' : '');
+            if (!apiKey || !accessToken) {
                 alert("Please configure your Zerodha Kite Credentials first in the top-right header!");
                 document.getElementById('credentials-drawer').classList.remove('hidden');
                 return;
@@ -812,15 +813,15 @@ const App = (function() {
                     const url = `/api/historical/?symbol=${sym}&interval=day&from=${fromStr}&to=${toStr}`;
                     const response = await fetch(url, {
                         headers: {
-                            'X-Kite-API-Key': apiConfig.api_key,
-                            'X-Kite-Access-Token': apiConfig.access_token
+                            'X-Kite-API-Key': apiKey,
+                            'X-Kite-Access-Token': accessToken
                         }
                     });
                     
                     if (response.ok) {
                         const data = await response.json();
-                        if (data.status === 'success' && data.candles) {
-                            const parsedCandles = data.candles.map(c => ({
+                        if (data.status === 'success' && data.data && data.data.candles) {
+                            const parsedCandles = data.data.candles.map(c => ({
                                 date: c[0].split('T')[0],
                                 open: c[1],
                                 high: c[2],

@@ -1,7 +1,35 @@
+import os
 import requests
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
+from pathlib import Path
+
+def load_env_file():
+    """
+    Manually parses the .env file in the BASE_DIR if it exists
+    and sets the environment variables.
+    """
+    base_dir = Path(__file__).resolve().parent.parent
+    env_path = base_dir / '.env'
+    if env_path.exists():
+        try:
+            with open(env_path, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith('#'):
+                        continue
+                    if '=' in line:
+                        key, val = line.split('=', 1)
+                        key = key.strip()
+                        val = val.strip().strip("'").strip('"')
+                        os.environ[key] = val
+        except Exception as e:
+            pass
+
+# Load environmental configs
+load_env_file()
+
 
 # Popular NSE Stock Symbol to Zerodha Instrument Token Mapping
 SYMBOL_TO_TOKEN = {
@@ -72,9 +100,14 @@ def dashboard_view(request):
     """
     Renders the main dashboard page.
     """
+    has_zerodha_creds = bool(os.environ.get('ZERODHA_API_KEY') and os.environ.get('ZERODHA_ACCESS_TOKEN'))
+    has_gemini_cred = bool(os.environ.get('GEMINI_API_KEY'))
+
     # Pass the list of pre-mapped symbols to the template so the UI dropdown can render them
     context = {
-        'supported_symbols': sorted(list(SYMBOL_TO_TOKEN.keys()))
+        'supported_symbols': sorted(list(SYMBOL_TO_TOKEN.keys())),
+        'has_zerodha_creds': has_zerodha_creds,
+        'has_gemini_cred': has_gemini_cred,
     }
     return render(request, 'screener/index.html', context)
 
@@ -99,6 +132,12 @@ def historical_proxy_view(request):
     # Extract auth details
     api_key = request.headers.get('X-Kite-API-Key') or request.GET.get('api_key')
     access_token = request.headers.get('X-Kite-Access-Token') or request.GET.get('access_token')
+
+    # Resolve from environment variables if client requests SERVER_PRECONFIGURED
+    if not api_key or api_key == 'SERVER_PRECONFIGURED':
+        api_key = os.environ.get('ZERODHA_API_KEY')
+    if not access_token or access_token == 'SERVER_PRECONFIGURED':
+        access_token = os.environ.get('ZERODHA_ACCESS_TOKEN')
 
     if not api_key or not access_token:
         return JsonResponse({
@@ -366,6 +405,9 @@ def generate_campaign_view(request):
         return JsonResponse({'status': 'error', 'message': 'Only POST method is allowed'}, status=405)
 
     api_key = request.headers.get('X-Gemini-API-Key') or request.GET.get('gemini_api_key')
+    if not api_key or api_key == 'SERVER_PRECONFIGURED':
+        api_key = os.environ.get('GEMINI_API_KEY')
+
     if not api_key:
         return JsonResponse({'status': 'error', 'message': 'Missing Gemini API Key (X-Gemini-API-Key)'}, status=400)
 
