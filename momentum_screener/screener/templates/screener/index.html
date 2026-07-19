@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aegis Momentum - Falling Knife Screener</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'screener/styles.css' %}?v=1.7">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar / Navigation -->
+        <header class="app-header">
+            <div class="logo-area">
+                <div class="logo-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                <div class="logo-text">
+                    <h1>Aegis Momentum</h1>
+                    <span>Quantitative & Momentum Screener</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button id="btn-open-guide" class="guide-btn"><i class="fa-solid fa-circle-info"></i> How it Works</button>
+                <button id="btn-toggle-credentials" class="guide-btn"><i class="fa-solid fa-gears"></i> API Setup</button>
+                <div class="data-source-selector">
+                    <span class="source-label"><i class="fa-solid fa-database"></i> Source:</span>
+                    <div class="toggle-container">
+                        <button id="btn-source-sim" class="toggle-btn active">Simulation</button>
+                        <button id="btn-source-zerodha" class="toggle-btn">Zerodha API</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Credentials Drawer (Shown for API Configuration) -->
+        <section id="credentials-drawer" class="credentials-drawer hidden">
+            <div class="drawer-content">
+                <h3><i class="fa-key fa-solid"></i> API Configurations</h3>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label for="zerodha-api-key">Zerodha API Key</label>
+                        <input type="password" id="zerodha-api-key" placeholder="Enter Zerodha API Key" autocomplete="off">
+                    </div>
+                    <div class="input-group">
+                        <label for="zerodha-access-token">Kite Access Token</label>
+                        <input type="password" id="zerodha-access-token" placeholder="Enter Daily Access Token" autocomplete="off">
+                    </div>
+                    <div class="input-group">
+                        <label for="gemini-api-key">Gemini API Key</label>
+                        <input type="password" id="gemini-api-key" placeholder="Enter Gemini API Key" autocomplete="off">
+                    </div>
+                    <button id="btn-auth-save" class="primary-btn">Save Settings</button>
+                </div>
+                <p class="auth-tip"><i class="fa-solid fa-circle-info"></i> Your API credentials are stored securely in session storage and are never saved on the server.</p>
+            </div>
+        </section>
+
+        <!-- Main Dashboard Content -->
+        <main class="dashboard-layout">
+            
+            <!-- Left Panel: Filter & Screener Configurations -->
+            <aside class="sidebar-config glass-card">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-sliders"></i> Filter Parameters</h2>
+                    <button id="btn-reset-filters" class="text-btn">Reset</button>
+                </div>
+                
+                <div class="config-sections">
+                    <!-- Rule 1: SMA 200 -->
+                    <div class="config-group">
+                        <div class="config-label-row">
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="chk-filter-sma" checked>
+                                <span class="checkmark"></span>
+                                <strong>200 SMA Filter</strong>
+                            </label>
+                        </div>
+                        <p class="config-description">Excludes stocks currently trading below their 200-day Simple Moving Average (SMA), signifying a major long-term downtrend.</p>
+                    </div>
+
+                    <!-- Rule 2: RSI Limit -->
+                    <div class="config-group">
+                        <div class="config-label-row">
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="chk-filter-rsi" checked>
+                                <span class="checkmark"></span>
+                                <strong>Oversold RSI Filter</strong>
+                            </label>
+                            <span class="badge-value" id="val-filter-rsi">30</span>
+                        </div>
+                        <p class="config-description">Excludes stocks where daily 14-day RSI is below the threshold, signifying extreme, unhedged capitulation.</p>
+                        <input type="range" id="rng-filter-rsi" min="15" max="45" value="30" class="slider">
+                    </div>
+
+                    <!-- Rule 3: ADX Trend Filter -->
+                    <div class="config-group">
+                        <div class="config-label-row">
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="chk-filter-adx" checked>
+                                <span class="checkmark"></span>
+                                <strong>ADX Trend Strength</strong>
+                            </label>
+                            <span class="badge-value" id="val-filter-adx">25</span>
+                        </div>
+                        <p class="config-description">Excludes stocks where 14-day ADX is above the limit AND -DI is greater than +DI, confirming a strong, active downtrend.</p>
+                        <input type="range" id="rng-filter-adx" min="15" max="40" value="25" class="slider">
+                    </div>
+
+                    <!-- Rule 4: Maximum Drawdown -->
+                    <div class="config-group">
+                        <div class="config-label-row">
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="chk-filter-drawdown" checked>
+                                <span class="checkmark"></span>
+                                <strong>Max Peak-to-Trough Drawdown</strong>
+                            </label>
+                            <span class="badge-value" id="val-filter-drawdown">30%</span>
+                        </div>
+                        <div class="period-selector-row" style="margin: 6px 0 8px 0; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                            <span class="config-description" style="font-size: 11px;">Lookback Period:</span>
+                            <select id="sel-filter-drawdown-years" class="small-select" style="background: rgba(0, 0, 0, 0.25); border: 1px solid var(--border-color); border-radius: var(--border-radius-sm); padding: 4px 8px; color: var(--text-primary); font-family: var(--font-stack); font-size: 12px; outline: none; cursor: pointer;">
+                                <option value="1" selected>1 Year (250 Days)</option>
+                                <option value="2">2 Years (500 Days)</option>
+                                <option value="3">3 Years (750 Days)</option>
+                            </select>
+                        </div>
+                        <p class="config-description">Excludes stocks with drawdowns exceeding the threshold from their rolling peak over the selected years.</p>
+                        <input type="range" id="rng-filter-drawdown" min="10" max="60" value="30" class="slider">
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Center Panel: Screener Grid & Stats -->
+            <section class="screener-results">
+                <!-- Stats Overview -->
+                <div class="stats-bar">
+                    <div class="stat-card glass-card">
+                        <div class="stat-icon blue"><i class="fa-solid fa-eye"></i></div>
+                        <div class="stat-data">
+                            <span class="stat-val" id="stat-total">0</span>
+                            <span class="stat-lbl">Total Screened</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-card">
+                        <div class="stat-icon red"><i class="fa-solid fa-skull"></i></div>
+                        <div class="stat-data">
+                            <span class="stat-val text-red" id="stat-knives">0</span>
+                            <span class="stat-lbl">Falling Knives</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-card">
+                        <div class="stat-icon green"><i class="fa-solid fa-circle-check"></i></div>
+                        <div class="stat-data">
+                            <span class="stat-val text-green" id="stat-safe">0</span>
+                            <span class="stat-lbl">Investable / Safe</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Screener Grid Card -->
+                <div class="screener-grid-card glass-card">
+                    <div class="grid-controls">
+                        <div class="search-box">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="grid-search" placeholder="Search ticker or name...">
+                        </div>
+                        
+                        <!-- Add Ticker for Zerodha Mode -->
+                        <div id="zerodha-add-ticker-section" class="add-ticker-box hidden">
+                            <select id="sel-add-symbol">
+                                <option value="" disabled selected>Select Nifty Stock</option>
+                                {% for symbol in supported_symbols %}
+                                    <option value="{{ symbol }}">{{ symbol }}</option>
+                                {% endfor %}
+                            </select>
+                            <input type="text" id="txt-add-custom-token" placeholder="Custom Token ID" class="small-input">
+                            <button id="btn-add-ticker" class="icon-btn"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table id="screener-table">
+                            <thead>
+                                <tr>
+                                    <th>Ticker</th>
+                                    <th>Company</th>
+                                    <th>Price</th>
+                                    <th>Drawdown</th>
+                                    <th>RSI (14)</th>
+                                    <th>ADX (14)</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="screener-tbody">
+                                <!-- Generated Dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Floating Detail Drawer (Expands when stock is selected) -->
+        <section id="detail-drawer" class="detail-drawer">
+            <div class="detail-overlay" id="detail-overlay"></div>
+            <div class="detail-panel">
+                <button id="btn-close-detail" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+                
+                <div class="detail-header">
+                    <div class="title-wrap">
+                        <h2 id="detail-ticker">RELIANCE</h2>
+                        <span id="detail-name">Reliance Industries Ltd.</span>
+                    </div>
+                    <div class="status-wrap">
+                        <span class="price-val" id="detail-price">₹0.00</span>
+                        <span class="badge" id="detail-status-badge">Safe</span>
+                    </div>
+                </div>
+
+                <div class="detail-body">
+                    <!-- Metrics Summary Grid -->
+                    <div class="detail-metrics-grid">
+                        <div class="metric-box">
+                            <span class="label" id="detail-metric-dd-label">Drawdown (1-Yr)</span>
+                            <span class="value" id="detail-metric-dd">0%</span>
+                        </div>
+                        <div class="metric-box">
+                            <span class="label">RSI (14)</span>
+                            <span class="value" id="detail-metric-rsi">0</span>
+                        </div>
+                        <div class="metric-box">
+                            <span class="label">ADX (14)</span>
+                            <span class="value" id="detail-metric-adx">0</span>
+                        </div>
+                        <div class="metric-box">
+                            <span class="label">Position vs 200 SMA</span>
+                            <span class="value" id="detail-metric-sma">Above</span>
+                        </div>
+                    </div>
+
+                    <!-- Charts Area -->
+                    <div class="charts-container">
+                        <div class="chart-wrapper">
+                            <h4>Price Trend & Moving Averages</h4>
+                            <div class="canvas-holder">
+                                <canvas id="chart-price"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <h4>Momentum Indicator (RSI & ADX)</h4>
+                            <div class="canvas-holder">
+                                <canvas id="chart-indicators"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Campaign Generator Section -->
+                    <div class="campaign-section" style="margin-top: 24px;">
+                        <div class="campaign-card" style="background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); border-radius: var(--border-radius-lg); padding: 20px;">
+                            <div class="campaign-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                                <h4 style="font-size: 13px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; margin: 0; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fa-solid fa-graduation-cap" style="color: var(--accent-indigo);"></i> Quant Learning Scenario
+                                </h4>
+                                <button id="btn-generate-campaign" class="primary-btn" style="font-size: 12px; padding: 6px 14px;"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate AI Dilemma</button>
+                            </div>
+                            
+                            <!-- Loading Spinner -->
+                            <div id="campaign-loading" class="campaign-loading-container hidden" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 0; gap: 12px;">
+                                <div class="spinner" style="width: 28px; height: 28px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent-indigo); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                                <span style="font-size: 13px; color: var(--text-secondary);">Analyzing technical matrix with Gemini...</span>
+                            </div>
+
+                            <!-- Generated Content -->
+                            <div id="campaign-content" class="campaign-content-body hidden" style="display: flex; flex-direction: column; gap: 14px;">
+                                <h3 id="campaign-title" style="font-size: 16px; font-weight: 600; color: var(--text-primary);">TCS Expectancy Dilemma</h3>
+                                <p id="campaign-scenario" class="scenario-text" style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin: 0;">
+                                    Scenario text
+                                </p>
+                                
+                                <div class="options-container" id="campaign-options" style="display: flex; flex-direction: column; gap: 10px;">
+                                    <!-- Rendered dynamically -->
+                                </div>
+                                
+                                <div id="campaign-feedback" class="feedback-panel hidden" style="padding: 16px; border-radius: var(--border-radius-md); border-width: 1px; border-style: solid; font-size: 13px; line-height: 1.45;">
+                                    <h4 id="feedback-title" style="font-size: 14px; font-weight: 600; margin-bottom: 6px;">Feedback Title</h4>
+                                    <p id="feedback-text" style="margin: 0;">Feedback details</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Info Guide Modal -->
+    <section id="guide-modal" class="modal-overlay hidden">
+        <div class="modal-content glass-card">
+            <button id="btn-close-guide" class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+            
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-shield-halved text-purple"></i> Aegis Momentum: Filter Interaction Guide</h2>
+                <p>Our screener uses a <strong>strict disqualification model</strong>. If a stock triggers even one <strong>🔴 Knife</strong> rule, it is classified as a <strong>Falling Knife</strong>. It must show <strong>🟢 Safe</strong> across all active rules to be cleared.</p>
+            </div>
+
+            <div class="guide-grid">
+                <!-- Card 1 -->
+                <div class="guide-card">
+                    <div class="guide-card-header">
+                        <span class="guide-icon"><i class="fa-solid fa-chart-line"></i></span>
+                        <h3>200-Day SMA Filter</h3>
+                    </div>
+                    <p class="guide-desc">Checks the macro-level long-term trend direction. Is the stock trading above its 200-day simple average price?</p>
+                    <div class="status-comparison">
+                        <div class="status-row knife">
+                            <span class="status-indicator">🔴 Knife</span>
+                            <span class="status-desc">Price is <strong>below</strong> 200 SMA (long-term downtrend/bear market).</span>
+                        </div>
+                        <div class="status-row safe">
+                            <span class="status-indicator">🟢 Safe</span>
+                            <span class="status-desc">Price is <strong>above</strong> 200 SMA (healthy structural uptrend).</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="guide-card">
+                    <div class="guide-card-header">
+                        <span class="guide-icon"><i class="fa-solid fa-chart-area"></i></span>
+                        <h3>Oversold RSI Filter</h3>
+                    </div>
+                    <p class="guide-desc">Measures short-term momentum speed and price exhaustion. Is daily 14-period RSI above the limit?</p>
+                    <div class="status-comparison">
+                        <div class="status-row knife">
+                            <span class="status-indicator">🔴 Knife</span>
+                            <span class="status-desc">RSI is <strong>below threshold (e.g. &lt; 30)</strong>. Stock is in severe panic capitulation.</span>
+                        </div>
+                        <div class="status-row safe">
+                            <span class="status-indicator">🟢 Safe</span>
+                            <span class="status-desc">RSI is <strong>above threshold (e.g. &ge; 30)</strong>. Panic has cooled or is stabilizing.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="guide-card">
+                    <div class="guide-card-header">
+                        <span class="guide-icon"><i class="fa-solid fa-compass"></i></span>
+                        <h3>ADX Trend Strength</h3>
+                    </div>
+                    <p class="guide-desc">Measures trend strength (ADX) and direction (+DI vs -DI). Is there an active strong downtrend?</p>
+                    <div class="status-comparison">
+                        <div class="status-row knife">
+                            <span class="status-indicator">🔴 Knife</span>
+                            <span class="status-desc">ADX is <strong>&gt; 25</strong> and <strong>-DI &gt; +DI</strong>. Bears are in strong momentum control.</span>
+                        </div>
+                        <div class="status-row safe">
+                            <span class="status-indicator">🟢 Safe</span>
+                            <span class="status-desc">ADX is <strong>&lt; 25</strong> (ranging bottom) or <strong>+DI &gt; -DI</strong> (bullish reversal).</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 4 -->
+                <div class="guide-card">
+                    <div class="guide-card-header">
+                        <span class="guide-icon"><i class="fa-solid fa-mountain"></i></span>
+                        <h3>Max Drawdown Filter</h3>
+                    </div>
+                    <p class="guide-desc">Measures peak-to-trough percentage drop from the 1-year (250-trading-day) high.</p>
+                    <div class="status-comparison">
+                        <div class="status-row knife">
+                            <span class="status-indicator">🔴 Knife</span>
+                            <span class="status-desc">Drawdown exceeds threshold (e.g., <strong>&gt; 30%</strong>). Deep structural damage.</span>
+                        </div>
+                        <div class="status-row safe">
+                            <span class="status-indicator">🟢 Safe</span>
+                            <span class="status-desc">Drawdown is within limits (e.g., <strong>&le; 30%</strong>). Standard, healthy pullback.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Django Template-to-JS Injections -->
+    <script>
+        // Mapping from Django context
+        const PRE_MAPPED_SYMBOLS = {{ supported_symbols|safe }};
+    </script>
+
+    <!-- Project JS dependencies -->
+    <script src="{% static 'screener/mockData.js' %}?v=1.7"></script>
+    <script src="{% static 'screener/app.js' %}?v=1.7"></script>
+</body>
+</html>
