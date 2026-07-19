@@ -124,6 +124,35 @@ const MockDataEngine = (function() {
         'QUANTUM': { name: 'Quantum Computing Labs', basePrice: 50, type: 'speculative_spike' }
     };
 
+    const NIFTY50_LIST = [
+        "ADANIENT", "ADANIPORTS", "APOLLOHOSP", "ASIANPAINT", "AXISBANK", 
+        "BAJAJ-AUTO", "BAJAJFINSV", "BAJFINANCE", "BHARTIARTL", "BPCL", 
+        "BRITANNIA", "CIPLA", "COALINDIA", "DIVISLAB", "DRREDDY", 
+        "EICHERMOT", "GRASIM", "HCLTECH", "HDFCBANK", "HDFCLIFE", 
+        "HEROMOTOCO", "HINDALCO", "HINDUNILVR", "ICICIBANK", "INDUSINDBK", 
+        "INFY", "ITC", "JSWSTEEL", "KOTAKBANK", "LT", 
+        "LTIM", "M&M", "MARUTI", "NESTLEIND", "NTPC", 
+        "ONGC", "POWERGRID", "RELIANCE", "SBILIFE", "SBIN", 
+        "SUNPHARMA", "TATACONSUM", "TATAMOTORS", "TATASTEEL", "TCS", 
+        "TECHM", "TITAN", "ULTRACEMCO", "WIPRO", "TRENT"
+    ];
+
+    const FO_LIST = [
+        "AUBANK", "AMBUJACEM", "APOLLOTYRE", "ASHOKLEY", "BALRAMCHIN", 
+        "BANDHANBNK", "BANKBARODA", "BATAINDIA", "BEL", "BHEL", 
+        "BOSCHLTD", "CANBK", "CHOLAFIN", "COFORGE", "CONCOR", 
+        "CUMMINSIND", "DABUR", "DEEPAKNTR", "DLF", "ESCORTS", 
+        "EXIDEIND", "FEDERALBNK", "GLENMARK", "GMRINFRA", "GNFC", 
+        "GODREJPROP", "HAL", "HAVELLS", "IDFCFIRSTB", "IGL", 
+        "INDHOTEL", "INDUSTOWER", "IOC", "IRCTC", "JINDALSTEL", 
+        "LICHSGFIN", "LUPIN", "METROPOLIS", "MFSL", "MGL", 
+        "MPHASIS", "MRF", "MUTHOOTFIN", "NATIONALUM", "NAVINFLUOR", 
+        "OBEROIRLTY", "OFSS", "PEL", "PERSISTENT", "PETRONET", 
+        "PFC", "PIDILITIND", "PNB", "POLYCAB", "RECLTD", 
+        "SAIL", "SHREECEM", "SIEMENS", "SRF", "SYNGENE", 
+        "TATACOMM", "TATAPOWER", "TVSMOTOR", "UBL", "VOLTAS", "ZEEL"
+    ];
+
     function getSimulatedData() {
         const dates = generateTradingDates(1250);
         const result = {};
@@ -139,7 +168,62 @@ const MockDataEngine = (function() {
         return result;
     }
 
+    function generateSimulatedList(symbols) {
+        const dates = generateTradingDates(1250);
+        const result = {};
+        
+        const pathTypes = ['steady_growth', 'terminal_decline', 'volatile_crash', 'healthy_correction', 'sideways', 'speculative_spike'];
+        
+        symbols.forEach((sym) => {
+            let charSum = 0;
+            for (let i = 0; i < sym.length; i++) charSum += sym.charCodeAt(i);
+            
+            const basePrice = 100 + (charSum % 40) * 120;
+            const type = pathTypes[charSum % pathTypes.length];
+            
+            let name = `${sym} Ltd.`;
+            if (sym === 'RELIANCE') name = 'Reliance Industries Ltd.';
+            else if (sym === 'TCS') name = 'Tata Consultancy Services Ltd.';
+            else if (sym === 'INFY') name = 'Infosys Ltd.';
+            else if (sym === 'HDFCBANK') name = 'HDFC Bank Ltd.';
+            else if (sym === 'ICICIBANK') name = 'ICICI Bank Ltd.';
+            else if (sym === 'SBIN') name = 'State Bank of India';
+            else if (sym === 'BHARTIARTL') name = 'Bharti Airtel Ltd.';
+            else if (sym === 'ITC') name = 'ITC Ltd.';
+            else if (sym === 'LT') name = 'Larsen & Toubro Ltd.';
+            else if (sym === 'HINDUNILVR') name = 'Hindustan Unilever Ltd.';
+            else if (sym === 'AXISBANK') name = 'Axis Bank Ltd.';
+            else if (sym === 'ASIANPAINT') name = 'Asian Paints Ltd.';
+            else if (sym === 'M&M') name = 'Mahindra & Mahindra Ltd.';
+            else if (sym === 'TATASTEEL') name = 'Tata Steel Ltd.';
+            else if (sym === 'WIPRO') name = 'Wipro Ltd.';
+            else if (sym === 'TATAMOTORS') name = 'Tata Motors Ltd.';
+            
+            result[sym] = {
+                ticker: sym,
+                name: name,
+                candles: generatePath(dates, basePrice, type)
+            };
+        });
+        
+        return result;
+    }
+
+    function getSimulatedNifty50() {
+        return generateSimulatedList(NIFTY50_LIST);
+    }
+
+    function getSimulatedFO() {
+        // F&O combines Nifty 50 + extra F&O stocks
+        const combined = [...new Set([...NIFTY50_LIST, ...FO_LIST])];
+        return generateSimulatedList(combined);
+    }
+
     return {
-        getSimulatedData
+        getSimulatedData,
+        getSimulatedNifty50,
+        getSimulatedFO,
+        NIFTY50_LIST,
+        FO_LIST
     };
 })();

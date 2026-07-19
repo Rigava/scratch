@@ -733,6 +733,126 @@ const App = (function() {
         }
     }
 
+    // --- Market Batch Scanning ---
+
+    function showScanProgress(visible, label = '', countText = '', percent = 0) {
+        const container = document.getElementById('scan-progress-container');
+        const labelEl = document.getElementById('scan-progress-label');
+        const countEl = document.getElementById('scan-progress-count');
+        const barEl = document.getElementById('scan-progress-bar');
+        
+        if (visible) {
+            container.classList.remove('hidden');
+            labelEl.innerText = label;
+            countEl.innerText = countText;
+            barEl.style.width = `${percent}%`;
+        } else {
+            container.classList.add('hidden');
+        }
+    }
+
+    async function executeMarketScan(listType) {
+        let symbols = [];
+        if (listType === 'nifty50') {
+            symbols = MockDataEngine.NIFTY50_LIST;
+        } else if (listType === 'fo') {
+            symbols = [...new Set([...MockDataEngine.NIFTY50_LIST, ...MockDataEngine.FO_LIST])];
+        }
+
+        if (state.dataSource === 'simulation') {
+            state.stocks = {};
+            renderScreenerGrid();
+            closeDetailDrawer();
+            
+            showScanProgress(true, `Initializing simulated ${listType.toUpperCase()} scan...`, `0 / ${symbols.length}`, 0);
+            
+            let simulatedPool = listType === 'nifty50' ? MockDataEngine.getSimulatedNifty50() : MockDataEngine.getSimulatedFO();
+            
+            for (let i = 0; i < symbols.length; i++) {
+                const sym = symbols[i];
+                state.stocks[sym] = simulatedPool[sym];
+                processStockIndicators(state.stocks[sym]);
+                renderScreenerGrid();
+                
+                const pct = Math.round(((i + 1) / symbols.length) * 100);
+                showScanProgress(true, `Simulated scan: processing ${sym}...`, `${i + 1} / ${symbols.length}`, pct);
+                
+                await new Promise(r => setTimeout(r, 45));
+            }
+            
+            showScanProgress(false);
+        } else {
+            // Zerodha Mode
+            const apiConfig = getCredentials();
+            if (!apiConfig.api_key || !apiConfig.access_token) {
+                alert("Please configure your Zerodha Kite Credentials first in the top-right header!");
+                document.getElementById('credentials-drawer').classList.remove('hidden');
+                return;
+            }
+            
+            state.stocks = {};
+            renderScreenerGrid();
+            closeDetailDrawer();
+            
+            showScanProgress(true, `Initializing Zerodha scan for ${listType.toUpperCase()}...`, `0 / ${symbols.length}`, 0);
+            
+            const toDate = new Date();
+            const fromDate = new Date();
+            // Fetch up to 5 years for actual backtesting support
+            fromDate.setFullYear(toDate.getFullYear() - 5);
+            const fromStr = fromDate.toISOString().split('T')[0];
+            const toStr = toDate.toISOString().split('T')[0];
+            
+            let successCount = 0;
+            for (let i = 0; i < symbols.length; i++) {
+                const sym = symbols[i];
+                showScanProgress(true, `Fetching ${sym} from Zerodha...`, `${i} / ${symbols.length}`, Math.round((i / symbols.length) * 100));
+                
+                try {
+                    const url = `/api/historical/?symbol=${sym}&interval=day&from=${fromStr}&to=${toStr}`;
+                    const response = await fetch(url, {
+                        headers: {
+                            'X-Kite-API-Key': apiConfig.api_key,
+                            'X-Kite-Access-Token': apiConfig.access_token
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.status === 'success' && data.candles) {
+                            const parsedCandles = data.candles.map(c => ({
+                                date: c[0].split('T')[0],
+                                open: c[1],
+                                high: c[2],
+                                low: c[3],
+                                close: c[4],
+                                volume: c[5]
+                            }));
+                            
+                            state.stocks[sym] = {
+                                ticker: sym,
+                                name: `${sym} Equity`,
+                                candles: parsedCandles
+                            };
+                            
+                            processStockIndicators(state.stocks[sym]);
+                            renderScreenerGrid();
+                            successCount++;
+                        }
+                    }
+                } catch (err) {
+                    console.error(`Failed to load ${sym}:`, err);
+                }
+                
+                // Rate limit respect delay (3 req/sec)
+                await new Promise(r => setTimeout(r, 350));
+            }
+            
+            showScanProgress(false);
+            alert(`Zerodha scan completed! Successfully loaded ${successCount} out of ${symbols.length} tickers.`);
+        }
+    }
+
     // --- Init & UI Binding ---
 
     function bindEvents() {
@@ -740,6 +860,10 @@ const App = (function() {
         document.getElementById('btn-toggle-credentials').addEventListener('click', () => {
             document.getElementById('credentials-drawer').classList.toggle('hidden');
         });
+
+        // Market batch scan binds
+        document.getElementById('btn-scan-nifty50').addEventListener('click', () => executeMarketScan('nifty50'));
+        document.getElementById('btn-scan-fo').addEventListener('click', () => executeMarketScan('fo'));
 
         // Source toggle buttons
         document.getElementById('btn-source-sim').addEventListener('click', (e) => {

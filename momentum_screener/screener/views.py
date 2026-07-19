@@ -22,6 +22,51 @@ SYMBOL_TO_TOKEN = {
     'WIPRO': '969473',
 }
 
+import csv
+
+# Global in-memory cache for trading symbols to tokens
+_symbol_to_token_cache = {}
+
+def get_instrument_token(symbol):
+    global _symbol_to_token_cache
+    
+    # Check cache first
+    if symbol in _symbol_to_token_cache:
+        return _symbol_to_token_cache[symbol]
+        
+    # Check pre-mapped list
+    if symbol in SYMBOL_TO_TOKEN:
+        return SYMBOL_TO_TOKEN[symbol]
+        
+    # Otherwise, download the instrument list from Zerodha once and cache it in memory
+    try:
+        url = "https://api.kite.trade/instruments"
+        response = requests.get(url, timeout=12)
+        if response.status_code == 200:
+            lines = response.text.splitlines()
+            reader = csv.reader(lines)
+            header = next(reader)
+            
+            # Find column indices
+            sym_idx = header.index("tradingsymbol")
+            tok_idx = header.index("instrument_token")
+            seg_idx = header.index("segment")
+            exc_idx = header.index("exchange")
+            
+            for row in reader:
+                if len(row) > max(sym_idx, tok_idx, seg_idx, exc_idx):
+                    # Filter for NSE Equities segment
+                    if row[exc_idx] == "NSE" and row[seg_idx] == "NSE":
+                        _symbol_to_token_cache[row[sym_idx]] = row[tok_idx]
+                        
+            # Return matching token from newly cached values
+            if symbol in _symbol_to_token_cache:
+                return _symbol_to_token_cache[symbol]
+    except Exception as e:
+        pass
+        
+    return None
+
 @require_GET
 def dashboard_view(request):
     """
@@ -68,16 +113,16 @@ def historical_proxy_view(request):
         }, status=400)
 
     # Resolve symbol to instrument token
-    if symbol_or_token in SYMBOL_TO_TOKEN:
-        instrument_token = SYMBOL_TO_TOKEN[symbol_or_token]
+    if symbol_or_token.isdigit():
+        instrument_token = symbol_or_token
     else:
-        # Check if the user passed a direct numeric token
-        if symbol_or_token.isdigit():
-            instrument_token = symbol_or_token
+        token = get_instrument_token(symbol_or_token)
+        if token:
+            instrument_token = token
         else:
             return JsonResponse({
                 'status': 'error',
-                'message': f"Symbol '{symbol_or_token}' is not pre-mapped. Please supply a valid numeric Zerodha Instrument Token directly."
+                'message': f"Symbol '{symbol_or_token}' could not be resolved to a Zerodha Instrument Token. Please verify the symbol or pass the numeric token directly."
             }, status=400)
 
     # Construct Kite historical URL

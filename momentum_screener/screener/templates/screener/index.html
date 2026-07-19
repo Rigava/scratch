@@ -13,7 +13,7 @@
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     {% load static %}
-    <link rel="stylesheet" href="{% static 'screener/styles.css' %}?v=1.7">
+    <link rel="stylesheet" href="{% static 'screener/styles.css' %}?v=1.8">
 </head>
 <body>
     <div class="app-container">
@@ -172,6 +172,12 @@
                             <input type="text" id="grid-search" placeholder="Search ticker or name...">
                         </div>
                         
+                        <!-- Batch Scan Buttons -->
+                        <div class="scan-buttons-group" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button id="btn-scan-nifty50" class="primary-btn" style="background: linear-gradient(135deg, var(--accent-indigo) 0%, #4f46e5 100%); font-size: 12px; padding: 8px 16px;"><i class="fa-solid fa-circle-nodes"></i> Scan Nifty 50</button>
+                            <button id="btn-scan-fo" class="primary-btn" style="background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); font-size: 12px; padding: 8px 16px;"><i class="fa-solid fa-chart-pie"></i> Scan F&O List</button>
+                        </div>
+                        
                         <!-- Add Ticker for Zerodha Mode -->
                         <div id="zerodha-add-ticker-section" class="add-ticker-box hidden">
                             <select id="sel-add-symbol">
@@ -182,6 +188,17 @@
                             </select>
                             <input type="text" id="txt-add-custom-token" placeholder="Custom Token ID" class="small-input">
                             <button id="btn-add-ticker" class="icon-btn"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar for Scanning -->
+                    <div id="scan-progress-container" class="scan-progress-container hidden" style="margin: 0 20px 15px 20px; padding: 12px; background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: var(--border-radius-md); display: flex; flex-direction: column; gap: 8px;">
+                        <div class="progress-info-row" style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--text-primary); font-family: var(--font-stack);">
+                            <span id="scan-progress-label">Scanning Nifty 50 list...</span>
+                            <span id="scan-progress-count" style="font-weight: 600;">0 / 50</span>
+                        </div>
+                        <div class="progress-bar-bg" style="height: 6px; background: rgba(255, 255, 255, 0.05); border-radius: 3px; overflow: hidden; width: 100%;">
+                            <div id="scan-progress-bar" style="height: 100%; background: linear-gradient(90deg, var(--accent-indigo), #c084fc); width: 0%; transition: width 0.2s ease;"></div>
                         </div>
                     </div>
 
@@ -397,7 +414,7 @@
     </script>
 
     <!-- Project JS dependencies -->
-    <script src="{% static 'screener/mockData.js' %}?v=1.7"></script>
-    <script src="{% static 'screener/app.js' %}?v=1.7"></script>
+    <script src="{% static 'screener/mockData.js' %}?v=1.8"></script>
+    <script src="{% static 'screener/app.js' %}?v=1.8"></script>
 </body>
 </html>
