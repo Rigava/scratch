@@ -13,7 +13,7 @@
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     {% load static %}
-    <link rel="stylesheet" href="{% static 'screener/styles.css' %}?v=1.9">
+    <link rel="stylesheet" href="{% static 'screener/styles.css' %}?v=2.5">
 </head>
 <body>
     <div class="app-container">
@@ -73,6 +73,18 @@
                 </div>
                 
                 <div class="config-sections">
+                    <!-- Rule 0: Status Filter (Safe vs Knife) -->
+                    <div class="config-group" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 15px; margin-bottom: 15px;">
+                        <div class="config-label-row">
+                            <strong style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary);"><i class="fa-solid fa-filter"></i> Filter by Status</strong>
+                        </div>
+                        <select id="sel-filter-status" style="width: 100%; margin-top: 8px; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--border-radius-sm); padding: 8px 12px; color: var(--text-primary); font-family: var(--font-stack); font-size: 13px; outline: none; cursor: pointer; transition: all 0.2s;">
+                            <option value="all" selected>All Tickers</option>
+                            <option value="safe">🟢 Safe Stocks Only</option>
+                            <option value="knife">🔴 Falling Knives Only</option>
+                        </select>
+                    </div>
+
                     <!-- Rule 1: SMA 200 -->
                     <div class="config-group">
                         <div class="config-label-row">
@@ -139,8 +151,21 @@
 
             <!-- Center Panel: Screener Grid & Stats -->
             <section class="screener-results">
+                <!-- Navigation Tabs -->
+                <div class="view-tabs" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 10px; font-family: var(--font-stack);">
+                    <button id="btn-tab-screener" class="tab-btn active" style="background: rgba(255,255,255,0.05); border: none; color: var(--text-primary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-list-check"></i> Screener Grid
+                    </button>
+                    <button id="btn-tab-backtest" class="tab-btn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-calculator"></i> RSI Strategy & Backtest
+                    </button>
+                    <button id="btn-tab-journal" class="tab-btn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-book"></i> Trading Journal
+                    </button>
+                </div>
+
                 <!-- Stats Overview -->
-                <div class="stats-bar">
+                <div id="screener-stats-bar" class="stats-bar">
                     <div class="stat-card glass-card">
                         <div class="stat-icon blue"><i class="fa-solid fa-eye"></i></div>
                         <div class="stat-data">
@@ -219,6 +244,139 @@
                                 <!-- Generated Dynamically -->
                             </tbody>
                         </table>
+                    </div>
+                </div>
+
+                <!-- Backtest View Card -->
+                <div id="backtest-view-card" class="screener-grid-card glass-card hidden" style="margin-top: 0;">
+                    <!-- Shortlist / Recent Signals Category -->
+                    <div style="margin-bottom: 25px; padding: 16px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-md);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                            <h3 style="margin: 0; color: var(--text-primary); font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; font-family: var(--font-stack);">
+                                <i class="fa-solid fa-bell" style="color: #818cf8;"></i> Recent RSI Crossovers & Signals (Last 5 Days)
+                            </h3>
+                            <!-- Signal Filter Category selector -->
+                            <div style="display: flex; align-items: center; gap: 8px; font-family: var(--font-stack);">
+                                <span style="font-size: 12px; color: var(--text-secondary);">Shortlist Category:</span>
+                                <select id="sel-signal-category" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); font-size: 12px; padding: 4px 10px; border-radius: 4px; outline: none; cursor: pointer; font-family: var(--font-stack);">
+                                    <option value="all">All Recent Signals</option>
+                                    <option value="buy">🟢 Buy Signals Only</option>
+                                    <option value="sell">🔴 Sell Signals Only</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="table-container" style="max-height: 200px; overflow-y: auto;">
+                            <table id="signals-table">
+                                <thead>
+                                    <tr>
+                                        <th>Ticker</th>
+                                        <th>Signal Type</th>
+                                        <th>Trigger Price</th>
+                                        <th>Trigger Date</th>
+                                        <th>Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="signals-tbody">
+                                    <tr>
+                                        <td colspan="5" style="text-align: center; color: var(--text-secondary); font-size: 13px; padding: 20px;">No recent crossovers found. Run Nifty 50 or F&O scan to fetch historical data.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Strategy Performance Metrics Table -->
+                    <div>
+                        <h3 style="margin: 0 0 15px 0; color: var(--text-primary); font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; font-family: var(--font-stack);">
+                            <i class="fa-solid fa-ranking-star" style="color: #fbbf24;"></i> Strategy Backtesting Performance Metrics (Wilder's RSI 30/70)
+                        </h3>
+                        <div class="table-container">
+                            <table id="backtest-performance-table">
+                                <thead>
+                                    <tr>
+                                        <th>Ticker</th>
+                                        <th>Company Name</th>
+                                        <th>Total Trades</th>
+                                        <th>Win Rate (%)</th>
+                                        <th>Avg Win (%)</th>
+                                        <th>Avg Loss (%)</th>
+                                        <th>Mathematical Expectancy (%)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="backtest-tbody">
+                                    <tr>
+                                        <td colspan="7" style="text-align: center; color: var(--text-secondary); font-size: 13px; padding: 20px;">No backtest data available. Execute Nifty 50 or F&O scan to run backtests.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trading Journal View Card -->
+                <div id="journal-view-card" class="screener-grid-card glass-card hidden" style="margin-top: 0;">
+                    <!-- Summary Metrics -->
+                    <div class="stats-bar" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                        <div class="stat-card glass-card" style="padding: 12px 16px; margin: 0; display: flex; align-items: center; gap: 12px;">
+                            <div class="stat-icon blue" style="width: 38px; height: 38px; border-radius: 50%; font-size: 14px;"><i class="fa-solid fa-list"></i></div>
+                            <div class="stat-data">
+                                <span class="stat-val" id="journal-stat-total" style="font-size: 18px;">0</span>
+                                <span class="stat-lbl" style="font-size: 11px;">Total Trades</span>
+                            </div>
+                        </div>
+                        <div class="stat-card glass-card" style="padding: 12px 16px; margin: 0; display: flex; align-items: center; gap: 12px;">
+                            <div class="stat-icon orange" style="width: 38px; height: 38px; border-radius: 50%; font-size: 14px;"><i class="fa-solid fa-hourglass-half"></i></div>
+                            <div class="stat-data">
+                                <span class="stat-val" id="journal-stat-active" style="font-size: 18px;">0</span>
+                                <span class="stat-lbl" style="font-size: 11px;">Active Trades</span>
+                            </div>
+                        </div>
+                        <div class="stat-card glass-card" style="padding: 12px 16px; margin: 0; display: flex; align-items: center; gap: 12px;">
+                            <div class="stat-icon green" style="width: 38px; height: 38px; border-radius: 50%; font-size: 14px;"><i class="fa-solid fa-percent"></i></div>
+                            <div class="stat-data">
+                                <span class="stat-val" id="journal-stat-winrate" style="font-size: 18px;">0%</span>
+                                <span class="stat-lbl" style="font-size: 11px;">Win Rate</span>
+                            </div>
+                        </div>
+                        <div class="stat-card glass-card" style="padding: 12px 16px; margin: 0; display: flex; align-items: center; gap: 12px;">
+                            <div class="stat-icon purple" style="width: 38px; height: 38px; border-radius: 50%; font-size: 14px;"><i class="fa-solid fa-wallet"></i></div>
+                            <div class="stat-data">
+                                <span class="stat-val" id="journal-stat-pnl" style="font-size: 18px;">₹0.00</span>
+                                <span class="stat-lbl" style="font-size: 11px;">Realized PnL</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Journal Table -->
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                            <h3 style="margin: 0; color: var(--text-primary); font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; font-family: var(--font-stack);">
+                                <i class="fa-solid fa-book" style="color: var(--accent-indigo);"></i> My Dummy Trades Journal
+                            </h3>
+                            <button id="btn-clear-journal" class="text-btn" style="color: var(--color-knife); font-size: 12px; display: flex; align-items: center; gap: 6px; background: transparent; border: none; cursor: pointer; outline: none;"><i class="fa-solid fa-trash-can"></i> Clear All Entries</button>
+                        </div>
+                        <div class="table-container">
+                            <table id="journal-table">
+                                <thead>
+                                    <tr>
+                                        <th>Ticker</th>
+                                        <th>Type</th>
+                                        <th>Entry Details</th>
+                                        <th>Exit Details</th>
+                                        <th>PnL (%)</th>
+                                        <th>Status</th>
+                                        <th>Notes / Reasons</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="journal-tbody">
+                                    <tr>
+                                        <td colspan="8" style="text-align: center; color: var(--text-secondary); font-size: 13px; padding: 20px;">No journal entries. Select a stock in the Screener Grid and scroll down the details drawer to log a dummy trade!</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -310,6 +468,55 @@
                                     <p id="feedback-text" style="margin: 0;">Feedback details</p>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Trading Journal Form Section -->
+                    <div class="journal-section" style="margin-top: 24px; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 24px;">
+                        <h4 style="font-size: 13px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; margin: 0 0 14px 0; display: flex; align-items: center; gap: 8px; font-family: var(--font-stack);">
+                            <i class="fa-solid fa-pen-to-square" style="color: var(--accent-indigo);"></i> Journal Dummy Trade
+                        </h4>
+                        
+                        <div id="journal-form-container" style="background: rgba(255, 255, 255, 0.01); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-lg); padding: 20px; display: flex; flex-direction: column; gap: 12px; font-family: var(--font-stack);">
+                            <!-- Row 1: Core Trade Parameters -->
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 120px; display: flex; flex-direction: column; gap: 4px;">
+                                    <label style="font-size: 11px; color: var(--text-secondary);">Trade Type</label>
+                                    <select id="journal-input-type" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); padding: 6px; border-radius: 4px; outline: none; font-size: 12px; font-family: var(--font-stack);">
+                                        <option value="Long">Buy (Long)</option>
+                                        <option value="Short">Sell (Short)</option>
+                                    </select>
+                                </div>
+                                <div style="flex: 1.5; min-width: 150px; display: flex; flex-direction: column; gap: 4px;">
+                                    <label style="font-size: 11px; color: var(--text-secondary);">Entry Date</label>
+                                    <select id="journal-input-date" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); padding: 6px; border-radius: 4px; outline: none; font-size: 12px; font-family: var(--font-stack);">
+                                        <!-- Populated dynamically with recent historical dates -->
+                                    </select>
+                                </div>
+                                <div style="flex: 1.2; min-width: 120px; display: flex; flex-direction: column; gap: 4px;">
+                                    <label style="font-size: 11px; color: var(--text-secondary);">Entry Price (₹)</label>
+                                    <input type="number" id="journal-input-price" step="0.01" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); padding: 6px; border-radius: 4px; outline: none; font-size: 12px; font-family: var(--font-stack);">
+                                </div>
+                            </div>
+                            
+                            <!-- Row 2: Risk Parameters -->
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 120px; display: flex; flex-direction: column; gap: 4px;">
+                                    <label style="font-size: 11px; color: var(--text-secondary);">Quantity (Qty)</label>
+                                    <input type="number" id="journal-input-qty" min="1" value="10" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); padding: 6px; border-radius: 4px; outline: none; font-size: 12px; font-family: var(--font-stack);">
+                                </div>
+                                <div style="flex: 1; min-width: 120px; display: flex; flex-direction: column; gap: 4px;">
+                                    <label style="font-size: 11px; color: var(--text-secondary);">Stop Loss Price (₹)</label>
+                                    <input type="number" id="journal-input-sl" step="0.01" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); padding: 6px; border-radius: 4px; outline: none; font-size: 12px; font-family: var(--font-stack);">
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <label style="font-size: 11px; color: var(--text-secondary);">Reason for Entry</label>
+                                <textarea id="journal-input-reason" rows="2" placeholder="e.g. RSI crossed 30 from below, expecting pullback recovery" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); padding: 8px; border-radius: 4px; outline: none; font-size: 12px; resize: vertical; font-family: var(--font-stack);"></textarea>
+                            </div>
+                            
+                            <button id="btn-save-journal-entry" class="primary-btn" style="width: 100%; font-size: 12px; padding: 8px;"><i class="fa-solid fa-plus"></i> Add Trade to Journal</button>
                         </div>
                     </div>
                 </div>
@@ -407,6 +614,71 @@
         </div>
     </section>
 
+    <!-- Trade Log Modal (Shows details of individual backtest trades) -->
+    <section id="tradelog-modal" class="modal hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px); z-index: 2000; display: flex; align-items: center; justify-content: center; font-family: var(--font-stack);">
+        <div class="glass-card" style="width: 90%; max-width: 750px; padding: 25px; border-radius: var(--border-radius-md); border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(17, 24, 39, 0.95); display: flex; flex-direction: column; gap: 15px; box-shadow: var(--shadow-lg);">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 12px;">
+                <h2 id="tradelog-title" style="margin: 0; color: var(--text-primary); font-size: 17px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-list-check" style="color: var(--accent-indigo);"></i> Trade Log: INFY
+                </h2>
+                <button id="btn-close-tradelog" style="background: transparent; border: none; color: var(--text-secondary); font-size: 22px; cursor: pointer; outline: none; transition: color 0.2s;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="table-container" style="max-height: 400px; overflow-y: auto; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-sm);">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                    <thead>
+                        <tr style="background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+                            <th style="padding: 10px;">#</th>
+                            <th style="padding: 10px;">Direction</th>
+                            <th style="padding: 10px;">Entry Date</th>
+                            <th style="padding: 10px;">Entry Price</th>
+                            <th style="padding: 10px;">Exit Date</th>
+                            <th style="padding: 10px;">Exit Price</th>
+                            <th style="padding: 10px;">Profit / Return</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tradelog-tbody">
+                        <!-- Populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Close Trade Modal (Allows closing active dummy trades in journal) -->
+    <section id="close-trade-modal" class="modal hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px); z-index: 2000; display: flex; align-items: center; justify-content: center; font-family: var(--font-stack);">
+        <div class="glass-card" style="width: 90%; max-width: 450px; padding: 25px; border-radius: var(--border-radius-md); border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(17, 24, 39, 0.95); display: flex; flex-direction: column; gap: 15px; box-shadow: var(--shadow-lg);">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 12px;">
+                <h2 style="margin: 0; color: var(--text-primary); font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-door-closed" style="color: var(--color-knife);"></i> Close Dummy Trade: <span id="close-modal-ticker">TCS</span>
+                </h2>
+                <button id="btn-close-close-trade" style="background: transparent; border: none; color: var(--text-secondary); font-size: 22px; cursor: pointer; outline: none;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex: 1.5; display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 11px; color: var(--text-secondary);">Exit Date</label>
+                        <select id="close-modal-date" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); padding: 6px; border-radius: 4px; outline: none; font-size: 12px; font-family: var(--font-stack);">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                    <div style="flex: 1.2; display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 11px; color: var(--text-secondary);">Exit Price (₹)</label>
+                        <input type="number" id="close-modal-price" step="0.01" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); padding: 6px; border-radius: 4px; outline: none; font-size: 12px; font-family: var(--font-stack);">
+                    </div>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 11px; color: var(--text-secondary);">Reason for Exit</label>
+                    <textarea id="close-modal-reason" rows="2" placeholder="e.g. Target reached, stop loss triggered, momentum reversing" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); padding: 8px; border-radius: 4px; outline: none; font-size: 12px; resize: vertical; font-family: var(--font-stack);"></textarea>
+                </div>
+                
+                <button id="btn-submit-close-trade" class="primary-btn" style="width: 100%; font-size: 12px; padding: 10px; background: linear-gradient(135deg, #f43f5e, #be123c);"><i class="fa-solid fa-check"></i> Close Trade & Realize PnL</button>
+            </div>
+        </div>
+    </section>
+
     <!-- Django Template-to-JS Injections -->
     <script>
         // Mapping from Django context
@@ -414,7 +686,7 @@
     </script>
 
     <!-- Project JS dependencies -->
-    <script src="{% static 'screener/mockData.js' %}?v=1.9"></script>
-    <script src="{% static 'screener/app.js' %}?v=1.9"></script>
+    <script src="{% static 'screener/mockData.js' %}?v=2.5"></script>
+    <script src="{% static 'screener/app.js' %}?v=2.5"></script>
 </body>
 </html>

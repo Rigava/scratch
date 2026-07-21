@@ -41,6 +41,7 @@ const App = (function() {
         stocks: {},               // Holds all loaded stock records
         activeTicker: null,       // Currently selected stock
         filters: {
+            status: 'all',
             sma: { enabled: true },
             rsi: { enabled: true, threshold: 30 },
             adx: { enabled: true, threshold: 25 },
@@ -49,7 +50,8 @@ const App = (function() {
         charts: {
             price: null,
             indicators: null
-        }
+        },
+        journal: JSON.parse(localStorage.getItem('trade_journal') || '[]')
     };
 
     // --- Mathematical Indicator Calculations ---
@@ -272,7 +274,13 @@ const App = (function() {
             const matchesSearch = stock.ticker.toLowerCase().includes(query) || 
                                   stock.name.toLowerCase().includes(query);
 
-            if (matchesSearch) {
+            const filterStatusSelect = document.getElementById('sel-filter-status');
+            const filterStatus = filterStatusSelect ? filterStatusSelect.value : 'all';
+            const matchesStatus = filterStatus === 'all' || 
+                                  (filterStatus === 'safe' && stock.status === 'Safe') || 
+                                  (filterStatus === 'knife' && stock.status === 'Knife');
+
+            if (matchesSearch && matchesStatus) {
                 total++;
                 if (stock.status === 'Knife') {
                     knives++;
@@ -316,6 +324,12 @@ const App = (function() {
         document.getElementById('stat-total').innerText = total;
         document.getElementById('stat-knives').innerText = knives;
         document.getElementById('stat-safe').innerText = safe;
+
+        // Sync backtest dashboard if visible
+        const backtestView = document.getElementById('backtest-view-card');
+        if (backtestView && !backtestView.classList.contains('hidden')) {
+            renderBacktestDashboard();
+        }
     }
 
     // --- Interactive Chart Rendering (Chart.js) ---
@@ -528,6 +542,9 @@ const App = (function() {
 
         // Render visual charts
         renderCharts(stock);
+
+        // Setup journal entry form for this stock
+        setupJournalForm(stock);
 
         // Reset campaign panel
         document.getElementById('campaign-loading').classList.add('hidden');
@@ -1015,6 +1032,15 @@ const App = (function() {
             renderScreenerGrid();
         });
 
+        // Status Filter dropdown change listener
+        const selectStatus = document.getElementById('sel-filter-status');
+        if (selectStatus) {
+            selectStatus.addEventListener('change', () => {
+                state.filters.status = selectStatus.value;
+                renderScreenerGrid();
+            });
+        }
+
         // Reset Filters Button
         document.getElementById('btn-reset-filters').addEventListener('click', () => {
             document.getElementById('chk-filter-sma').checked = true;
@@ -1026,12 +1052,14 @@ const App = (function() {
             sliderAdx.value = 25;
             sliderDd.value = 30;
             selectDdYears.value = "1";
+            if (selectStatus) selectStatus.value = "all";
 
             document.getElementById('val-filter-rsi').innerText = '30';
             document.getElementById('val-filter-adx').innerText = '25';
             document.getElementById('val-filter-drawdown').innerText = '30%';
 
             state.filters = {
+                status: 'all',
                 sma: { enabled: true },
                 rsi: { enabled: true, threshold: 30 },
                 adx: { enabled: true, threshold: 25 },
@@ -1059,6 +1087,659 @@ const App = (function() {
                 guideModal.classList.add('hidden');
             }
         });
+
+        // Tab switching binds
+        const tabScreener = document.getElementById('btn-tab-screener');
+        const tabBacktest = document.getElementById('btn-tab-backtest');
+        const tabJournal = document.getElementById('btn-tab-journal');
+        const screenerStats = document.getElementById('screener-stats-bar');
+        const screenerGrid = document.querySelector('.screener-results .screener-grid-card:not(#backtest-view-card):not(#journal-view-card)');
+        const backtestViewCard = document.getElementById('backtest-view-card');
+        const journalViewCard = document.getElementById('journal-view-card');
+        
+        function deactivateAllTabs() {
+            [tabScreener, tabBacktest, tabJournal].forEach(tab => {
+                tab.classList.remove('active');
+                tab.style.background = 'transparent';
+                tab.style.color = 'var(--text-secondary)';
+            });
+            screenerStats.classList.add('hidden');
+            screenerGrid.classList.add('hidden');
+            backtestViewCard.classList.add('hidden');
+            journalViewCard.classList.add('hidden');
+        }
+
+        tabScreener.addEventListener('click', () => {
+            deactivateAllTabs();
+            tabScreener.classList.add('active');
+            tabScreener.style.background = 'rgba(255,255,255,0.05)';
+            tabScreener.style.color = 'var(--text-primary)';
+            
+            screenerStats.classList.remove('hidden');
+            screenerGrid.classList.remove('hidden');
+        });
+        
+        tabBacktest.addEventListener('click', () => {
+            deactivateAllTabs();
+            tabBacktest.classList.add('active');
+            tabBacktest.style.background = 'rgba(255,255,255,0.05)';
+            tabBacktest.style.color = 'var(--text-primary)';
+            
+            backtestViewCard.classList.remove('hidden');
+            renderBacktestDashboard();
+        });
+
+        tabJournal.addEventListener('click', () => {
+            deactivateAllTabs();
+            tabJournal.classList.add('active');
+            tabJournal.style.background = 'rgba(255,255,255,0.05)';
+            tabJournal.style.color = 'var(--text-primary)';
+            
+            journalViewCard.classList.remove('hidden');
+            renderJournalDashboard();
+        });
+        
+        // Signal category selector change
+        document.getElementById('sel-signal-category').addEventListener('change', () => {
+            renderBacktestDashboard();
+        });
+
+        // Trade Log Modal Bindings
+        const tradelogModal = document.getElementById('tradelog-modal');
+        document.getElementById('btn-close-tradelog').addEventListener('click', () => {
+            tradelogModal.classList.add('hidden');
+        });
+        tradelogModal.addEventListener('click', (e) => {
+            if (e.target === tradelogModal) {
+                tradelogModal.classList.add('hidden');
+            }
+        });
+
+        // Journal Entry Form Bindings
+        document.getElementById('btn-save-journal-entry').addEventListener('click', () => {
+            if (state.activeTicker) {
+                saveJournalEntry(state.activeTicker);
+            }
+        });
+
+        // Journal Clear Bindings
+        document.getElementById('btn-clear-journal').addEventListener('click', () => {
+            if (confirm('Are you sure you want to clear your trade journal? This will delete all entries permanently.')) {
+                state.journal = [];
+                localStorage.setItem('trade_journal', JSON.stringify([]));
+                renderJournalDashboard();
+            }
+        });
+
+        // Close Trade Modal Bindings
+        const closeTradeModal = document.getElementById('close-trade-modal');
+        document.getElementById('btn-close-close-trade').addEventListener('click', () => {
+            closeTradeModal.classList.add('hidden');
+        });
+        closeTradeModal.addEventListener('click', (e) => {
+            if (e.target === closeTradeModal) {
+                closeTradeModal.classList.add('hidden');
+            }
+        });
+        document.getElementById('btn-submit-close-trade').addEventListener('click', submitCloseTrade);
+    }
+
+    // --- Strategy Backtesting & Signals Engine ---
+
+    function runRSIBacktestJS(candles) {
+        if (!candles || candles.length < 30) {
+            return { totalTrades: 0, winRate: 0, avgWin: 0, avgLoss: 0, expectancy: 0, signals: [] };
+        }
+        
+        const prices = candles.map(c => c.close);
+        const opens = candles.map(c => c.open);
+        const rsi = calculateRSI(prices, 14);
+        
+        let inTrade = false;
+        let buyPrice = 0;
+        let buyDate = "";
+        let trades = [];
+        let tradesLog = [];
+        let signals = [];
+        
+        const n = candles.length;
+        
+        for (let i = 15; i < n - 1; i++) {
+            // Entry signal: RSI crossed 30 from below (rsi[i-1] < 30 and rsi[i] >= 30)
+            if (!inTrade && rsi[i-1] !== null && rsi[i] !== null) {
+                if (rsi[i-1] < 30 && rsi[i] >= 30) {
+                    buyPrice = opens[i+1];
+                    buyDate = candles[i+1].date;
+                    inTrade = true;
+                    continue;
+                }
+            }
+            
+            // Exit signal: RSI reaches or exceeds 70
+            if (inTrade && rsi[i] !== null) {
+                if (rsi[i] >= 70) {
+                    const sellPrice = opens[i+1];
+                    const sellDate = candles[i+1].date;
+                    const pnl = ((sellPrice - buyPrice) / buyPrice) * 100;
+                    trades.push(pnl);
+                    tradesLog.push({
+                        direction: 'Long',
+                        entryDate: buyDate,
+                        entryPrice: buyPrice,
+                        exitDate: sellDate,
+                        exitPrice: sellPrice,
+                        pnl: pnl,
+                        isForceClosed: false
+                    });
+                    inTrade = false;
+                }
+            }
+        }
+
+        // Force close open trade at the end of history to ensure correct loss metrics
+        if (inTrade) {
+            const sellPrice = prices[n - 1];
+            const sellDate = candles[n - 1].date;
+            const pnl = ((sellPrice - buyPrice) / buyPrice) * 100;
+            trades.push(pnl);
+            tradesLog.push({
+                direction: 'Long',
+                entryDate: buyDate,
+                entryPrice: buyPrice,
+                exitDate: sellDate,
+                exitPrice: sellPrice,
+                pnl: pnl,
+                isForceClosed: true
+            });
+            inTrade = false;
+        }
+        
+        // Scan last 14 trading days for active signals (expanded from 5 to find crossovers)
+        for (let i = n - 14; i < n; i++) {
+            if (i <= 15) continue;
+            const prevRsi = rsi[i-1];
+            const currRsi = rsi[i];
+            
+            if (prevRsi !== null && currRsi !== null) {
+                // Buy Crossover: crosses above 30 from below
+                if (prevRsi < 30 && currRsi >= 30) {
+                    signals.push({
+                        type: 'Buy',
+                        date: candles[i].date,
+                        price: candles[i].close,
+                        description: `RSI crossed above 30 from below (${prevRsi.toFixed(1)} -> ${currRsi.toFixed(1)})`
+                    });
+                }
+                // Sell Crossovers: reaches/crosses above 70, or crosses back below 70
+                if (prevRsi < 70 && currRsi >= 70) {
+                    signals.push({
+                        type: 'Sell',
+                        date: candles[i].date,
+                        price: candles[i].close,
+                        description: `RSI reached/exceeded 70 (${prevRsi.toFixed(1)} -> ${currRsi.toFixed(1)})`
+                    });
+                } else if (prevRsi >= 70 && currRsi < 70) {
+                    signals.push({
+                        type: 'Sell',
+                        date: candles[i].date,
+                        price: candles[i].close,
+                        description: `RSI crossed below 70 showing momentum fade (${prevRsi.toFixed(1)} -> ${currRsi.toFixed(1)})`
+                    });
+                }
+            }
+        }
+        
+        // Fallback: If no crossovers occurred in the last 14 days, check current absolute oversold/overbought states
+        if (signals.length === 0 && n > 0) {
+            const latestRsi = rsi[n - 1];
+            if (latestRsi !== null) {
+                if (latestRsi <= 35) {
+                    signals.push({
+                        type: 'Buy',
+                        date: candles[n - 1].date,
+                        price: candles[n - 1].close,
+                        description: `Oversold zone setup (Current RSI is ${latestRsi.toFixed(1)} <= 35)`
+                    });
+                } else if (latestRsi >= 65) {
+                    signals.push({
+                        type: 'Sell',
+                        date: candles[n - 1].date,
+                        price: candles[n - 1].close,
+                        description: `Overbought zone setup (Current RSI is ${latestRsi.toFixed(1)} >= 65)`
+                    });
+                }
+            }
+        }
+        
+        const totalTrades = trades.length;
+        if (totalTrades === 0) {
+            return { totalTrades: 0, winRate: 0, avgWin: 0, avgLoss: 0, expectancy: 0, signals, tradesLog };
+        }
+        
+        const wins = trades.filter(p => p > 0);
+        const losses = trades.filter(p => p <= 0);
+        
+        const winRate = (wins.length / totalTrades) * 100;
+        const avgWin = wins.length > 0 ? (wins.reduce((a, b) => a + b, 0) / wins.length) : 0;
+        const avgLoss = losses.length > 0 ? (losses.reduce((a, b) => a + b, 0) / losses.length) : 0;
+        const expectancy = trades.reduce((a, b) => a + b, 0) / totalTrades;
+        
+        return {
+            totalTrades,
+            winRate: Math.round(winRate * 100) / 100,
+            avgWin: Math.round(avgWin * 100) / 100,
+            avgLoss: Math.round(avgLoss * 100) / 100,
+            expectancy: Math.round(expectancy * 100) / 100,
+            signals,
+            tradesLog
+        };
+    }
+
+    function renderBacktestDashboard() {
+        const backtestTbody = document.getElementById('backtest-tbody');
+        const signalsTbody = document.getElementById('signals-tbody');
+        const signalFilter = document.getElementById('sel-signal-category').value;
+        
+        backtestTbody.innerHTML = '';
+        signalsTbody.innerHTML = '';
+        
+        const stocksList = Object.values(state.stocks);
+        if (stocksList.length === 0) {
+            backtestTbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-secondary); font-size: 13px; padding: 20px;">No stocks loaded. Run Nifty 50 or F&O scan to execute backtests.</td></tr>`;
+            signalsTbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-secondary); font-size: 13px; padding: 20px;">No recent signals found. Run a market scan first.</td></tr>`;
+            return;
+        }
+        
+        const backtestResults = [];
+        let allSignals = [];
+        
+        stocksList.forEach(stock => {
+            const res = runRSIBacktestJS(stock.candles);
+            backtestResults.push({
+                ticker: stock.ticker,
+                name: stock.name,
+                totalTrades: res.totalTrades,
+                winRate: res.winRate,
+                avgWin: res.avgWin,
+                avgLoss: res.avgLoss,
+                expectancy: res.expectancy,
+                tradesLog: res.tradesLog
+            });
+            
+            res.signals.forEach(sig => {
+                allSignals.push({
+                    ticker: stock.ticker,
+                    type: sig.type,
+                    price: sig.price,
+                    date: sig.date,
+                    description: sig.description
+                });
+            });
+        });
+        
+        // Sort backtest results by winRate descending
+        backtestResults.sort((a, b) => b.winRate - a.winRate);
+        
+        // Populate performance table
+        backtestResults.forEach(r => {
+            const tr = document.createElement('tr');
+            tr.style.cursor = 'pointer';
+            tr.title = 'Click to view detailed trade log';
+            tr.innerHTML = `
+                <td style="font-weight: 600; color: var(--accent-indigo);">${r.ticker}</td>
+                <td>${r.name}</td>
+                <td>${r.totalTrades}</td>
+                <td style="font-weight: 600; color: ${r.winRate >= 50 ? 'var(--color-safe)' : 'var(--text-secondary)'};">${r.winRate}%</td>
+                <td class="text-green">+${r.avgWin.toFixed(2)}%</td>
+                <td class="text-red">${r.avgLoss.toFixed(2)}%</td>
+                <td style="font-weight: 600; color: ${r.expectancy >= 0 ? 'var(--color-safe)' : 'var(--color-knife)'};">${r.expectancy >= 0 ? '+' : ''}${r.expectancy.toFixed(2)}%</td>
+            `;
+            tr.addEventListener('click', () => {
+                showTradeLogModal(r.ticker, r.name, r.tradesLog);
+            });
+            backtestTbody.appendChild(tr);
+        });
+        
+        // Filter signals based on shortlist dropdown category
+        let filteredSignals = allSignals;
+        if (signalFilter === 'buy') {
+            filteredSignals = allSignals.filter(s => s.type === 'Buy');
+        } else if (signalFilter === 'sell') {
+            filteredSignals = allSignals.filter(s => s.type === 'Sell');
+        }
+        
+        if (filteredSignals.length === 0) {
+            signalsTbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-secondary); font-size: 13px; padding: 20px;">No recent crossovers matching the "${signalFilter}" shortlist category.</td></tr>`;
+        } else {
+            filteredSignals.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight: 600; color: var(--accent-indigo); cursor: pointer;" onclick="App.triggerSelect('${s.ticker}')">${s.ticker}</td>
+                    <td><span class="badge ${s.type === 'Buy' ? 'badge-green' : 'badge-red'}">${s.type.toUpperCase()}</span></td>
+                    <td style="font-weight: 600;">₹${s.price.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td>${s.date}</td>
+                    <td style="font-size: 12px; color: var(--text-secondary);">${s.description}</td>
+                `;
+                signalsTbody.appendChild(tr);
+            });
+        }
+    }
+
+    function showTradeLogModal(ticker, name, tradesLog) {
+        const modal = document.getElementById('tradelog-modal');
+        const title = document.getElementById('tradelog-title');
+        const tbody = document.getElementById('tradelog-tbody');
+        
+        title.innerHTML = `<i class="fa-solid fa-list-check" style="color: var(--accent-indigo);"></i> Trade Log: ${ticker} (${name})`;
+        tbody.innerHTML = '';
+        
+        if (!tradesLog || tradesLog.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 20px;">No trades executed for this stock.</td></tr>`;
+        } else {
+            tradesLog.forEach((t, idx) => {
+                const tr = document.createElement('tr');
+                const exitLabel = t.isForceClosed ? `<span style="color: var(--text-secondary); font-size: 11px;">${t.exitDate} (Force Close)</span>` : t.exitDate;
+                tr.innerHTML = `
+                    <td style="padding: 10px;">${idx + 1}</td>
+                    <td style="padding: 10px;"><span class="badge badge-green">LONG</span></td>
+                    <td style="padding: 10px;">${t.entryDate}</td>
+                    <td style="padding: 10px; font-weight: 500;">₹${t.entryPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td style="padding: 10px;">${exitLabel}</td>
+                    <td style="padding: 10px; font-weight: 500;">₹${t.exitPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td style="padding: 10px; font-weight: 600; color: ${t.pnl >= 0 ? 'var(--color-safe)' : 'var(--color-knife)'};">${t.pnl >= 0 ? '+' : ''}${t.pnl.toFixed(2)}%</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        
+        modal.classList.remove('hidden');
+    }
+
+    let closingTradeId = null;
+
+    function setupJournalForm(stock) {
+        const dateSelect = document.getElementById('journal-input-date');
+        if (!dateSelect) return;
+        
+        dateSelect.innerHTML = '';
+        
+        const recentCandles = stock.candles.slice(-30).reverse();
+        recentCandles.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.date;
+            opt.text = c.date;
+            dateSelect.appendChild(opt);
+        });
+        
+        const latestCandle = stock.candles[stock.candles.length - 1];
+        document.getElementById('journal-input-price').value = latestCandle.close.toFixed(2);
+        document.getElementById('journal-input-qty').value = '10';
+        document.getElementById('journal-input-reason').value = '';
+        document.getElementById('journal-input-type').value = 'Long';
+        
+        // Auto SL Calculator
+        function calculateSL() {
+            const type = document.getElementById('journal-input-type').value;
+            const price = parseFloat(document.getElementById('journal-input-price').value);
+            if (!isNaN(price) && price > 0) {
+                const sl = type === 'Long' ? (price * 0.95) : (price * 1.05);
+                document.getElementById('journal-input-sl').value = sl.toFixed(2);
+            }
+        }
+        
+        // Run once initially
+        calculateSL();
+        
+        // Update price and SL on date selection change
+        dateSelect.onchange = () => {
+            const selectedDate = dateSelect.value;
+            const candle = stock.candles.find(c => c.date === selectedDate);
+            if (candle) {
+                document.getElementById('journal-input-price').value = candle.close.toFixed(2);
+                calculateSL();
+            }
+        };
+        
+        // Update SL on price or type changes
+        document.getElementById('journal-input-price').oninput = calculateSL;
+        document.getElementById('journal-input-type').onchange = calculateSL;
+    }
+
+    function saveJournalEntry(ticker) {
+        const type = document.getElementById('journal-input-type').value;
+        const entryDate = document.getElementById('journal-input-date').value;
+        const entryPrice = parseFloat(document.getElementById('journal-input-price').value);
+        const qty = parseInt(document.getElementById('journal-input-qty').value);
+        const sl = parseFloat(document.getElementById('journal-input-sl').value);
+        const entryReason = document.getElementById('journal-input-reason').value.trim();
+        
+        if (isNaN(entryPrice) || entryPrice <= 0) {
+            alert('Please enter a valid entry price.');
+            return;
+        }
+        
+        if (isNaN(qty) || qty <= 0) {
+            alert('Please enter a valid quantity.');
+            return;
+        }
+        
+        if (isNaN(sl) || sl <= 0) {
+            alert('Please enter a valid stop loss price.');
+            return;
+        }
+        
+        const entry = {
+            id: 'trade_' + Date.now(),
+            ticker: ticker,
+            type: type,
+            entryDate: entryDate,
+            entryPrice: entryPrice,
+            quantity: qty,
+            stopLoss: sl,
+            entryReason: entryReason,
+            exitDate: null,
+            exitPrice: null,
+            exitReason: null,
+            status: 'Active',
+            pnl: null
+        };
+        
+        state.journal.push(entry);
+        localStorage.setItem('trade_journal', JSON.stringify(state.journal));
+        
+        alert(`Successfully journaled trade entry for ${ticker}!`);
+        document.getElementById('journal-input-reason').value = '';
+        
+        renderJournalDashboard();
+    }
+
+    function renderJournalDashboard() {
+        const tbody = document.getElementById('journal-tbody');
+        const statTotal = document.getElementById('journal-stat-total');
+        const statActive = document.getElementById('journal-stat-active');
+        const statWinrate = document.getElementById('journal-stat-winrate');
+        const statPnl = document.getElementById('journal-stat-pnl');
+        
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        
+        const journal = state.journal;
+        statTotal.innerText = journal.length;
+        
+        const activeTrades = journal.filter(t => t.status === 'Active');
+        statActive.innerText = activeTrades.length;
+        
+        const closedTrades = journal.filter(t => t.status === 'Realized');
+        
+        let winCount = 0;
+        closedTrades.forEach(t => {
+            if (t.pnl > 0) winCount++;
+        });
+        
+        const winRate = closedTrades.length > 0 ? Math.round((winCount / closedTrades.length) * 100) : 0;
+        statWinrate.innerText = `${winRate}%`;
+        
+        // Calculate absolute realized PnL based on trade quantity
+        let realizedAbsolutePnL = 0;
+        closedTrades.forEach(t => {
+            const diff = t.exitPrice - t.entryPrice;
+            const tradePnL = (t.type === 'Long' ? diff : -diff) * (t.quantity || 10);
+            realizedAbsolutePnL += tradePnL;
+        });
+        
+        const formattedAbsolutePnl = realizedAbsolutePnL >= 0 
+            ? `₹${realizedAbsolutePnL.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` 
+            : `-₹${Math.abs(realizedAbsolutePnL).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        
+        statPnl.innerText = formattedAbsolutePnl;
+        statPnl.className = `stat-val ${realizedAbsolutePnL >= 0 ? 'text-green' : 'text-red'}`;
+        
+        if (journal.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-secondary); font-size: 13px; padding: 20px;">No journal entries. Select a stock in the Screener Grid and scroll down the details drawer to log a dummy trade!</td></tr>`;
+            return;
+        }
+        
+        journal.forEach(t => {
+            const tr = document.createElement('tr');
+            
+            const stock = state.stocks[t.ticker];
+            const currentPrice = stock ? stock.current.price : t.entryPrice;
+            
+            let pnlDisplay = '';
+            let pnlClass = '';
+            
+            const quantity = t.quantity || 10;
+            
+            if (t.status === 'Active') {
+                const diff = currentPrice - t.entryPrice;
+                const pct = (t.type === 'Long' ? diff : -diff) / t.entryPrice * 100;
+                const absolute = (t.type === 'Long' ? diff : -diff) * quantity;
+                pnlDisplay = `Active: ${pct >= 0 ? '+' : ''}${pct.toFixed(2)}% (${absolute >= 0 ? '+' : ''}₹${absolute.toFixed(2)})`;
+                pnlClass = pct >= 0 ? 'text-green' : 'text-red';
+            } else {
+                const diff = t.exitPrice - t.entryPrice;
+                const absolute = (t.type === 'Long' ? diff : -diff) * quantity;
+                pnlDisplay = `${t.pnl >= 0 ? '+' : ''}${t.pnl.toFixed(2)}% (${absolute >= 0 ? '+' : ''}₹${absolute.toFixed(2)})`;
+                pnlClass = t.pnl >= 0 ? 'text-green' : 'text-red';
+            }
+            
+            const exitDetails = t.status === 'Active' 
+                ? `<span style="color: var(--text-secondary); font-size: 11px;">Active at ₹${currentPrice.toFixed(2)}</span>` 
+                : `<div style="font-size: 12px; font-weight: 500;">₹${t.exitPrice.toFixed(2)}</div><div style="font-size: 10px; color: var(--text-secondary);">${t.exitDate}</div>`;
+                
+            const typeBadge = t.type === 'Long' 
+                ? `<span class="badge badge-green" style="font-size: 10px; padding: 2px 6px;">BUY</span>` 
+                : `<span class="badge badge-red" style="font-size: 10px; padding: 2px 6px;">SELL</span>`;
+                
+            const actionBtn = t.status === 'Active'
+                ? `<button onclick="App.triggerCloseTrade('${t.id}')" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; font-size: 11px; padding: 4px 8px; border-radius: 4px; cursor: pointer; outline: none; transition: all 0.2s;"><i class="fa-solid fa-door-closed"></i> Close</button>`
+                : `<button onclick="App.triggerDeleteTrade('${t.id}')" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-secondary); font-size: 11px; padding: 4px 8px; border-radius: 4px; cursor: pointer; outline: none; transition: all 0.2s;"><i class="fa-solid fa-trash-can"></i> Delete</button>`;
+            
+            const slText = t.stopLoss ? `<div style="font-size: 11px; color: #f87171; font-weight: 500;">SL: ₹${t.stopLoss.toFixed(2)}</div>` : '';
+            
+            let notesText = `<strong>Entry:</strong> ${t.entryReason || 'No reason logged'}`;
+            if (t.status === 'Realized' && t.exitReason) {
+                notesText += `<br/><strong>Exit:</strong> ${t.exitReason}`;
+            }
+
+            tr.innerHTML = `
+                <td style="font-weight: 600; color: var(--accent-indigo); cursor: pointer;" onclick="App.triggerSelect('${t.ticker}')">${t.ticker}</td>
+                <td>${typeBadge}</td>
+                <td>
+                    <div style="font-size: 12px; font-weight: 500;">₹${t.entryPrice.toFixed(2)}</div>
+                    <div style="font-size: 11px; color: var(--text-secondary);">${quantity} shares</div>
+                    ${slText}
+                    <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">${t.entryDate}</div>
+                </td>
+                <td>${exitDetails}</td>
+                <td style="font-weight: 600;" class="${pnlClass}">${pnlDisplay}</td>
+                <td><span class="badge ${t.status === 'Active' ? 'badge-blue' : 'badge-green'}" style="font-size: 10px; padding: 2px 6px;">${t.status.toUpperCase()}</span></td>
+                <td style="font-size: 11px; color: var(--text-secondary); max-width: 250px; white-space: normal; line-height: 1.4;">${notesText}</td>
+                <td>${actionBtn}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function openCloseTradeModal(tradeId) {
+        const trade = state.journal.find(t => t.id === tradeId);
+        if (!trade) return;
+        
+        closingTradeId = tradeId;
+        
+        const stock = state.stocks[trade.ticker];
+        if (!stock) return;
+        
+        document.getElementById('close-modal-ticker').innerText = trade.ticker;
+        
+        const dateSelect = document.getElementById('close-modal-date');
+        dateSelect.innerHTML = '';
+        
+        const entryIdx = stock.candles.findIndex(c => c.date === trade.entryDate);
+        const startIdx = entryIdx !== -1 ? entryIdx : 0;
+        const exitCandles = stock.candles.slice(startIdx);
+        
+        exitCandles.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.date;
+            opt.text = c.date;
+            dateSelect.appendChild(opt);
+        });
+        
+        const latestCandle = stock.candles[stock.candles.length - 1];
+        document.getElementById('close-modal-price').value = latestCandle.close.toFixed(2);
+        document.getElementById('close-modal-reason').value = '';
+        
+        dateSelect.onchange = () => {
+            const selectedDate = dateSelect.value;
+            const candle = stock.candles.find(c => c.date === selectedDate);
+            if (candle) {
+                document.getElementById('close-modal-price').value = candle.close.toFixed(2);
+            }
+        };
+        
+        document.getElementById('close-trade-modal').classList.remove('hidden');
+    }
+
+    function submitCloseTrade() {
+        if (!closingTradeId) return;
+        
+        const trade = state.journal.find(t => t.id === closingTradeId);
+        if (!trade) return;
+        
+        const exitDate = document.getElementById('close-modal-date').value;
+        const exitPrice = parseFloat(document.getElementById('close-modal-price').value);
+        const exitReason = document.getElementById('close-modal-reason').value.trim();
+        
+        if (isNaN(exitPrice) || exitPrice <= 0) {
+            alert('Please enter a valid exit price.');
+            return;
+        }
+        
+        const diff = exitPrice - trade.entryPrice;
+        const pnl = (trade.type === 'Long' ? diff : -diff) / trade.entryPrice * 100;
+        
+        trade.exitDate = exitDate;
+        trade.exitPrice = exitPrice;
+        trade.exitReason = exitReason;
+        trade.status = 'Realized';
+        trade.pnl = pnl;
+        
+        localStorage.setItem('trade_journal', JSON.stringify(state.journal));
+        document.getElementById('close-trade-modal').classList.add('hidden');
+        closingTradeId = null;
+        
+        renderJournalDashboard();
+        alert(`Successfully closed trade for ${trade.ticker}! Realized Return: ${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}%`);
+    }
+
+    function deleteJournalEntry(tradeId) {
+        if (confirm('Are you sure you want to delete this journal entry?')) {
+            state.journal = state.journal.filter(t => t.id !== tradeId);
+            localStorage.setItem('trade_journal', JSON.stringify(state.journal));
+            renderJournalDashboard();
+        }
     }
 
     function init() {
@@ -1077,7 +1758,18 @@ const App = (function() {
     }
 
     return {
-        init
+        init,
+        triggerSelect: (ticker) => {
+            // Switch back to screener tab first
+            document.getElementById('btn-tab-screener').click();
+            openDetailDrawer(ticker);
+        },
+        triggerCloseTrade: (tradeId) => {
+            openCloseTradeModal(tradeId);
+        },
+        triggerDeleteTrade: (tradeId) => {
+            deleteJournalEntry(tradeId);
+        }
     };
 })();
 

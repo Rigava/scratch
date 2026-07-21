@@ -286,6 +286,13 @@ def run_backtest_rsi_30_70(candles):
                 trades.append(pnl_pct)
                 in_trade = False
 
+    # Force close open trade at the end of history to ensure correct loss metrics
+    if in_trade:
+        sell_price = prices[-1]
+        pnl_pct = (sell_price - buy_price) / buy_price * 100
+        trades.append(pnl_pct)
+        in_trade = False
+
     total_trades = len(trades)
     if total_trades == 0:
         return {
