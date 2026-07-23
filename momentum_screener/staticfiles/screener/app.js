@@ -51,7 +51,8 @@ const App = (function() {
             price: null,
             indicators: null
         },
-        journal: JSON.parse(localStorage.getItem('trade_journal') || '[]')
+        journal: JSON.parse(localStorage.getItem('trade_journal') || '[]'),
+        journalFilter: 'all'
     };
 
     // --- Mathematical Indicator Calculations ---
@@ -566,7 +567,30 @@ const App = (function() {
     // Load static high-fidelity simulation pool
     function loadSimulationData() {
         state.stocks = MockDataEngine.getSimulatedData();
+        hydrateActiveJournalTickers();
         renderScreenerGrid();
+    }
+
+    function hydrateActiveJournalTickers() {
+        state.journal.forEach(t => {
+            if (t.status === 'Active' && !state.stocks[t.ticker]) {
+                if (state.dataSource === 'simulation') {
+                    // Generate simulated data for this ticker specifically
+                    const simulated = MockDataEngine.generateSimulatedList([t.ticker]);
+                    if (simulated[t.ticker]) {
+                        state.stocks[t.ticker] = simulated[t.ticker];
+                        processStockIndicators(state.stocks[t.ticker]);
+                    }
+                } else if (state.dataSource === 'zerodha') {
+                    // Fetch Zerodha data if credentials are saved
+                    const apiKey = sessionStorage.getItem('zerodha_api_key') || (typeof SERVER_HAS_ZERODHA !== 'undefined' && SERVER_HAS_ZERODHA ? 'SERVER_PRECONFIGURED' : '');
+                    const accessToken = sessionStorage.getItem('zerodha_access_token') || (typeof SERVER_HAS_ZERODHA !== 'undefined' && SERVER_HAS_ZERODHA ? 'SERVER_PRECONFIGURED' : '');
+                    if (apiKey && accessToken) {
+                        fetchZerodhaData(t.ticker).catch(err => console.error(`Failed to hydrate active trade ticker ${t.ticker}:`, err));
+                    }
+                }
+            }
+        });
     }
 
     // Fetch data using the Django CORS-proxy views for Zerodha historical endpoint
@@ -918,7 +942,9 @@ const App = (function() {
                 fetchZerodhaData('RELIANCE');
                 fetchZerodhaData('TCS');
                 fetchZerodhaData('INFY');
+                hydrateActiveJournalTickers();
             } else {
+                hydrateActiveJournalTickers();
                 renderScreenerGrid();
             }
         });
@@ -941,6 +967,7 @@ const App = (function() {
                 fetchZerodhaData('RELIANCE');
                 fetchZerodhaData('TCS');
                 fetchZerodhaData('INFY');
+                hydrateActiveJournalTickers();
             }
         });
 
@@ -1182,6 +1209,70 @@ const App = (function() {
             }
         });
         document.getElementById('btn-submit-close-trade').addEventListener('click', submitCloseTrade);
+
+        // Journal Period Filters
+        const jBtnAll = document.getElementById('btn-journal-filter-all');
+        const jBtnYear = document.getElementById('btn-journal-filter-year');
+        const jBtnMonth = document.getElementById('btn-journal-filter-month');
+        const jBtnDay = document.getElementById('btn-journal-filter-day');
+
+        function deactivateJournalFilters() {
+            [jBtnAll, jBtnYear, jBtnMonth, jBtnDay].forEach(btn => {
+                if (btn) {
+                    btn.classList.remove('active');
+                    btn.style.background = 'transparent';
+                    btn.style.color = 'var(--text-secondary)';
+                }
+            });
+        }
+
+        if (jBtnAll) {
+            jBtnAll.addEventListener('click', () => {
+                deactivateJournalFilters();
+                jBtnAll.classList.add('active');
+                jBtnAll.style.background = 'rgba(255, 255, 255, 0.08)';
+                jBtnAll.style.color = 'var(--text-primary)';
+                state.journalFilter = 'all';
+                document.getElementById('journal-filter-desc').innerText = 'Showing metrics for all time';
+                renderJournalDashboard();
+            });
+        }
+
+        if (jBtnYear) {
+            jBtnYear.addEventListener('click', () => {
+                deactivateJournalFilters();
+                jBtnYear.classList.add('active');
+                jBtnYear.style.background = 'rgba(255, 255, 255, 0.08)';
+                jBtnYear.style.color = 'var(--text-primary)';
+                state.journalFilter = 'yearly';
+                document.getElementById('journal-filter-desc').innerText = 'Showing metrics for past year';
+                renderJournalDashboard();
+            });
+        }
+
+        if (jBtnMonth) {
+            jBtnMonth.addEventListener('click', () => {
+                deactivateJournalFilters();
+                jBtnMonth.classList.add('active');
+                jBtnMonth.style.background = 'rgba(255, 255, 255, 0.08)';
+                jBtnMonth.style.color = 'var(--text-primary)';
+                state.journalFilter = 'monthly';
+                document.getElementById('journal-filter-desc').innerText = 'Showing metrics for past month';
+                renderJournalDashboard();
+            });
+        }
+
+        if (jBtnDay) {
+            jBtnDay.addEventListener('click', () => {
+                deactivateJournalFilters();
+                jBtnDay.classList.add('active');
+                jBtnDay.style.background = 'rgba(255, 255, 255, 0.08)';
+                jBtnDay.style.color = 'var(--text-primary)';
+                state.journalFilter = 'daily';
+                document.getElementById('journal-filter-desc').innerText = 'Showing metrics for past 24 hours';
+                renderJournalDashboard();
+            });
+        }
     }
 
     // --- Strategy Backtesting & Signals Engine ---
@@ -1564,7 +1655,30 @@ const App = (function() {
         
         tbody.innerHTML = '';
         
-        const journal = state.journal;
+        const filter = state.journalFilter || 'all';
+        
+        // Helper to check if trade date fits filter
+        function isTradeInPeriod(t, period) {
+            if (period === 'all') return true;
+            const dateStr = t.status === 'Realized' ? t.exitDate : t.entryDate;
+            if (!dateStr) return false;
+            
+            const tradeDate = new Date(dateStr);
+            const today = new Date();
+            
+            tradeDate.setHours(0,0,0,0);
+            today.setHours(0,0,0,0);
+            
+            const diffTime = Math.abs(today - tradeDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (period === 'daily') return diffDays <= 1;
+            if (period === 'monthly') return diffDays <= 30;
+            if (period === 'yearly') return diffDays <= 365;
+            return true;
+        }
+
+        const journal = state.journal.filter(t => isTradeInPeriod(t, filter));
         statTotal.innerText = journal.length;
         
         const activeTrades = journal.filter(t => t.status === 'Active');
@@ -1596,7 +1710,7 @@ const App = (function() {
         statPnl.className = `stat-val ${realizedAbsolutePnL >= 0 ? 'text-green' : 'text-red'}`;
         
         if (journal.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-secondary); font-size: 13px; padding: 20px;">No journal entries. Select a stock in the Screener Grid and scroll down the details drawer to log a dummy trade!</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-secondary); font-size: 13px; padding: 20px;">No journal entries match the "${filter}" filter. Select a stock in the Screener Grid and scroll down the details drawer to log a dummy trade!</td></tr>`;
             return;
         }
         
@@ -1668,36 +1782,46 @@ const App = (function() {
         
         closingTradeId = tradeId;
         
-        const stock = state.stocks[trade.ticker];
-        if (!stock) return;
-        
         document.getElementById('close-modal-ticker').innerText = trade.ticker;
         
-        const dateSelect = document.getElementById('close-modal-date');
-        dateSelect.innerHTML = '';
+        const wrapper = document.getElementById('close-modal-date-wrapper');
+        const stock = state.stocks[trade.ticker];
         
-        const entryIdx = stock.candles.findIndex(c => c.date === trade.entryDate);
-        const startIdx = entryIdx !== -1 ? entryIdx : 0;
-        const exitCandles = stock.candles.slice(startIdx);
-        
-        exitCandles.forEach(c => {
-            const opt = document.createElement('option');
-            opt.value = c.date;
-            opt.text = c.date;
-            dateSelect.appendChild(opt);
-        });
-        
-        const latestCandle = stock.candles[stock.candles.length - 1];
-        document.getElementById('close-modal-price').value = latestCandle.close.toFixed(2);
-        document.getElementById('close-modal-reason').value = '';
-        
-        dateSelect.onchange = () => {
-            const selectedDate = dateSelect.value;
-            const candle = stock.candles.find(c => c.date === selectedDate);
-            if (candle) {
-                document.getElementById('close-modal-price').value = candle.close.toFixed(2);
-            }
-        };
+        if (stock) {
+            // Render select dropdown
+            wrapper.innerHTML = `<select id="close-modal-date" style="width: 100%; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); padding: 6px; border-radius: 4px; outline: none; font-size: 12px; font-family: var(--font-stack);"></select>`;
+            const dateSelect = document.getElementById('close-modal-date');
+            
+            const entryIdx = stock.candles.findIndex(c => c.date === trade.entryDate);
+            const startIdx = entryIdx !== -1 ? entryIdx : 0;
+            const exitCandles = stock.candles.slice(startIdx);
+            
+            exitCandles.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.date;
+                opt.text = c.date;
+                dateSelect.appendChild(opt);
+            });
+            
+            const latestCandle = stock.candles[stock.candles.length - 1];
+            document.getElementById('close-modal-price').value = latestCandle.close.toFixed(2);
+            document.getElementById('close-modal-reason').value = '';
+            
+            dateSelect.onchange = () => {
+                const selectedDate = dateSelect.value;
+                const candle = stock.candles.find(c => c.date === selectedDate);
+                if (candle) {
+                    document.getElementById('close-modal-price').value = candle.close.toFixed(2);
+                }
+            };
+        } else {
+            // Render fallback date picker input since stock is not loaded
+            const todayStr = new Date().toISOString().split('T')[0];
+            wrapper.innerHTML = `<input type="date" id="close-modal-date" value="${todayStr}" min="${trade.entryDate}" style="width: 100%; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); padding: 6px; border-radius: 4px; outline: none; font-size: 12px; font-family: var(--font-stack);">`;
+            
+            document.getElementById('close-modal-price').value = trade.entryPrice.toFixed(2);
+            document.getElementById('close-modal-reason').value = '';
+        }
         
         document.getElementById('close-trade-modal').classList.remove('hidden');
     }

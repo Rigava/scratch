@@ -13,7 +13,7 @@
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     {% load static %}
-    <link rel="stylesheet" href="{% static 'screener/styles.css' %}?v=2.5">
+    <link rel="stylesheet" href="{% static 'screener/styles.css' %}?v=2.6">
 </head>
 <body>
     <div class="app-container">
@@ -316,6 +316,20 @@
 
                 <!-- Trading Journal View Card -->
                 <div id="journal-view-card" class="screener-grid-card glass-card hidden" style="margin-top: 0;">
+                    <!-- Performance Period Toolbar -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; flex-wrap: wrap; gap: 12px; font-family: var(--font-stack);">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 13px; color: var(--text-secondary);"><i class="fa-solid fa-filter"></i> Performance Period:</span>
+                            <div class="toggle-container" style="display: flex; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 2px; gap: 4px;">
+                                <button id="btn-journal-filter-all" class="toggle-btn active" style="font-size: 11px; padding: 4px 10px; border-radius: 4px; background: rgba(255,255,255,0.08); border: none; color: var(--text-primary); cursor: pointer; outline: none;">All Time</button>
+                                <button id="btn-journal-filter-year" class="toggle-btn" style="font-size: 11px; padding: 4px 10px; border-radius: 4px; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; outline: none;">Yearly</button>
+                                <button id="btn-journal-filter-month" class="toggle-btn" style="font-size: 11px; padding: 4px 10px; border-radius: 4px; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; outline: none;">Monthly</button>
+                                <button id="btn-journal-filter-day" class="toggle-btn" style="font-size: 11px; padding: 4px 10px; border-radius: 4px; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; outline: none;">Daily</button>
+                            </div>
+                        </div>
+                        <span id="journal-filter-desc" style="font-size: 11px; color: var(--text-secondary); font-style: italic;">Showing metrics for all time</span>
+                    </div>
+
                     <!-- Summary Metrics -->
                     <div class="stats-bar" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px;">
                         <div class="stat-card glass-card" style="padding: 12px 16px; margin: 0; display: flex; align-items: center; gap: 12px;">
@@ -659,9 +673,11 @@
                 <div style="display: flex; gap: 10px;">
                     <div style="flex: 1.5; display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 11px; color: var(--text-secondary);">Exit Date</label>
-                        <select id="close-modal-date" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); padding: 6px; border-radius: 4px; outline: none; font-size: 12px; font-family: var(--font-stack);">
-                            <!-- Populated dynamically -->
-                        </select>
+                        <div id="close-modal-date-wrapper">
+                            <select id="close-modal-date" style="width: 100%; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); padding: 6px; border-radius: 4px; outline: none; font-size: 12px; font-family: var(--font-stack);">
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
                     </div>
                     <div style="flex: 1.2; display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 11px; color: var(--text-secondary);">Exit Price (₹)</label>
@@ -686,7 +702,7 @@
     </script>
 
     <!-- Project JS dependencies -->
-    <script src="{% static 'screener/mockData.js' %}?v=2.5"></script>
-    <script src="{% static 'screener/app.js' %}?v=2.5"></script>
+    <script src="{% static 'screener/mockData.js' %}?v=2.6"></script>
+    <script src="{% static 'screener/app.js' %}?v=2.6"></script>
 </body>
 </html>
