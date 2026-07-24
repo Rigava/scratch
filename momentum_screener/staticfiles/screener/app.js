@@ -1734,8 +1734,9 @@ const App = (function() {
             } else {
                 const diff = t.exitPrice - t.entryPrice;
                 const absolute = (t.type === 'Long' ? diff : -diff) * quantity;
-                pnlDisplay = `${t.pnl >= 0 ? '+' : ''}${t.pnl.toFixed(2)}% (${absolute >= 0 ? '+' : ''}₹${absolute.toFixed(2)})`;
-                pnlClass = t.pnl >= 0 ? 'text-green' : 'text-red';
+                const pnlVal = typeof t.pnl === 'number' ? t.pnl : 0;
+                pnlDisplay = `${pnlVal >= 0 ? '+' : ''}${pnlVal.toFixed(2)}% (${absolute >= 0 ? '+' : ''}₹${absolute.toFixed(2)})`;
+                pnlClass = pnlVal >= 0 ? 'text-green' : 'text-red';
             }
             
             const exitDetails = t.status === 'Active' 
@@ -1787,7 +1788,7 @@ const App = (function() {
         const wrapper = document.getElementById('close-modal-date-wrapper');
         const stock = state.stocks[trade.ticker];
         
-        if (stock) {
+        if (stock && stock.candles && stock.candles.length > 0) {
             // Render select dropdown
             wrapper.innerHTML = `<select id="close-modal-date" style="width: 100%; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); padding: 6px; border-radius: 4px; outline: none; font-size: 12px; font-family: var(--font-stack);"></select>`;
             const dateSelect = document.getElementById('close-modal-date');
@@ -1832,9 +1833,15 @@ const App = (function() {
         const trade = state.journal.find(t => t.id === closingTradeId);
         if (!trade) return;
         
-        const exitDate = document.getElementById('close-modal-date').value;
+        const dateInput = document.getElementById('close-modal-date');
+        const exitDate = dateInput ? dateInput.value : '';
         const exitPrice = parseFloat(document.getElementById('close-modal-price').value);
         const exitReason = document.getElementById('close-modal-reason').value.trim();
+        
+        if (!exitDate) {
+            alert('Please select or enter a valid exit date.');
+            return;
+        }
         
         if (isNaN(exitPrice) || exitPrice <= 0) {
             alert('Please enter a valid exit price.');
