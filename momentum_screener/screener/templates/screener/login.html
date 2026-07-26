@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aegis Momentum - Sign In</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {% load static %}
+    <style>
+        :root {
+            --bg-primary: #12100e;
+            --bg-secondary: #1a1714;
+            --bg-card: rgba(26, 23, 20, 0.75);
+            --border-color: rgba(234, 224, 213, 0.08);
+            --text-primary: #eae0d5;
+            --text-secondary: #b5ad99;
+            --text-muted: #7f7667;
+            --accent-indigo: #e9805d;
+            --accent-indigo-hover: #d86a47;
+            --font-stack: 'Outfit', sans-serif;
+            --border-radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-stack);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated Space Background */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(239, 68, 68, 0.05) 0%, transparent 45%);
+            z-index: -1;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 460px;
+            padding: 20px;
+            z-index: 10;
+        }
+
+        .logo-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .logo-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-indigo), #4f46e5);
+            font-size: 24px;
+            color: white;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+            margin-bottom: 12px;
+        }
+
+        .logo-header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, #ffffff, #c7d2fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 4px;
+        }
+
+        .logo-header span {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .glass-card {
+            background: rgba(17, 24, 39, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Tab Headers */
+        .tab-headers {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 25px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-family: var(--font-stack);
+            font-size: 14px;
+            font-weight: 600;
+            padding: 12px 0;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s;
+            position: relative;
+            text-align: center;
+        }
+
+        .tab-btn.active {
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 20%;
+            width: 60%;
+            height: 2px;
+            background: var(--accent-indigo);
+            box-shadow: 0 0 8px var(--accent-indigo);
+        }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            left: 12px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .form-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 10px 12px 10px 36px;
+            border-radius: 6px;
+            outline: none;
+            font-family: var(--font-stack);
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+
+        .form-input:focus {
+            border-color: var(--accent-indigo);
+            box-shadow: 0 0 0 3px rgba(233, 128, 93, 0.15);
+        }
+
+        .error-alert {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .primary-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--accent-indigo), #c76543);
+            border: none;
+            color: white;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: var(--font-stack);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            outline: none;
+            margin-top: 10px;
+        }
+
+        .primary-btn:hover {
+            box-shadow: 0 0 15px rgba(233, 128, 93, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 11px;
+            margin: 20px 0;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .divider:not(:empty)::before {
+            margin-right: .5em;
+        }
+
+        .divider:not(:empty)::after {
+            margin-left: .5em;
+        }
+
+        .guest-btn {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            padding: 12px;
+            border-radius: 6px;
+            font-family: var(--font-stack);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            text-decoration: none;
+            display: block;
+        }
+
+        .guest-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .features-alert {
+            background: rgba(99, 102, 241, 0.06);
+            border: 1px solid rgba(99, 102, 241, 0.15);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 25px;
+        }
+
+        .features-alert h4 {
+            font-size: 12px;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .features-alert ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .features-alert li {
+            font-size: 11px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            line-height: 1.4;
+        }
+
+        .features-alert li i {
+            color: var(--accent-indigo);
+            font-size: 10px;
+            margin-top: 3px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Floating Theme Toggle -->
+    <button id="btn-theme-toggle" title="Toggle Light/Dark Theme" style="position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-secondary); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; outline: none; transition: all 0.3s; z-index: 1000;" onmouseover="this.style.color='var(--accent-indigo)'; this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.color='var(--text-secondary)'; this.style.background='rgba(255,255,255,0.05)'">
+        <i class="fa-solid fa-sun"></i>
+    </button>
+
+    <div class="auth-container">
+        <div class="logo-header">
+            <div class="logo-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <h1>Aegis Momentum</h1>
+            <span>Quantitative & Momentum Screener</span>
+        </div>
+
+        <div class="glass-card">
+            <!-- Tabs -->
+            <div class="tab-headers">
+                <button class="tab-btn {% if active_tab != 'signup' %}active{% endif %}" onclick="showTab('login')">Sign In</button>
+                <button class="tab-btn {% if active_tab == 'signup' %}active{% endif %}" onclick="showTab('signup')">Register</button>
+            </div>
+
+            {% if error %}
+            <div class="error-alert">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span>{{ error }}</span>
+            </div>
+            {% endif %}
+
+            <!-- Login Form -->
+            <form id="login-form" action="{% url 'screener:login' %}" method="POST" style="{% if active_tab == 'signup' %}display: none;{% endif %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Username</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" name="username" class="form-input" placeholder="Enter username" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" name="password" class="form-input" placeholder="Enter password" required>
+                    </div>
+                </div>
+                <button type="submit" class="primary-btn"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
+            </form>
+
+            <!-- Signup Form -->
+            <form id="signup-form" action="{% url 'screener:signup' %}" method="POST" style="{% if active_tab != 'signup' %}display: none;{% endif %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Username</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" name="username" class="form-input" placeholder="Create username" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-envelope"></i>
+                        <input type="email" name="email" class="form-input" placeholder="Enter email" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" name="password" class="form-input" placeholder="Create password" required>
+                    </div>
+                </div>
+                <button type="submit" class="primary-btn"><i class="fa-solid fa-user-plus"></i> Register & Start 7-Day Trial</button>
+            </form>
+
+            <div class="divider">OR</div>
+
+            <!-- Guest Demo Bypass -->
+            <a href="{% url 'screener:guest_trial' %}" class="guest-btn"><i class="fa-solid fa-wand-magic-sparkles"></i> Try Guest Demo Mode</a>
+
+            <!-- Features Alert Box -->
+            <div class="features-alert">
+                <h4><i class="fa-solid fa-star"></i> 7-Day Trial Features</h4>
+                <ul>
+                    <li><i class="fa-solid fa-check"></i> 7 Days of free, unlimited access to RSI Backtester and Trading Journal.</li>
+                    <li><i class="fa-solid fa-check"></i> Database-persisted trades—your trading journal logs are saved safely to your account.</li>
+                    <li><i class="fa-solid fa-check"></i> Connect Zerodha Kite API keys or scan mock high-fidelity market data instantly.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            const loginForm = document.getElementById('login-form');
+            const signupForm = document.getElementById('signup-form');
+            const tabButtons = document.querySelectorAll('.tab-btn');
+
+            if (tabName === 'login') {
+                loginForm.style.display = 'block';
+                signupForm.style.display = 'none';
+                tabButtons[0].classList.add('active');
+                tabButtons[1].classList.remove('active');
+            } else {
+                loginForm.style.display = 'none';
+                signupForm.style.display = 'block';
+                tabButtons[0].classList.remove('active');
+                tabButtons[1].classList.add('active');
+            }
+        }
+
+        // Theme Toggle Handler
+        const themeToggle = document.getElementById('btn-theme-toggle');
+        
+        function applyTheme(theme) {
+            if (theme === 'light') {
+                document.body.classList.add('light-theme');
+                themeToggle.innerHTML = '<i class="fa-solid fa-moon"></i>';
+            } else {
+                document.body.classList.remove('light-theme');
+                themeToggle.innerHTML = '<i class="fa-solid fa-sun"></i>';
+            }
+        }
+
+        // Check stored theme
+        const currentTheme = localStorage.getItem('theme') || 'dark';
+        applyTheme(currentTheme);
+
+        themeToggle.addEventListener('click', () => {
+            const activeTheme = document.body.classList.contains('light-theme') ? 'dark' : 'light';
+            localStorage.setItem('theme', activeTheme);
+            applyTheme(activeTheme);
+        });
+    </script>
+</body>
+</html>

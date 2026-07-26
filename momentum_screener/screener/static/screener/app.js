@@ -345,6 +345,14 @@ const App = (function() {
         const sma200 = stock.indicators.sma200.slice(-lookbackDays);
         const isKnifeArraySlice = stock.isKnifeArray.slice(-lookbackDays);
         
+        // Theme variables for Chart.js
+        const isLight = document.body.classList.contains('light-theme');
+        const textColor = isLight ? '#181512' : '#eae0d5';
+        const mutedTextColor = isLight ? '#6e675f' : '#b5ad99';
+        const gridColor = isLight ? 'rgba(26, 23, 20, 0.05)' : 'rgba(255, 255, 255, 0.05)';
+        const mainLineColor = isLight ? '#181512' : '#eae0d5';
+        const sma200Color = '#e9805d';
+        
         // 1. Render Price Chart (Top Panel)
         if (state.charts.price) {
             state.charts.price.destroy();
@@ -359,7 +367,7 @@ const App = (function() {
                     {
                         label: 'Close Price',
                         data: prices,
-                        borderColor: '#f9fafb',
+                        borderColor: mainLineColor,
                         borderWidth: 2,
                         pointRadius: 0,
                         tension: 0.1
@@ -376,7 +384,7 @@ const App = (function() {
                     {
                         label: '200 SMA',
                         data: sma200,
-                        borderColor: '#6366f1',
+                        borderColor: sma200Color,
                         borderWidth: 2,
                         pointRadius: 0,
                         tension: 0.1
@@ -389,17 +397,17 @@ const App = (function() {
                 scales: {
                     x: {
                         grid: { display: false },
-                        ticks: { color: '#6b7280', maxTicksLimit: 8 }
+                        ticks: { color: mutedTextColor, maxTicksLimit: 8 }
                     },
                     y: {
-                        grid: { color: 'rgba(255,255,255,0.05)' },
-                        ticks: { color: '#6b7280' }
+                        grid: { color: gridColor },
+                        ticks: { color: mutedTextColor }
                     }
                 },
                 plugins: {
                     legend: {
                         position: 'top',
-                        labels: { color: '#f9fafb', boxWidth: 15, font: { family: 'Outfit' } }
+                        labels: { color: textColor, boxWidth: 15, font: { family: 'Outfit' } }
                     },
                     tooltip: {
                         mode: 'index',
@@ -473,7 +481,7 @@ const App = (function() {
                 scales: {
                     x: {
                         grid: { display: false },
-                        ticks: { color: '#6b7280', maxTicksLimit: 8 }
+                        ticks: { color: mutedTextColor, maxTicksLimit: 8 }
                     },
                     yRsi: {
                         type: 'linear',
@@ -495,7 +503,7 @@ const App = (function() {
                 plugins: {
                     legend: {
                         position: 'top',
-                        labels: { color: '#f9fafb', boxWidth: 12, font: { family: 'Outfit' } }
+                        labels: { color: textColor, boxWidth: 12, font: { family: 'Outfit' } }
                     },
                     tooltip: {
                         mode: 'index',
@@ -546,6 +554,31 @@ const App = (function() {
 
         // Setup journal entry form for this stock
         setupJournalForm(stock);
+
+        const journalFormContainer = document.getElementById('journal-form-container');
+        if (journalFormContainer) {
+            const elements = journalFormContainer.querySelectorAll('input, select, textarea, button');
+            if (USER_STATUS === 'expired') {
+                elements.forEach(el => el.disabled = true);
+                journalFormContainer.style.opacity = '0.5';
+                journalFormContainer.style.pointerEvents = 'none';
+                
+                let warn = document.getElementById('journal-expired-warning');
+                if (!warn) {
+                    warn = document.createElement('div');
+                    warn.id = 'journal-expired-warning';
+                    warn.style.cssText = 'background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #f87171; font-size: 11px; padding: 8px; border-radius: 6px; text-align: center; margin-bottom: 10px; font-weight: 500;';
+                    warn.innerHTML = '<i class="fa-solid fa-lock"></i> Trading Journal is locked (Trial Expired)';
+                    journalFormContainer.parentNode.insertBefore(warn, journalFormContainer);
+                }
+            } else {
+                elements.forEach(el => el.disabled = false);
+                journalFormContainer.style.opacity = '1';
+                journalFormContainer.style.pointerEvents = 'auto';
+                const warn = document.getElementById('journal-expired-warning');
+                if (warn) warn.remove();
+            }
+        }
 
         // Reset campaign panel
         document.getElementById('campaign-loading').classList.add('hidden');
@@ -1147,6 +1180,10 @@ const App = (function() {
         });
         
         tabBacktest.addEventListener('click', () => {
+            if (USER_STATUS === 'expired') {
+                document.getElementById('trial-expired-overlay').classList.remove('hidden');
+                return;
+            }
             deactivateAllTabs();
             tabBacktest.classList.add('active');
             tabBacktest.style.background = 'rgba(255,255,255,0.05)';
@@ -1157,6 +1194,10 @@ const App = (function() {
         });
 
         tabJournal.addEventListener('click', () => {
+            if (USER_STATUS === 'expired') {
+                document.getElementById('trial-expired-overlay').classList.remove('hidden');
+                return;
+            }
             deactivateAllTabs();
             tabJournal.classList.add('active');
             tabJournal.style.background = 'rgba(255,255,255,0.05)';
@@ -1184,6 +1225,10 @@ const App = (function() {
 
         // Journal Entry Form Bindings
         document.getElementById('btn-save-journal-entry').addEventListener('click', () => {
+            if (USER_STATUS === 'expired') {
+                document.getElementById('trial-expired-overlay').classList.remove('hidden');
+                return;
+            }
             if (state.activeTicker) {
                 saveJournalEntry(state.activeTicker);
             }
@@ -1191,12 +1236,75 @@ const App = (function() {
 
         // Journal Clear Bindings
         document.getElementById('btn-clear-journal').addEventListener('click', () => {
+            if (USER_STATUS === 'expired') {
+                document.getElementById('trial-expired-overlay').classList.remove('hidden');
+                return;
+            }
             if (confirm('Are you sure you want to clear your trade journal? This will delete all entries permanently.')) {
-                state.journal = [];
-                localStorage.setItem('trade_journal', JSON.stringify([]));
-                renderJournalDashboard();
+                if (USER_STATUS === 'guest') {
+                    state.journal = [];
+                    localStorage.setItem('trade_journal', JSON.stringify([]));
+                    renderJournalDashboard();
+                } else {
+                    fetch('/api/journal/clear/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        }
+                    })
+                    .then(res => res.json())
+                    .then(res => {
+                        if (res.status === 'success') {
+                            syncJournalWithBackend();
+                        } else {
+                            alert(`Failed to clear journal: ${res.message}`);
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Error clearing journal in DB', err);
+                        alert('Error connecting to backend database.');
+                    });
+                }
             }
         });
+
+        // Trial Expired Overlay Dismiss Bindings
+        const expiredOverlay = document.getElementById('trial-expired-overlay');
+        const btnExpiredDismiss = document.getElementById('btn-expired-dismiss');
+        if (btnExpiredDismiss) {
+            btnExpiredDismiss.addEventListener('click', () => {
+                expiredOverlay.classList.add('hidden');
+                tabScreener.click(); // Switch back to screener tab
+            });
+        }
+
+        // Theme Toggle Bindings
+        const themeToggle = document.getElementById('btn-theme-toggle');
+        if (themeToggle) {
+            function updateToggleIcon() {
+                const isLight = document.body.classList.contains('light-theme');
+                themeToggle.innerHTML = isLight ? '<i class="fa-solid fa-moon"></i>' : '<i class="fa-solid fa-sun"></i>';
+            }
+            // Set initial state
+            updateToggleIcon();
+
+            themeToggle.addEventListener('click', () => {
+                const activeTheme = document.body.classList.contains('light-theme') ? 'dark' : 'light';
+                localStorage.setItem('theme', activeTheme);
+                if (activeTheme === 'light') {
+                    document.body.classList.add('light-theme');
+                } else {
+                    document.body.classList.remove('light-theme');
+                }
+                updateToggleIcon();
+
+                // Redraw active charts to reflect new theme styling gridline/label colors!
+                if (state.activeTicker && state.stocks[state.activeTicker]) {
+                    renderCharts(state.stocks[state.activeTicker]);
+                }
+            });
+        }
 
         // Close Trade Modal Bindings
         const closeTradeModal = document.getElementById('close-trade-modal');
@@ -1596,7 +1704,44 @@ const App = (function() {
         document.getElementById('journal-input-type').onchange = calculateSL;
     }
 
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function syncJournalWithBackend() {
+        if (USER_STATUS === 'guest') {
+            renderJournalDashboard();
+            return;
+        }
+        fetch('/api/journal/')
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    state.journal = res.data;
+                    hydrateActiveJournalTickers();
+                    renderJournalDashboard();
+                }
+            })
+            .catch(err => console.error('Error syncing journal', err));
+    }
+
     function saveJournalEntry(ticker) {
+        if (USER_STATUS === 'expired') {
+            alert('Your trial has expired. Please contact the administrator to extend your trial.');
+            return;
+        }
+
         const type = document.getElementById('journal-input-type').value;
         const entryDate = document.getElementById('journal-input-date').value;
         const entryPrice = parseFloat(document.getElementById('journal-input-price').value);
@@ -1620,28 +1765,53 @@ const App = (function() {
         }
         
         const entry = {
-            id: 'trade_' + Date.now(),
             ticker: ticker,
             type: type,
             entryDate: entryDate,
             entryPrice: entryPrice,
             quantity: qty,
             stopLoss: sl,
-            entryReason: entryReason,
-            exitDate: null,
-            exitPrice: null,
-            exitReason: null,
-            status: 'Active',
-            pnl: null
+            entryReason: entryReason
         };
         
-        state.journal.push(entry);
-        localStorage.setItem('trade_journal', JSON.stringify(state.journal));
-        
-        alert(`Successfully journaled trade entry for ${ticker}!`);
-        document.getElementById('journal-input-reason').value = '';
-        
-        renderJournalDashboard();
+        if (USER_STATUS === 'guest') {
+            entry.id = 'trade_' + Date.now();
+            entry.exitDate = null;
+            entry.exitPrice = null;
+            entry.exitReason = null;
+            entry.status = 'Active';
+            entry.pnl = null;
+
+            state.journal.push(entry);
+            localStorage.setItem('trade_journal', JSON.stringify(state.journal));
+            
+            alert(`Successfully journaled trade entry for ${ticker}!`);
+            document.getElementById('journal-input-reason').value = '';
+            renderJournalDashboard();
+        } else {
+            fetch('/api/journal/add/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(entry)
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    alert(`Successfully journaled trade entry for ${ticker}!`);
+                    document.getElementById('journal-input-reason').value = '';
+                    syncJournalWithBackend();
+                } else {
+                    alert(`Failed to save trade: ${res.message}`);
+                }
+            })
+            .catch(err => {
+                console.error('Error saving trade to DB', err);
+                alert('Error connecting to backend database.');
+            });
+        }
     }
 
     function renderJournalDashboard() {
@@ -1848,28 +2018,82 @@ const App = (function() {
             return;
         }
         
-        const diff = exitPrice - trade.entryPrice;
-        const pnl = (trade.type === 'Long' ? diff : -diff) / trade.entryPrice * 100;
-        
-        trade.exitDate = exitDate;
-        trade.exitPrice = exitPrice;
-        trade.exitReason = exitReason;
-        trade.status = 'Realized';
-        trade.pnl = pnl;
-        
-        localStorage.setItem('trade_journal', JSON.stringify(state.journal));
-        document.getElementById('close-trade-modal').classList.add('hidden');
-        closingTradeId = null;
-        
-        renderJournalDashboard();
-        alert(`Successfully closed trade for ${trade.ticker}! Realized Return: ${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}%`);
+        if (USER_STATUS === 'guest') {
+            const diff = exitPrice - trade.entryPrice;
+            const pnl = (trade.type === 'Long' ? diff : -diff) / trade.entryPrice * 100;
+            
+            trade.exitDate = exitDate;
+            trade.exitPrice = exitPrice;
+            trade.exitReason = exitReason;
+            trade.status = 'Realized';
+            trade.pnl = pnl;
+            
+            localStorage.setItem('trade_journal', JSON.stringify(state.journal));
+            document.getElementById('close-trade-modal').classList.add('hidden');
+            closingTradeId = null;
+            
+            renderJournalDashboard();
+            alert(`Successfully closed trade for ${trade.ticker}! Realized Return: ${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}%`);
+        } else {
+            fetch('/api/journal/close/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    id: closingTradeId,
+                    exitDate: exitDate,
+                    exitPrice: exitPrice,
+                    exitReason: exitReason
+                })
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    document.getElementById('close-trade-modal').classList.add('hidden');
+                    closingTradeId = null;
+                    syncJournalWithBackend();
+                    alert(`Successfully closed trade for ${trade.ticker}! Realized Return: ${res.pnl >= 0 ? '+' : ''}${res.pnl.toFixed(2)}%`);
+                } else {
+                    alert(`Failed to close trade: ${res.message}`);
+                }
+            })
+            .catch(err => {
+                console.error('Error closing trade in DB', err);
+                alert('Error connecting to backend database.');
+            });
+        }
     }
 
     function deleteJournalEntry(tradeId) {
         if (confirm('Are you sure you want to delete this journal entry?')) {
-            state.journal = state.journal.filter(t => t.id !== tradeId);
-            localStorage.setItem('trade_journal', JSON.stringify(state.journal));
-            renderJournalDashboard();
+            if (USER_STATUS === 'guest') {
+                state.journal = state.journal.filter(t => t.id !== tradeId);
+                localStorage.setItem('trade_journal', JSON.stringify(state.journal));
+                renderJournalDashboard();
+            } else {
+                fetch('/api/journal/delete/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ id: tradeId })
+                })
+                .then(res => res.json())
+                .then(res => {
+                    if (res.status === 'success') {
+                        syncJournalWithBackend();
+                    } else {
+                        alert(`Failed to delete trade: ${res.message}`);
+                    }
+                })
+                .catch(err => {
+                    console.error('Error deleting trade from DB', err);
+                    alert('Error connecting to backend database.');
+                });
+            }
         }
     }
 
@@ -1883,6 +2107,10 @@ const App = (function() {
         if (savedKey) document.getElementById('zerodha-api-key').value = savedKey;
         if (savedToken) document.getElementById('zerodha-access-token').value = savedToken;
         if (savedGemini) document.getElementById('gemini-api-key').value = savedGemini;
+
+        if (USER_STATUS !== 'guest') {
+            syncJournalWithBackend();
+        }
 
         // Start in Simulation Mode
         loadSimulationData();

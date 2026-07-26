@@ -13,9 +13,17 @@
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     {% load static %}
-    <link rel="stylesheet" href="{% static 'screener/styles.css' %}?v=2.7">
+    <link rel="stylesheet" href="{% static 'screener/styles.css' %}?v=2.8">
 </head>
 <body>
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-theme');
+            }
+        })();
+    </script>
     <div class="app-container">
         <!-- Sidebar / Navigation -->
         <header class="app-header">
@@ -27,6 +35,24 @@
                 </div>
             </div>
             <div class="header-actions">
+                <!-- User Profile & Trial Badge -->
+                <div class="user-profile-badge" style="display: flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.05); padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.08); font-size: 11px; margin-right: 5px;">
+                    <span style="font-weight: 600; color: var(--text-primary);"><i class="fa-solid fa-circle-user" style="color: var(--accent-indigo); margin-right: 4px;"></i> {{ username }}</span>
+                    <span style="color: rgba(255, 255, 255, 0.15);">|</span>
+                    {% if user_status == 'premium' %}
+                        <span style="color: #34d399; font-weight: 600;"><i class="fa-solid fa-crown" style="color: #fbbf24; margin-right: 2px;"></i> Premium</span>
+                    {% elif user_status == 'trial' %}
+                        <span style="color: #60a5fa; font-weight: 600;"><i class="fa-solid fa-bolt" style="color: #f59e0b; margin-right: 2px;"></i> Trial: {{ days_left }} days left</span>
+                    {% elif user_status == 'expired' %}
+                        <span style="color: #f87171; font-weight: 600;"><i class="fa-solid fa-triangle-exclamation" style="margin-right: 2px;"></i> Trial Expired</span>
+                    {% else %}
+                        <span style="color: #f472b6; font-weight: 600;"><i class="fa-solid fa-user-astronaut" style="margin-right: 2px;"></i> Guest Demo</span>
+                    {% endif %}
+                    <span style="color: rgba(255, 255, 255, 0.15);">|</span>
+                    <button id="btn-theme-toggle" title="Toggle Light/Dark Theme" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; outline: none; padding: 0; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-indigo)'" onmouseout="this.style.color='var(--text-secondary)'"><i class="fa-solid fa-sun"></i></button>
+                    <span style="color: rgba(255, 255, 255, 0.15);">|</span>
+                    <a href="{% url 'screener:logout' %}" style="color: var(--text-secondary); text-decoration: none; font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='var(--text-secondary)'"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+                </div>
                 <button id="btn-open-guide" class="guide-btn"><i class="fa-solid fa-circle-info"></i> How it Works</button>
                 <button id="btn-toggle-credentials" class="guide-btn"><i class="fa-solid fa-gears"></i> API Setup</button>
                 <div class="data-source-selector">
@@ -78,7 +104,7 @@
                         <div class="config-label-row">
                             <strong style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary);"><i class="fa-solid fa-filter"></i> Filter by Status</strong>
                         </div>
-                        <select id="sel-filter-status" style="width: 100%; margin-top: 8px; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--border-radius-sm); padding: 8px 12px; color: var(--text-primary); font-family: var(--font-stack); font-size: 13px; outline: none; cursor: pointer; transition: all 0.2s;">
+                        <select id="sel-filter-status" style="width: 100%; margin-top: 8px; background: var(--bg-input); border: 1px solid var(--border-input); border-radius: var(--border-radius-sm); padding: 8px 12px; color: var(--text-primary); font-family: var(--font-stack); font-size: 13px; outline: none; cursor: pointer; transition: all 0.2s;">
                             <option value="all" selected>All Tickers</option>
                             <option value="safe">🟢 Safe Stocks Only</option>
                             <option value="knife">🔴 Falling Knives Only</option>
@@ -137,7 +163,7 @@
                         </div>
                         <div class="period-selector-row" style="margin: 6px 0 8px 0; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
                             <span class="config-description" style="font-size: 11px;">Lookback Period:</span>
-                            <select id="sel-filter-drawdown-years" class="small-select" style="background: rgba(0, 0, 0, 0.25); border: 1px solid var(--border-color); border-radius: var(--border-radius-sm); padding: 4px 8px; color: var(--text-primary); font-family: var(--font-stack); font-size: 12px; outline: none; cursor: pointer;">
+                            <select id="sel-filter-drawdown-years" class="small-select" style="background: var(--bg-input); border: 1px solid var(--border-input); border-radius: var(--border-radius-sm); padding: 4px 8px; color: var(--text-primary); font-family: var(--font-stack); font-size: 12px; outline: none; cursor: pointer;">
                                 <option value="1" selected>1 Year (250 Days)</option>
                                 <option value="2">2 Years (500 Days)</option>
                                 <option value="3">3 Years (750 Days)</option>
@@ -199,8 +225,8 @@
                         
                         <!-- Batch Scan Buttons -->
                         <div class="scan-buttons-group" style="display: flex; gap: 10px; flex-wrap: wrap;">
-                            <button id="btn-scan-nifty50" class="primary-btn" style="background: linear-gradient(135deg, var(--accent-indigo) 0%, #4f46e5 100%); font-size: 12px; padding: 8px 16px;"><i class="fa-solid fa-circle-nodes"></i> Scan Nifty 50</button>
-                            <button id="btn-scan-fo" class="primary-btn" style="background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); font-size: 12px; padding: 8px 16px;"><i class="fa-solid fa-chart-pie"></i> Scan F&O List</button>
+                            <button id="btn-scan-nifty50" class="primary-btn" style="background: linear-gradient(135deg, var(--accent-indigo) 0%, #c76543 100%); font-size: 12px; padding: 8px 16px;"><i class="fa-solid fa-circle-nodes"></i> Scan Nifty 50</button>
+                            <button id="btn-scan-fo" class="primary-btn" style="background: linear-gradient(135deg, #f4a261 0%, #e76f51 100%); font-size: 12px; padding: 8px 16px;"><i class="fa-solid fa-chart-pie"></i> Scan F&O List</button>
                         </div>
                         
                         <!-- Add Ticker for Zerodha Mode -->
@@ -217,13 +243,13 @@
                     </div>
 
                     <!-- Progress Bar for Scanning -->
-                    <div id="scan-progress-container" class="scan-progress-container hidden" style="margin: 0 20px 15px 20px; padding: 12px; background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: var(--border-radius-md); display: flex; flex-direction: column; gap: 8px;">
+                    <div id="scan-progress-container" class="scan-progress-container hidden" style="margin: 0 20px 15px 20px; padding: 12px; background: rgba(233, 128, 93, 0.08); border: 1px solid rgba(233, 128, 93, 0.2); border-radius: var(--border-radius-md); display: flex; flex-direction: column; gap: 8px;">
                         <div class="progress-info-row" style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--text-primary); font-family: var(--font-stack);">
                             <span id="scan-progress-label">Scanning Nifty 50 list...</span>
                             <span id="scan-progress-count" style="font-weight: 600;">0 / 50</span>
                         </div>
                         <div class="progress-bar-bg" style="height: 6px; background: rgba(255, 255, 255, 0.05); border-radius: 3px; overflow: hidden; width: 100%;">
-                            <div id="scan-progress-bar" style="height: 100%; background: linear-gradient(90deg, var(--accent-indigo), #c084fc); width: 0%; transition: width 0.2s ease;"></div>
+                            <div id="scan-progress-bar" style="height: 100%; background: linear-gradient(90deg, var(--accent-indigo), #f4a261); width: 0%; transition: width 0.2s ease;"></div>
                         </div>
                     </div>
 
@@ -258,7 +284,7 @@
                             <!-- Signal Filter Category selector -->
                             <div style="display: flex; align-items: center; gap: 8px; font-family: var(--font-stack);">
                                 <span style="font-size: 12px; color: var(--text-secondary);">Shortlist Category:</span>
-                                <select id="sel-signal-category" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); font-size: 12px; padding: 4px 10px; border-radius: 4px; outline: none; cursor: pointer; font-family: var(--font-stack);">
+                                <select id="sel-signal-category" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); font-size: 12px; padding: 4px 10px; border-radius: 4px; outline: none; cursor: pointer; font-family: var(--font-stack);">
                                     <option value="all">All Recent Signals</option>
                                     <option value="buy">🟢 Buy Signals Only</option>
                                     <option value="sell">🔴 Sell Signals Only</option>
@@ -491,25 +517,25 @@
                             <i class="fa-solid fa-pen-to-square" style="color: var(--accent-indigo);"></i> Journal Dummy Trade
                         </h4>
                         
-                        <div id="journal-form-container" style="background: rgba(255, 255, 255, 0.01); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-lg); padding: 20px; display: flex; flex-direction: column; gap: 12px; font-family: var(--font-stack);">
+                        <div id="journal-form-container" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius-lg); padding: 20px; display: flex; flex-direction: column; gap: 12px; font-family: var(--font-stack);">
                             <!-- Row 1: Core Trade Parameters -->
                             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                                 <div style="flex: 1; min-width: 120px; display: flex; flex-direction: column; gap: 4px;">
                                     <label style="font-size: 11px; color: var(--text-secondary);">Trade Type</label>
-                                    <select id="journal-input-type" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); padding: 6px; border-radius: 4px; outline: none; font-size: 12px; font-family: var(--font-stack);">
+                                    <select id="journal-input-type" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); padding: 6px; border-radius: 4px; outline: none; font-size: 12px; font-family: var(--font-stack);">
                                         <option value="Long">Buy (Long)</option>
                                         <option value="Short">Sell (Short)</option>
                                     </select>
                                 </div>
                                 <div style="flex: 1.5; min-width: 150px; display: flex; flex-direction: column; gap: 4px;">
                                     <label style="font-size: 11px; color: var(--text-secondary);">Entry Date</label>
-                                    <select id="journal-input-date" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); padding: 6px; border-radius: 4px; outline: none; font-size: 12px; font-family: var(--font-stack);">
+                                    <select id="journal-input-date" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); padding: 6px; border-radius: 4px; outline: none; font-size: 12px; font-family: var(--font-stack);">
                                         <!-- Populated dynamically with recent historical dates -->
                                     </select>
                                 </div>
                                 <div style="flex: 1.2; min-width: 120px; display: flex; flex-direction: column; gap: 4px;">
                                     <label style="font-size: 11px; color: var(--text-secondary);">Entry Price (₹)</label>
-                                    <input type="number" id="journal-input-price" step="0.01" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); padding: 6px; border-radius: 4px; outline: none; font-size: 12px; font-family: var(--font-stack);">
+                                    <input type="number" id="journal-input-price" step="0.01" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); padding: 6px; border-radius: 4px; outline: none; font-size: 12px; font-family: var(--font-stack);">
                                 </div>
                             </div>
                             
@@ -517,17 +543,17 @@
                             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                                 <div style="flex: 1; min-width: 120px; display: flex; flex-direction: column; gap: 4px;">
                                     <label style="font-size: 11px; color: var(--text-secondary);">Quantity (Qty)</label>
-                                    <input type="number" id="journal-input-qty" min="1" value="10" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); padding: 6px; border-radius: 4px; outline: none; font-size: 12px; font-family: var(--font-stack);">
+                                    <input type="number" id="journal-input-qty" min="1" value="10" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); padding: 6px; border-radius: 4px; outline: none; font-size: 12px; font-family: var(--font-stack);">
                                 </div>
                                 <div style="flex: 1; min-width: 120px; display: flex; flex-direction: column; gap: 4px;">
                                     <label style="font-size: 11px; color: var(--text-secondary);">Stop Loss Price (₹)</label>
-                                    <input type="number" id="journal-input-sl" step="0.01" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); padding: 6px; border-radius: 4px; outline: none; font-size: 12px; font-family: var(--font-stack);">
+                                    <input type="number" id="journal-input-sl" step="0.01" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); padding: 6px; border-radius: 4px; outline: none; font-size: 12px; font-family: var(--font-stack);">
                                 </div>
                             </div>
                             
                             <div style="display: flex; flex-direction: column; gap: 4px;">
                                 <label style="font-size: 11px; color: var(--text-secondary);">Reason for Entry</label>
-                                <textarea id="journal-input-reason" rows="2" placeholder="e.g. RSI crossed 30 from below, expecting pullback recovery" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); padding: 8px; border-radius: 4px; outline: none; font-size: 12px; resize: vertical; font-family: var(--font-stack);"></textarea>
+                                <textarea id="journal-input-reason" rows="2" placeholder="e.g. RSI crossed 30 from below, expecting pullback recovery" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); padding: 8px; border-radius: 4px; outline: none; font-size: 12px; resize: vertical; font-family: var(--font-stack);"></textarea>
                             </div>
                             
                             <button id="btn-save-journal-entry" class="primary-btn" style="width: 100%; font-size: 12px; padding: 8px;"><i class="fa-solid fa-plus"></i> Add Trade to Journal</button>
@@ -661,8 +687,8 @@
 
     <!-- Close Trade Modal (Allows closing active dummy trades in journal) -->
     <section id="close-trade-modal" class="modal hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px); z-index: 2000; display: flex; align-items: center; justify-content: center; font-family: var(--font-stack);">
-        <div class="glass-card" style="width: 90%; max-width: 450px; padding: 25px; border-radius: var(--border-radius-md); border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(17, 24, 39, 0.95); display: flex; flex-direction: column; gap: 15px; box-shadow: var(--shadow-lg);">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 12px;">
+        <div class="glass-card" style="width: 90%; max-width: 450px; padding: 25px; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); background: var(--bg-secondary); display: flex; flex-direction: column; gap: 15px; box-shadow: var(--shadow-lg);">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
                 <h2 style="margin: 0; color: var(--text-primary); font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
                     <i class="fa-solid fa-door-closed" style="color: var(--color-knife);"></i> Close Dummy Trade: <span id="close-modal-ticker">TCS</span>
                 </h2>
@@ -674,31 +700,52 @@
                     <div style="flex: 1.5; display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 11px; color: var(--text-secondary);">Exit Date</label>
                         <div id="close-modal-date-wrapper">
-                            <select id="close-modal-date" style="width: 100%; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); padding: 6px; border-radius: 4px; outline: none; font-size: 12px; font-family: var(--font-stack);">
+                            <select id="close-modal-date" style="width: 100%; background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); padding: 6px; border-radius: 4px; outline: none; font-size: 12px; font-family: var(--font-stack);">
                                 <!-- Populated dynamically -->
                             </select>
                         </div>
                     </div>
                     <div style="flex: 1.2; display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 11px; color: var(--text-secondary);">Exit Price (₹)</label>
-                        <input type="number" id="close-modal-price" step="0.01" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); padding: 6px; border-radius: 4px; outline: none; font-size: 12px; font-family: var(--font-stack);">
+                        <input type="number" id="close-modal-price" step="0.01" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); padding: 6px; border-radius: 4px; outline: none; font-size: 12px; font-family: var(--font-stack);">
                     </div>
                 </div>
                 
                 <div style="display: flex; flex-direction: column; gap: 4px;">
                     <label style="font-size: 11px; color: var(--text-secondary);">Reason for Exit</label>
-                    <textarea id="close-modal-reason" rows="2" placeholder="e.g. Target reached, stop loss triggered, momentum reversing" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); padding: 8px; border-radius: 4px; outline: none; font-size: 12px; resize: vertical; font-family: var(--font-stack);"></textarea>
+                    <textarea id="close-modal-reason" rows="2" placeholder="e.g. Target reached, stop loss triggered, momentum reversing" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); padding: 8px; border-radius: 4px; outline: none; font-size: 12px; resize: vertical; font-family: var(--font-stack);"></textarea>
                 </div>
                 
-                <button id="btn-submit-close-trade" class="primary-btn" style="width: 100%; font-size: 12px; padding: 10px; background: linear-gradient(135deg, #f43f5e, #be123c);"><i class="fa-solid fa-check"></i> Close Trade & Realize PnL</button>
+                <button id="btn-submit-close-trade" class="primary-btn" style="width: 100%; font-size: 12px; padding: 10px; background: linear-gradient(135deg, #df7a5e, #be543a);"><i class="fa-solid fa-check"></i> Close Trade & Realize PnL</button>
             </div>
         </div>
     </section>
+
+    <!-- Trial Expired Overlay (locks backtesting and journal) -->
+    <div id="trial-expired-overlay" class="modal hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-modal); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 10000; display: flex; align-items: center; justify-content: center; font-family: var(--font-stack);">
+        <div class="glass-card" style="width: 90%; max-width: 480px; padding: 35px; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); background: var(--bg-secondary); display: flex; flex-direction: column; gap: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); text-align: center;">
+            <div style="font-size: 50px; color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <h2 style="font-size: 20px; font-weight: 700; color: var(--text-primary); margin: 0;">Trial Period Expired</h2>
+            <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin: 0;">
+                Your trial of Aegis Momentum has expired. Access to the **RSI Backtesting Engine** and database-backed **Trading Journal** has been locked.
+            </p>
+            <div style="background: rgba(233, 128, 93, 0.05); border: 1px solid rgba(233, 128, 93, 0.1); padding: 12px; border-radius: 6px; font-size: 12px; color: var(--text-secondary); text-align: left; line-height: 1.5;">
+                <strong style="color: var(--text-primary); display: block; margin-bottom: 4px;"><i class="fa-solid fa-circle-info"></i> How to extend usage:</strong>
+                Please contact the platform administrator to extend your trial duration or unlock full premium access.
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button id="btn-expired-dismiss" class="primary-btn" style="flex: 1; margin: 0; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); font-size: 12px; cursor: pointer;"><i class="fa-solid fa-chart-line"></i> Back to Screener</button>
+                <a href="{% url 'screener:logout' %}" class="primary-btn" style="flex: 1; text-decoration: none; margin: 0; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: linear-gradient(135deg, var(--accent-indigo), #c76543); color: #fff;"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</a>
+            </div>
+        </div>
+    </div>
 
     <!-- Django Template-to-JS Injections -->
     <script>
         // Mapping from Django context
         const PRE_MAPPED_SYMBOLS = {{ supported_symbols|safe }};
+        const USER_STATUS = "{{ user_status }}";
+        const USER_DAYS_LEFT = {{ days_left }};
     </script>
 
     <!-- Project JS dependencies -->

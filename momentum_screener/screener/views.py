@@ -1,8 +1,15 @@
 import os
 import requests
-from django.shortcuts import render
-from django.http import JsonResponse
+from django.shortcuts import render, redirect
+from django.http import JsonResponse, HttpResponseForbidden
 from django.views.decorators.http import require_GET
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
+from django.db import IntegrityError
+from .models import UserProfile, TradeJournal
+import json
 from pathlib import Path
 
 def load_env_file():
@@ -95,11 +102,34 @@ def get_instrument_token(symbol):
         
     return None
 
-@require_GET
 def dashboard_view(request):
     """
     Renders the main dashboard page.
     """
+    if not request.user.is_authenticated and not request.session.get('is_guest_user'):
+        return redirect('screener:login')
+
+    user_status = 'guest'
+    days_left = 0
+    username = 'Guest User'
+
+    if request.user.is_authenticated:
+        username = request.user.username
+        if request.user.is_superuser:
+            user_status = 'premium'
+            days_left = 9999
+        else:
+            profile, created = UserProfile.objects.get_or_create(user=request.user)
+            if profile.is_premium:
+                user_status = 'premium'
+                days_left = 9999
+            elif profile.is_trial_active():
+                user_status = 'trial'
+                days_left = profile.days_remaining()
+            else:
+                user_status = 'expired'
+                days_left = 0
+
     has_zerodha_creds = bool(os.environ.get('ZERODHA_API_KEY') and os.environ.get('ZERODHA_ACCESS_TOKEN'))
     has_gemini_cred = bool(os.environ.get('GEMINI_API_KEY'))
 
@@ -108,6 +138,9 @@ def dashboard_view(request):
         'supported_symbols': sorted(list(SYMBOL_TO_TOKEN.keys())),
         'has_zerodha_creds': has_zerodha_creds,
         'has_gemini_cred': has_gemini_cred,
+        'user_status': user_status,
+        'days_left': days_left,
+        'username': username,
     }
     return render(request, 'screener/index.html', context)
 
@@ -561,4 +594,211 @@ def generate_campaign_view(request):
             'status': 'error',
             'message': f"Failed to parse Gemini response: {str(e)}"
         }, status=500)
+
+# --- Authentication Views ---
+
+def login_view(request):
+    if request.user.is_authenticated or request.session.get('is_guest_user'):
+        return redirect('screener:dashboard')
+    
+    error_message = None
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '').strip()
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            request.session['is_guest_user'] = False
+            return redirect('screener:dashboard')
+        else:
+            error_message = "Invalid username or password."
+            
+    return render(request, 'screener/login.html', {'error': error_message, 'active_tab': 'login'})
+
+def signup_view(request):
+    if request.user.is_authenticated or request.session.get('is_guest_user'):
+        return redirect('screener:dashboard')
+        
+    error_message = None
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        email = request.POST.get('email', '').strip()
+        password = request.POST.get('password', '').strip()
+        
+        if not username or not email or not password:
+            error_message = "All fields are required."
+        else:
+            try:
+                # Create user
+                user = User.objects.create_user(username=username, email=email, password=password)
+                # Create UserProfile
+                UserProfile.objects.create(user=user)
+                # Authenticate and login
+                authenticated_user = authenticate(request, username=username, password=password)
+                if authenticated_user is not None:
+                    login(request, authenticated_user)
+                    return redirect('screener:dashboard')
+            except IntegrityError:
+                error_message = "Username already exists."
+            except Exception as e:
+                error_message = f"Error creating account: {str(e)}"
+                
+    return render(request, 'screener/login.html', {'error': error_message, 'active_tab': 'signup'})
+
+def logout_view(request):
+    logout(request)
+    request.session.flush()
+    return redirect('screener:login')
+
+def guest_trial_view(request):
+    request.session.flush()
+    request.session['is_guest_user'] = True
+    request.session['scan_count'] = 0
+    return redirect('screener:dashboard')
+
+# --- Trade Journal API endpoints ---
+
+@csrf_exempt
+@login_required
+def api_journal_get(request):
+    trades = TradeJournal.objects.filter(user=request.user).order_by('-created_at')
+    data = []
+    for t in trades:
+        data.append({
+            'id': f"trade_db_{t.id}",
+            'ticker': t.ticker,
+            'type': t.trade_type,
+            'entryDate': t.entry_date,
+            'entryPrice': t.entry_price,
+            'quantity': t.quantity,
+            'stopLoss': t.stop_loss,
+            'entryReason': t.entry_reason,
+            'exitDate': t.exit_date,
+            'exitPrice': t.exit_price,
+            'exitReason': t.exit_reason,
+            'status': t.status,
+            'pnl': t.pnl
+        })
+    return JsonResponse({'status': 'success', 'data': data})
+
+@csrf_exempt
+@login_required
+def api_journal_add(request):
+    if not request.user.is_superuser and not request.user.profile.is_trial_active():
+        return JsonResponse({'status': 'error', 'message': 'Trial Expired'}, status=403)
+        
+    if request.method == 'POST':
+        try:
+            payload = json.loads(request.body)
+            ticker = payload.get('ticker', '').strip().upper()
+            trade_type = payload.get('type', 'Long')
+            entry_date = payload.get('entryDate', '')
+            entry_price = float(payload.get('entryPrice', 0))
+            quantity = int(payload.get('quantity', 10))
+            
+            stop_loss = payload.get('stopLoss')
+            if stop_loss is not None and stop_loss != '':
+                stop_loss = float(stop_loss)
+            else:
+                stop_loss = None
+                
+            entry_reason = payload.get('entryReason', '')
+
+            trade = TradeJournal.objects.create(
+                user=request.user,
+                ticker=ticker,
+                trade_type=trade_type,
+                entry_date=entry_date,
+                entry_price=entry_price,
+                quantity=quantity,
+                stop_loss=stop_loss,
+                entry_reason=entry_reason,
+                status='Active'
+            )
+            return JsonResponse({
+                'status': 'success', 
+                'data': {
+                    'id': f"trade_db_{trade.id}",
+                    'ticker': trade.ticker,
+                    'type': trade.trade_type,
+                    'entryDate': trade.entry_date,
+                    'entryPrice': trade.entry_price,
+                    'quantity': trade.quantity,
+                    'stopLoss': trade.stop_loss,
+                    'entryReason': trade.entry_reason,
+                    'status': trade.status
+                }
+            })
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
+
+@csrf_exempt
+@login_required
+def api_journal_close(request):
+    if not request.user.is_superuser and not request.user.profile.is_trial_active():
+        return JsonResponse({'status': 'error', 'message': 'Trial Expired'}, status=403)
+        
+    if request.method == 'POST':
+        try:
+            payload = json.loads(request.body)
+            trade_id_str = payload.get('id', '')
+            if trade_id_str.startswith('trade_db_'):
+                trade_id = int(trade_id_str.replace('trade_db_', ''))
+            else:
+                return JsonResponse({'status': 'error', 'message': 'Invalid trade ID format'}, status=400)
+
+            exit_date = payload.get('exitDate', '')
+            exit_price = float(payload.get('exitPrice', 0))
+            exit_reason = payload.get('exitReason', '')
+
+            trade = TradeJournal.objects.get(id=trade_id, user=request.user)
+            diff = exit_price - trade.entry_price
+            pnl = (diff if trade.trade_type == 'Long' else -diff) / trade.entry_price * 100
+
+            trade.exit_date = exit_date
+            trade.exit_price = exit_price
+            trade.exit_reason = exit_reason
+            trade.status = 'Realized'
+            trade.pnl = pnl
+            trade.save()
+
+            return JsonResponse({'status': 'success', 'pnl': pnl})
+        except TradeJournal.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Trade record not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
+
+@csrf_exempt
+@login_required
+def api_journal_delete(request):
+    if request.method == 'POST':
+        try:
+            payload = json.loads(request.body)
+            trade_id_str = payload.get('id', '')
+            if trade_id_str.startswith('trade_db_'):
+                trade_id = int(trade_id_str.replace('trade_db_', ''))
+            else:
+                return JsonResponse({'status': 'error', 'message': 'Invalid trade ID format'}, status=400)
+
+            trade = TradeJournal.objects.get(id=trade_id, user=request.user)
+            trade.delete()
+            return JsonResponse({'status': 'success'})
+        except TradeJournal.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Trade record not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
+
+@csrf_exempt
+@login_required
+def api_journal_clear(request):
+    if request.method == 'POST':
+        try:
+            TradeJournal.objects.filter(user=request.user).delete()
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
 
