@@ -4,7 +4,8 @@ from . import views
 app_name = 'screener'
 
 urlpatterns = [
-    path('', views.dashboard_view, name='dashboard'),
+    path('', views.home_view, name='home'),
+    path('dashboard/', views.dashboard_view, name='dashboard'),
     path('login/', views.login_view, name='login'),
     path('signup/', views.signup_view, name='signup'),
     path('logout/', views.logout_view, name='logout'),

@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aegis Momentum - Catching Knives is a Losing Game</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'screener/styles.css' %}?v=2.8">
+    <style>
+        /* Home Page Exclusive Animations & Layout Rules */
+        .home-main {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-stack);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .home-main::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(233, 128, 93, 0.04) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(244, 162, 97, 0.03) 0%, transparent 45%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .nav-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 40px;
+            border-bottom: 1px solid var(--border-color);
+            z-index: 10;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .logo-section i {
+            font-size: 24px;
+            color: var(--accent-indigo);
+            text-shadow: 0 0 10px var(--accent-indigo-glow);
+        }
+
+        .logo-section h1 {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: var(--transition-smooth);
+        }
+
+        .nav-link:hover {
+            color: var(--accent-indigo);
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .nav-btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: var(--transition-smooth);
+        }
+
+        .nav-btn.login-btn {
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .nav-btn.login-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--text-secondary);
+        }
+
+        .nav-btn.signup-btn {
+            background: var(--accent-indigo);
+            color: white;
+            box-shadow: 0 4px 12px var(--accent-indigo-glow);
+        }
+
+        .nav-btn.signup-btn:hover {
+            background: var(--accent-indigo-hover);
+            transform: translateY(-1px);
+        }
+
+        /* Hero Section */
+        .hero-section {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 40px;
+            padding: 80px 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .hero-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .hero-badge {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .hero-badge span {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent-indigo);
+        }
+
+        .hero-title {
+            font-size: 52px;
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -1.5px;
+            color: var(--text-primary);
+        }
+
+        .hero-title span {
+            color: var(--accent-indigo);
+        }
+
+        .hero-description {
+            font-size: 16px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            max-width: 550px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .hero-btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: var(--transition-smooth);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hero-btn.primary {
+            background: linear-gradient(135deg, var(--accent-indigo), #c76543);
+            color: white;
+            box-shadow: 0 4px 15px var(--accent-indigo-glow);
+        }
+
+        .hero-btn.primary:hover {
+            transform: translateY(-1.5px);
+            box-shadow: 0 6px 20px rgba(233, 128, 93, 0.3);
+        }
+
+        .hero-btn.secondary {
+            border: 1px solid var(--border-color);
+            background: rgba(255,255,255,0.02);
+            color: var(--text-primary);
+        }
+
+        .hero-btn.secondary:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: var(--text-secondary);
+        }
+
+        /* Floating Showcase Graphic */
+        .hero-visual {
+            display: flex;
+            justify-content: flex-end;
+            position: relative;
+        }
+
+        .visual-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            padding: 24px;
+            width: 100%;
+            max-width: 460px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        .visual-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+            margin-bottom: 15px;
+        }
+
+        .dots {
+            display: flex;
+            gap: 5px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            border: 1.5px solid var(--text-muted);
+        }
+
+        .visual-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: monospace;
+        }
+
+        /* Mock Chart Graphic */
+        .mock-chart {
+            height: 160px;
+            width: 100%;
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .mock-chart-line {
+            width: 100%;
+            height: 100%;
+            stroke: var(--text-primary);
+            stroke-width: 2.5;
+            fill: none;
+        }
+
+        .mock-chart-sma {
+            width: 100%;
+            height: 100%;
+            stroke: var(--accent-indigo);
+            stroke-width: 1.5;
+            stroke-dasharray: 4, 4;
+            fill: none;
+        }
+
+        .mock-highlight {
+            position: absolute;
+            background: rgba(223, 122, 94, 0.15);
+            border-left: 2px dashed var(--alert-ruby);
+            top: 0;
+            bottom: 0;
+            left: 55%;
+            width: 30%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--alert-ruby);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .mock-legend {
+            display: flex;
+            gap: 15px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-color {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+        }
+
+        /* Comparison Section */
+        .comparison-section {
+            background: var(--bg-card);
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            padding: 80px 40px;
+            z-index: 10;
+        }
+
+        .comparison-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 50px;
+            align-items: center;
+        }
+
+        .comparison-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .compare-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            padding: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            transition: var(--transition-smooth);
+        }
+
+        .compare-card:hover {
+            transform: scale(1.02);
+            border-color: var(--text-muted);
+        }
+
+        .compare-status {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            shrink-0: 0;
+        }
+
+        .compare-status.knife {
+            background: var(--alert-ruby-bg);
+            color: var(--alert-ruby);
+        }
+
+        .compare-status.safe {
+            background: var(--alert-emerald-bg);
+            color: var(--alert-emerald);
+        }
+
+        .compare-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .compare-info h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .compare-info p {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        /* Features Track Grid */
+        .tracks-section {
+            padding: 80px 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+            z-index: 10;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-header h2 {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -1px;
+        }
+
+        .section-header p {
+            font-size: 15px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            line-height: 1.5;
+        }
+
+        .tracks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 25px;
+        }
+
+        .track-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: var(--transition-smooth);
+        }
+
+        .track-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-indigo);
+            box-shadow: 0 10px 25px var(--accent-indigo-glow);
+        }
+
+        .track-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            background: var(--accent-indigo-glow);
+            color: var(--accent-indigo);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .track-card h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .track-card p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .track-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: auto;
+            padding-top: 15px;
+        }
+
+        .track-tag {
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        /* Footer */
+        .footer-section {
+            border-top: 1px solid var(--border-color);
+            padding: 40px 40px;
+            background: var(--bg-secondary);
+            margin-top: auto;
+            z-index: 10;
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .footer-logo i {
+            color: var(--accent-indigo);
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 20px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: var(--transition-smooth);
+        }
+
+        .footer-links a:hover {
+            color: var(--accent-indigo);
+        }
+
+        .copyright {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Responsive Settings */
+        @media (max-width: 991px) {
+            .hero-section {
+                grid-template-columns: 1fr;
+                text-align: center;
+                padding: 50px 20px;
+            }
+
+            .hero-description {
+                margin: 0 auto;
+            }
+
+            .hero-buttons {
+                justify-content: center;
+            }
+
+            .hero-visual {
+                justify-content: center;
+            }
+
+            .comparison-container {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .comparison-cards {
+                order: last;
+            }
+
+            .nav-container {
+                padding: 15px 20px;
+            }
+
+            .nav-links {
+                display: none; /* Hide standard links on mobile for simplicity */
+            }
+
+            .tracks-section {
+                padding: 50px 20px;
+            }
+
+            .comparison-section {
+                padding: 50px 20px;
+            }
+        }
+    </style>
+</head>
+<body class="home-main">
+
+    <!-- Navbar -->
+    <nav class="nav-container">
+        <a href="/" class="logo-section">
+            <i class="fa-solid fa-shield-halved"></i>
+            <h1>Aegis Momentum</h1>
+        </a>
+
+        <div class="nav-links">
+            <a href="#how-it-works" class="nav-link">How it Works</a>
+            <a href="#features" class="nav-link">Features</a>
+        </div>
+
+        <div class="nav-actions">
+            <!-- Theme Toggle Button -->
+            <button id="btn-theme-toggle" title="Toggle Light/Dark Theme" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; outline: none; padding: 4px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-indigo)'" onmouseout="this.style.color='var(--text-secondary)'"><i class="fa-solid fa-sun"></i></button>
+            
+            {% if request.user.is_authenticated or request.session.is_guest_user %}
+                <a href="{% url 'screener:dashboard' %}" class="nav-btn signup-btn"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+            {% else %}
+                <a href="{% url 'screener:login' %}" class="nav-btn login-btn">Sign In</a>
+                <a href="{% url 'screener:login' %}?tab=signup" class="nav-btn signup-btn">Get Started</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="hero-content">
+            <div class="hero-badge">
+                <span></span> Watch the momentum shift
+            </div>
+            <h1 class="hero-title">Catching knives is a losing game. Meet <span>Aegis</span>.</h1>
+            <p class="hero-description">
+                Aegis Momentum screens stock data in real time using math-anchored filters (Peak-to-Trough Drawdowns, RSI Crossovers, and 200 SMA Support). Avoid entry before the momentum shifts, and log your trading journey in a database-backed journal.
+            </p>
+            <div class="hero-buttons">
+                {% if request.user.is_authenticated or request.session.is_guest_user %}
+                    <a href="{% url 'screener:dashboard' %}" class="hero-btn primary"><i class="fa-solid fa-chart-line"></i> Go to Dashboard →</a>
+                {% else %}
+                    <a href="{% url 'screener:login' %}?tab=signup" class="hero-btn primary"><i class="fa-solid fa-user-plus"></i> Start 7-Day Free Trial →</a>
+                    <a href="{% url 'screener:guest_trial' %}" class="hero-btn secondary"><i class="fa-solid fa-wand-magic-sparkles"></i> Try Guest Demo Mode</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="hero-visual">
+            <div class="visual-card">
+                <span class="absolute -top-3 -left-3 z-10 font-sketch text-[10px] uppercase tracking-widest text-paper bg-accent bg-gradient-to-r style-badge" style="background: var(--accent-indigo); color: white; border-radius: 20px; padding: 4px 10px; font-weight: 700; box-shadow: 0 4px 10px var(--accent-indigo-glow); position: absolute;">Live Scan</span>
+                
+                <div class="visual-header">
+                    <div class="dots">
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                    </div>
+                    <span class="visual-label">EMA/SMA indicator · TCS</span>
+                </div>
+
+                <div class="mock-chart">
+                    <!-- SVG Mock Stock Line -->
+                    <svg viewBox="0 0 300 150" style="width: 100%; height: 100%;">
+                        <!-- Grid Lines -->
+                        <line x1="0" y1="30" x2="300" y2="30" stroke="var(--border-color)" stroke-width="0.5" />
+                        <line x1="0" y1="75" x2="300" y2="75" stroke="var(--border-color)" stroke-width="0.5" />
+                        <line x1="0" y1="120" x2="300" y2="120" stroke="var(--border-color)" stroke-width="0.5" />
+                        
+                        <!-- 200 SMA (Sleek Curve) -->
+                        <path d="M 0 110 Q 75 105 150 95 T 300 65" class="mock-chart-sma" />
+                        
+                        <!-- Stock Close Price Line (Drawdown spike and crash) -->
+                        <path d="M 0 90 L 40 70 L 80 80 L 120 50 L 160 135 L 200 142 L 240 100 L 280 115" class="mock-chart-line" />
+                    </svg>
+                    <!-- Highlighted Knife block -->
+                    <div class="mock-highlight">
+                        <span><i class="fa-solid fa-skull"></i> Knife Zone</span>
+                    </div>
+                </div>
+
+                <div class="mock-legend">
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: var(--text-primary);"></span>
+                        <span>Close Price</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: var(--accent-indigo);"></span>
+                        <span>200 SMA</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison Section -->
+    <section id="how-it-works" class="comparison-section">
+        <div class="comparison-container">
+            <div class="comparison-cards">
+                <div class="compare-card">
+                    <div class="compare-status knife">
+                        <i class="fa-solid fa-skull-crossbones"></i>
+                    </div>
+                    <div class="compare-info">
+                        <h4>Falling Knife Setup (High Risk)</h4>
+                        <p>Stock falls vertically (Drawdown > 30%) below its 200-day moving average. Entering early leads to severe capital depletion.</p>
+                    </div>
+                </div>
+
+                <div class="compare-card">
+                    <div class="compare-status safe">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div class="compare-info">
+                        <h4>Safe Momentum Setup (Low Risk)</h4>
+                        <p>Stock holds above its 200 SMA, consolidating with low drawdown levels (< 15%) and crosses oversold RSI zones. Perfect entry trigger.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hero-content">
+                <div class="hero-badge" style="color: var(--accent-indigo);">
+                    <span></span> Knife vs. Safe Setup
+                </div>
+                <h2 class="hero-title" style="font-size: 40px;">Never buy on the way down. Spot the shift.</h2>
+                <p class="hero-description">
+                    A stock that is down 30% might look cheap, but buying without confirmation is a gamble. Aegis screens for peak-to-trough drawdowns and 200 SMA crossovers so you only trade when the trend shifts in your favor.
+                </p>
+                <div style="margin-top: 15px;">
+                    {% if request.user.is_authenticated or request.session.is_guest_user %}
+                        <a href="{% url 'screener:dashboard' %}" style="color: var(--accent-indigo); text-decoration: underline; font-weight: 600; font-size: 14px;">Open dashboard and view signals →</a>
+                    {% else %}
+                        <a href="{% url 'screener:login' %}" style="color: var(--accent-indigo); text-decoration: underline; font-weight: 600; font-size: 14px;">Create your account to start screening →</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tracks / Features Grid Section -->
+    <section id="features" class="tracks-section">
+        <div class="section-header">
+            <h2>Explore the Platform</h2>
+            <p>Aegis Momentum equips you with four integrated quantitative modules designed to refine your investing decisions.</p>
+        </div>
+
+        <div class="tracks-grid">
+            <div class="track-card">
+                <div class="track-icon"><i class="fa-solid fa-filter"></i></div>
+                <h3>Momentum Screener</h3>
+                <p>Scan Nifty 50 and F&O instruments dynamically. Filter out falling knives based on customized drawdown tolerances and indicators.</p>
+                <div class="track-tags">
+                    <span class="track-tag">Quantitative</span>
+                    <span class="track-tag">SMA Filters</span>
+                    <span class="track-tag">Knife Tags</span>
+                </div>
+            </div>
+
+            <div class="track-card">
+                <div class="track-icon"><i class="fa-solid fa-chart-line"></i></div>
+                <h3>RSI Backtesting</h3>
+                <p>Run historical simulations of RSI crossover setups. Review historical trade success rates, win ratios, and average returns.</p>
+                <div class="track-tags">
+                    <span class="track-tag">Backtester</span>
+                    <span class="track-tag">Hist. Candles</span>
+                    <span class="track-tag">Win Rates</span>
+                </div>
+            </div>
+
+            <div class="track-card">
+                <div class="track-icon"><i class="fa-solid fa-book"></i></div>
+                <h3>Trading Journal</h3>
+                <p>Maintain your record log. Save entries, exits, target quantities, stop loss margins, and entry reasons permanently in the database.</p>
+                <div class="track-tags">
+                    <span class="track-tag">Database</span>
+                    <span class="track-tag">PnL Metrics</span>
+                    <span class="track-tag">Risk Rules</span>
+                </div>
+            </div>
+
+            <div class="track-card">
+                <div class="track-icon"><i class="fa-solid fa-link"></i></div>
+                <h3>Zerodha Kite API</h3>
+                <p>Connect your Zerodha Kite Developer keys to fetch live stock data and chart trends directly from official NSE feeds.</p>
+                <div class="track-tags">
+                    <span class="track-tag">API Link</span>
+                    <span class="track-tag">Live Feeds</span>
+                    <span class="track-tag">NSE Candles</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer-section">
+        <div class="footer-container">
+            <a href="/" class="footer-logo">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span>Aegis Momentum</span>
+            </a>
+            
+            <div class="footer-links">
+                <a href="#how-it-works">How it Works</a>
+                <a href="#features">Features</a>
+                {% if not request.user.is_authenticated and not request.session.is_guest_user %}
+                    <a href="{% url 'screener:login' %}">Sign In</a>
+                    <a href="{% url 'screener:login' %}?tab=signup">Register</a>
+                {% endif %}
+            </div>
+
+            <span class="copyright">© 2026 Aegis Momentum. All rights reserved.</span>
+        </div>
+    </footer>
+
+    <!-- Anti-flicker Theme Sync -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-theme');
+            }
+        })();
+
+        // Theme Toggle Handler
+        const themeToggle = document.getElementById('btn-theme-toggle');
+        
+        function updateToggleIcon() {
+            const isLight = document.body.classList.contains('light-theme');
+            themeToggle.innerHTML = isLight ? '<i class="fa-solid fa-moon"></i>' : '<i class="fa-solid fa-sun"></i>';
+        }
+        updateToggleIcon();
+
+        themeToggle.addEventListener('click', () => {
+            const activeTheme = document.body.classList.contains('light-theme') ? 'dark' : 'light';
+            localStorage.setItem('theme', activeTheme);
+            if (activeTheme === 'light') {
+                document.body.classList.add('light-theme');
+            } else {
+                document.body.classList.remove('light-theme');
+            }
+            updateToggleIcon();
+        });
+    </script>
+</body>
+</html>

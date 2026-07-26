@@ -102,6 +102,12 @@ def get_instrument_token(symbol):
         
     return None
 
+def home_view(request):
+    """
+    Renders the public homepage.
+    """
+    return render(request, 'screener/home.html')
+
 def dashboard_view(request):
     """
     Renders the main dashboard page.
@@ -613,7 +619,10 @@ def login_view(request):
         else:
             error_message = "Invalid username or password."
             
-    return render(request, 'screener/login.html', {'error': error_message, 'active_tab': 'login'})
+    tab = request.GET.get('tab', 'login')
+    if tab not in ['login', 'signup']:
+        tab = 'login'
+    return render(request, 'screener/login.html', {'error': error_message, 'active_tab': tab})
 
 def signup_view(request):
     if request.user.is_authenticated or request.session.get('is_guest_user'):
