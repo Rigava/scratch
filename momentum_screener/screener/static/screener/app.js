@@ -52,7 +52,11 @@ const App = (function() {
             indicators: null
         },
         journal: JSON.parse(localStorage.getItem('trade_journal') || '[]'),
-        journalFilter: 'all'
+        journalFilter: 'all',
+        sort: {
+            field: 'ticker',
+            direction: 'asc'
+        }
     };
 
     // --- Mathematical Indicator Calculations ---
@@ -267,6 +271,7 @@ const App = (function() {
         let total = 0;
         let knives = 0;
         let safe = 0;
+        let filteredStocks = [];
 
         for (const stock of Object.values(state.stocks)) {
             // Re-evaluate current status based on updated state filters
@@ -288,38 +293,92 @@ const App = (function() {
                 } else {
                     safe++;
                 }
-
-                // Render row
-                const tr = document.createElement('tr');
-                tr.setAttribute('data-ticker', stock.ticker);
-                if (state.activeTicker === stock.ticker) {
-                    tr.classList.add('selected');
-                }
-
-                const badgeClass = stock.status === 'Knife' ? 'badge-red' : 'badge-green';
-                const icon = stock.status === 'Knife' ? '<i class="fa-solid fa-skull"></i>' : '<i class="fa-solid fa-circle-check"></i>';
-
-                tr.innerHTML = `
-                    <td><strong>${stock.ticker}</strong></td>
-                    <td>
-                        <strong>${stock.ticker}</strong>
-                        <span class="symbol-name">${stock.name}</span>
-                    </td>
-                    <td>₹${stock.current.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    <td class="${stock.current.drawdown > state.filters.drawdown.threshold && state.filters.drawdown.enabled ? 'text-red' : ''}">${stock.current.drawdown}%</td>
-                    <td class="${stock.current.rsi < state.filters.rsi.threshold && state.filters.rsi.enabled ? 'text-red' : ''}">${stock.current.rsi ?? '-'}</td>
-                    <td>${stock.current.adx ?? '-'}</td>
-                    <td><span class="badge ${badgeClass}">${icon} ${stock.status}</span></td>
-                `;
-
-                // Set click handler
-                tr.addEventListener('click', () => {
-                    openDetailDrawer(stock.ticker);
-                });
-
-                tbody.appendChild(tr);
+                filteredStocks.push(stock);
             }
         }
+
+        // Sort filtered stocks list
+        const sortField = state.sort.field;
+        const sortDirection = state.sort.direction;
+
+        filteredStocks.sort((a, b) => {
+            let valA, valB;
+
+            if (sortField === 'ticker') {
+                valA = a.ticker.toLowerCase();
+                valB = b.ticker.toLowerCase();
+            } else if (sortField === 'company') {
+                valA = a.name.toLowerCase();
+                valB = b.name.toLowerCase();
+            } else if (sortField === 'price') {
+                valA = a.current.price;
+                valB = b.current.price;
+            } else if (sortField === 'drawdown') {
+                valA = a.current.drawdown;
+                valB = b.current.drawdown;
+            } else if (sortField === 'rsi') {
+                valA = a.current.rsi ?? 0;
+                valB = b.current.rsi ?? 0;
+            } else if (sortField === 'adx') {
+                valA = a.current.adx ?? 0;
+                valB = b.current.adx ?? 0;
+            } else if (sortField === 'status') {
+                valA = a.status.toLowerCase();
+                valB = b.status.toLowerCase();
+            }
+
+            if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+            if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        // Render rows
+        for (const stock of filteredStocks) {
+            const tr = document.createElement('tr');
+            tr.setAttribute('data-ticker', stock.ticker);
+            if (state.activeTicker === stock.ticker) {
+                tr.classList.add('selected');
+            }
+
+            const badgeClass = stock.status === 'Knife' ? 'badge-red' : 'badge-green';
+            const icon = stock.status === 'Knife' ? '<i class="fa-solid fa-skull"></i>' : '<i class="fa-solid fa-circle-check"></i>';
+
+            tr.innerHTML = `
+                <td><strong>${stock.ticker}</strong></td>
+                <td>
+                    <strong>${stock.ticker}</strong>
+                    <span class="symbol-name">${stock.name}</span>
+                </td>
+                <td>₹${stock.current.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td class="${stock.current.drawdown > state.filters.drawdown.threshold && state.filters.drawdown.enabled ? 'text-red' : ''}">${stock.current.drawdown}%</td>
+                <td class="${stock.current.rsi < state.filters.rsi.threshold && state.filters.rsi.enabled ? 'text-red' : ''}">${stock.current.rsi ?? '-'}</td>
+                <td>${stock.current.adx ?? '-'}</td>
+                <td><span class="badge ${badgeClass}">${icon} ${stock.status}</span></td>
+            `;
+
+            tr.addEventListener('click', () => {
+                openDetailDrawer(stock.ticker);
+            });
+
+            tbody.appendChild(tr);
+        }
+
+        // Helper to update sorting arrows on table columns
+        (function updateScreenerHeaderIcons() {
+            document.querySelectorAll('#screener-table th.sortable').forEach(th => {
+                const field = th.getAttribute('data-sort');
+                const icon = th.querySelector('i');
+                if (icon) {
+                    if (state.sort.field === field) {
+                        th.classList.add('active');
+                        icon.className = state.sort.direction === 'asc' ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down';
+                    } else {
+                        th.classList.remove('active');
+                        icon.className = 'fa-solid fa-sort';
+                    }
+                }
+            });
+        })();
 
         // Update statistics
         document.getElementById('stat-total').innerText = total;
@@ -1278,6 +1337,22 @@ const App = (function() {
                 tabScreener.click(); // Switch back to screener tab
             });
         }
+
+        // Table Sorting Header Bindings
+        document.querySelectorAll('#screener-table th.sortable').forEach(th => {
+            th.addEventListener('click', () => {
+                const field = th.getAttribute('data-sort');
+                if (state.sort.field === field) {
+                    // Toggle direction
+                    state.sort.direction = state.sort.direction === 'asc' ? 'desc' : 'asc';
+                } else {
+                    // Set new sort field and default to asc
+                    state.sort.field = field;
+                    state.sort.direction = 'asc';
+                }
+                renderScreenerGrid();
+            });
+        });
 
         // Theme Toggle Bindings
         const themeToggle = document.getElementById('btn-theme-toggle');

@@ -619,6 +619,27 @@ th {
     letter-spacing: 0.8px;
 }
 
+th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: var(--transition-smooth);
+}
+
+th.sortable:hover {
+    color: var(--accent-indigo);
+}
+
+th.sortable i {
+    margin-left: 4px;
+    font-size: 10px;
+    opacity: 0.4;
+    transition: var(--transition-smooth);
+}
+
+th.sortable:hover i, th.sortable.active i {
+    opacity: 1;
+}
+
 tbody tr {
     cursor: pointer;
     transition: var(--transition-smooth);
