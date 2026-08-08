@@ -230,6 +230,8 @@ const App = (function() {
         const lastIdx = candles.length - 1;
         const pricePrev = lastIdx > 0 ? prices[lastIdx - 1] : prices[lastIdx];
         const pctChange = pricePrev ? ((prices[lastIdx] - pricePrev) / pricePrev) * 100 : 0;
+        const pricePrev7d = lastIdx >= 7 ? prices[lastIdx - 7] : prices[0];
+        const pctChange7d = pricePrev7d ? ((prices[lastIdx] - pricePrev7d) / pricePrev7d) * 100 : 0;
 
         stock.current = {
             price: prices[lastIdx],
@@ -239,7 +241,8 @@ const App = (function() {
             plusDI: adxData.plusDI[lastIdx],
             minusDI: adxData.minusDI[lastIdx],
             aboveSMA200: sma200[lastIdx] ? (prices[lastIdx] >= sma200[lastIdx]) : true,
-            pctChange: Math.round(pctChange * 100) / 100
+            pctChange: Math.round(pctChange * 100) / 100,
+            pctChange7d: Math.round(pctChange7d * 100) / 100
         };
 
         // Compute historical "Knife" flags for chart highlights
@@ -292,7 +295,15 @@ const App = (function() {
                                   (filterStatus === 'safe' && stock.status === 'Safe') || 
                                   (filterStatus === 'knife' && stock.status === 'Knife');
 
-            if (matchesSearch && matchesStatus) {
+            const filterPerfSelect = document.getElementById('sel-filter-performance');
+            const filterPerf = filterPerfSelect ? filterPerfSelect.value : 'all';
+            const matchesPerf = filterPerf === 'all' || 
+                                (filterPerf === '1d-winners' && stock.current.pctChange > 0) || 
+                                (filterPerf === '1d-losers' && stock.current.pctChange < 0) || 
+                                (filterPerf === '7d-winners' && stock.current.pctChange7d > 0) || 
+                                (filterPerf === '7d-losers' && stock.current.pctChange7d < 0);
+
+            if (matchesSearch && matchesStatus && matchesPerf) {
                 total++;
                 if (stock.status === 'Knife') {
                     knives++;
@@ -327,6 +338,9 @@ const App = (function() {
             } else if (sortField === 'price') {
                 valA = a.current.price;
                 valB = b.current.price;
+            } else if (sortField === 'change1d') {
+                valA = a.current.pctChange;
+                valB = b.current.pctChange;
             } else if (sortField === 'drawdown') {
                 valA = a.current.drawdown;
                 valB = b.current.drawdown;
@@ -356,9 +370,41 @@ const App = (function() {
 
             const badgeClass = stock.status === 'Knife' ? 'badge-red' : 'badge-green';
             const icon = stock.status === 'Knife' ? '<i class="fa-solid fa-skull"></i>' : '<i class="fa-solid fa-circle-check"></i>';
-            const changeColor = stock.current.pctChange >= 0 ? 'text-green' : 'text-red';
-            const changeSign = stock.current.pctChange >= 0 ? '+' : '';
-            const changeHtml = `<span class="${changeColor}" style="font-size: 11px; margin-left: 6px; font-weight: 600;">${changeSign}${stock.current.pctChange}%</span>`;
+
+            // Calculate mini progress bars for 1D and 7D returns
+            const calcBarWidth = (val) => {
+                const abs = Math.abs(val);
+                return Math.min(100, Math.round(abs * 10)); // e.g. 5% change -> 50% width
+            };
+
+            const width1d = calcBarWidth(stock.current.pctChange);
+            const class1d = stock.current.pctChange >= 0 ? 'positive' : 'negative';
+            const sign1d = stock.current.pctChange >= 0 ? '+' : '';
+            const color1d = stock.current.pctChange >= 0 ? 'text-green' : 'text-red';
+
+            const width7d = calcBarWidth(stock.current.pctChange7d);
+            const class7d = stock.current.pctChange7d >= 0 ? 'positive' : 'negative';
+            const sign7d = stock.current.pctChange7d >= 0 ? '+' : '';
+            const color7d = stock.current.pctChange7d >= 0 ? 'text-green' : 'text-red';
+
+            const perfVisualHtml = `
+                <div class="perf-visual">
+                    <div class="perf-row">
+                        <span class="perf-lbl">1D</span>
+                        <div class="perf-bar-bg">
+                            <div class="perf-bar ${class1d}" style="width: ${width1d}%;"></div>
+                        </div>
+                        <span class="perf-val ${color1d}">${sign1d}${stock.current.pctChange}%</span>
+                    </div>
+                    <div class="perf-row">
+                        <span class="perf-lbl">7D</span>
+                        <div class="perf-bar-bg">
+                            <div class="perf-bar ${class7d}" style="width: ${width7d}%;"></div>
+                        </div>
+                        <span class="perf-val ${color7d}">${sign7d}${stock.current.pctChange7d}%</span>
+                    </div>
+                </div>
+            `;
 
             tr.innerHTML = `
                 <td><strong>${stock.ticker}</strong></td>
@@ -366,7 +412,8 @@ const App = (function() {
                     <strong>${stock.ticker}</strong>
                     <span class="symbol-name">${stock.name}</span>
                 </td>
-                <td>₹${stock.current.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}${changeHtml}</td>
+                <td>₹${stock.current.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td>${perfVisualHtml}</td>
                 <td class="${stock.current.drawdown > state.filters.drawdown.threshold && state.filters.drawdown.enabled ? 'text-red' : ''}">${stock.current.drawdown}%</td>
                 <td class="${stock.current.rsi < state.filters.rsi.threshold && state.filters.rsi.enabled ? 'text-red' : ''}">${stock.current.rsi ?? '-'}</td>
                 <td>${stock.current.adx ?? '-'}</td>
@@ -1181,6 +1228,14 @@ const App = (function() {
             });
         }
 
+        // Performance Filter dropdown change listener
+        const selectPerf = document.getElementById('sel-filter-performance');
+        if (selectPerf) {
+            selectPerf.addEventListener('change', () => {
+                renderScreenerGrid();
+            });
+        }
+
         // Reset Filters Button
         document.getElementById('btn-reset-filters').addEventListener('click', () => {
             document.getElementById('chk-filter-sma').checked = true;
@@ -1193,6 +1248,7 @@ const App = (function() {
             sliderDd.value = 30;
             selectDdYears.value = "1";
             if (selectStatus) selectStatus.value = "all";
+            if (selectPerf) selectPerf.value = "all";
 
             document.getElementById('val-filter-rsi').innerText = '30';
             document.getElementById('val-filter-adx').innerText = '25';

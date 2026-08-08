@@ -111,6 +111,20 @@
                         </select>
                     </div>
 
+                    <!-- Rule 0.5: Performance Filter (Winners vs Losers) -->
+                    <div class="config-group" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 15px; margin-bottom: 15px;">
+                        <div class="config-label-row">
+                            <strong style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary);"><i class="fa-solid fa-gauge-high"></i> Performance Filter</strong>
+                        </div>
+                        <select id="sel-filter-performance" style="width: 100%; margin-top: 8px; background: var(--bg-input); border: 1px solid var(--border-input); border-radius: var(--border-radius-sm); padding: 8px 12px; color: var(--text-primary); font-family: var(--font-stack); font-size: 13px; outline: none; cursor: pointer; transition: all 0.2s;">
+                            <option value="all" selected>All Performance</option>
+                            <option value="1d-winners">🏆 1D Winners (Day Up)</option>
+                            <option value="1d-losers">📉 1D Losers (Day Down)</option>
+                            <option value="7d-winners">🔥 7D Winners (7 Days Up)</option>
+                            <option value="7d-losers">❄️ 7D Losers (7 Days Down)</option>
+                        </select>
+                    </div>
+
                     <!-- Rule 1: SMA 200 -->
                     <div class="config-group">
                         <div class="config-label-row">
@@ -274,6 +288,7 @@
                                     <th class="sortable" data-sort="ticker">Ticker <i class="fa-solid fa-sort"></i></th>
                                     <th class="sortable" data-sort="company">Company <i class="fa-solid fa-sort"></i></th>
                                     <th class="sortable" data-sort="price">Price <i class="fa-solid fa-sort"></i></th>
+                                    <th class="sortable" data-sort="change1d">Perf (1D/7D) <i class="fa-solid fa-sort"></i></th>
                                     <th class="sortable" data-sort="drawdown">Drawdown <i class="fa-solid fa-sort"></i></th>
                                     <th class="sortable" data-sort="rsi">RSI (14) <i class="fa-solid fa-sort"></i></th>
                                     <th class="sortable" data-sort="adx">ADX (14) <i class="fa-solid fa-sort"></i></th>
