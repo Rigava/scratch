@@ -213,6 +213,20 @@
                             <span class="stat-lbl">Investable / Safe</span>
                         </div>
                     </div>
+                    <div class="stat-card glass-card">
+                        <div class="stat-icon green"><i class="fa-solid fa-arrow-trend-up"></i></div>
+                        <div class="stat-data">
+                            <span class="stat-val text-green" id="stat-gainers">0</span>
+                            <span class="stat-lbl">Gainers (Day Up)</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-card">
+                        <div class="stat-icon red"><i class="fa-solid fa-arrow-trend-down"></i></div>
+                        <div class="stat-data">
+                            <span class="stat-val text-red" id="stat-losers">0</span>
+                            <span class="stat-lbl">Losers (Day Down)</span>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Screener Grid Card -->
@@ -313,10 +327,22 @@
                     </div>
 
                     <!-- Strategy Performance Metrics Table -->
-                    <div>
-                        <h3 style="margin: 0 0 15px 0; color: var(--text-primary); font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; font-family: var(--font-stack);">
-                            <i class="fa-solid fa-ranking-star" style="color: #fbbf24;"></i> Strategy Backtesting Performance Metrics (Wilder's RSI 30/70)
-                        </h3>
+                    <div style="margin-top: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; font-family: var(--font-stack);">
+                            <h3 style="margin: 0; color: var(--text-primary); font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-ranking-star" style="color: #fbbf24;"></i> Strategy Backtesting Performance Metrics (Wilder's RSI 30/70)
+                            </h3>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 12px; color: var(--text-secondary);">Backtest Lookback:</span>
+                                <select id="sel-backtest-period" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); font-size: 12px; padding: 4px 10px; border-radius: 4px; outline: none; cursor: pointer; font-family: var(--font-stack);">
+                                    <option value="1">1 Year (250 Days)</option>
+                                    <option value="2">2 Years (500 Days)</option>
+                                    <option value="3">3 Years (750 Days)</option>
+                                    <option value="4">4 Years (1000 Days)</option>
+                                    <option value="5">5 Years (1250 Days)</option>
+                                </select>
+                            </div>
+                        </div>
                         <div class="table-container">
                             <table id="backtest-performance-table">
                                 <thead>

@@ -228,6 +228,9 @@ const App = (function() {
 
         // Determine current status based on the latest day's values
         const lastIdx = candles.length - 1;
+        const pricePrev = lastIdx > 0 ? prices[lastIdx - 1] : prices[lastIdx];
+        const pctChange = pricePrev ? ((prices[lastIdx] - pricePrev) / pricePrev) * 100 : 0;
+
         stock.current = {
             price: prices[lastIdx],
             drawdown: drawdown[lastIdx],
@@ -235,7 +238,8 @@ const App = (function() {
             adx: adxData.adx[lastIdx],
             plusDI: adxData.plusDI[lastIdx],
             minusDI: adxData.minusDI[lastIdx],
-            aboveSMA200: sma200[lastIdx] ? (prices[lastIdx] >= sma200[lastIdx]) : true
+            aboveSMA200: sma200[lastIdx] ? (prices[lastIdx] >= sma200[lastIdx]) : true,
+            pctChange: Math.round(pctChange * 100) / 100
         };
 
         // Compute historical "Knife" flags for chart highlights
@@ -271,6 +275,8 @@ const App = (function() {
         let total = 0;
         let knives = 0;
         let safe = 0;
+        let gainers = 0;
+        let losers = 0;
         let filteredStocks = [];
 
         for (const stock of Object.values(state.stocks)) {
@@ -293,6 +299,14 @@ const App = (function() {
                 } else {
                     safe++;
                 }
+
+                // Track Gainers vs Losers based on day change
+                if (stock.current.pctChange > 0) {
+                    gainers++;
+                } else if (stock.current.pctChange < 0) {
+                    losers++;
+                }
+
                 filteredStocks.push(stock);
             }
         }
@@ -342,6 +356,9 @@ const App = (function() {
 
             const badgeClass = stock.status === 'Knife' ? 'badge-red' : 'badge-green';
             const icon = stock.status === 'Knife' ? '<i class="fa-solid fa-skull"></i>' : '<i class="fa-solid fa-circle-check"></i>';
+            const changeColor = stock.current.pctChange >= 0 ? 'text-green' : 'text-red';
+            const changeSign = stock.current.pctChange >= 0 ? '+' : '';
+            const changeHtml = `<span class="${changeColor}" style="font-size: 11px; margin-left: 6px; font-weight: 600;">${changeSign}${stock.current.pctChange}%</span>`;
 
             tr.innerHTML = `
                 <td><strong>${stock.ticker}</strong></td>
@@ -349,7 +366,7 @@ const App = (function() {
                     <strong>${stock.ticker}</strong>
                     <span class="symbol-name">${stock.name}</span>
                 </td>
-                <td>₹${stock.current.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td>₹${stock.current.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}${changeHtml}</td>
                 <td class="${stock.current.drawdown > state.filters.drawdown.threshold && state.filters.drawdown.enabled ? 'text-red' : ''}">${stock.current.drawdown}%</td>
                 <td class="${stock.current.rsi < state.filters.rsi.threshold && state.filters.rsi.enabled ? 'text-red' : ''}">${stock.current.rsi ?? '-'}</td>
                 <td>${stock.current.adx ?? '-'}</td>
@@ -384,6 +401,10 @@ const App = (function() {
         document.getElementById('stat-total').innerText = total;
         document.getElementById('stat-knives').innerText = knives;
         document.getElementById('stat-safe').innerText = safe;
+        const statGainers = document.getElementById('stat-gainers');
+        if (statGainers) statGainers.innerText = gainers;
+        const statLosers = document.getElementById('stat-losers');
+        if (statLosers) statLosers.innerText = losers;
 
         // Sync backtest dashboard if visible
         const backtestView = document.getElementById('backtest-view-card');
@@ -698,7 +719,7 @@ const App = (function() {
         // Set date range for historical candle requests based on drawdown lookback period
         const toDate = new Date();
         const fromDate = new Date();
-        const lookupYears = state.filters.drawdown.years || 1;
+        const lookupYears = 5; // Fetch 5 years of daily candles to support full RSI backtesting range
         fromDate.setFullYear(toDate.getFullYear() - lookupYears);
 
         const formatDate = (d) => {
@@ -1271,6 +1292,14 @@ const App = (function() {
             renderBacktestDashboard();
         });
 
+        // Backtest lookback period selector change
+        const backtestPeriodSelect = document.getElementById('sel-backtest-period');
+        if (backtestPeriodSelect) {
+            backtestPeriodSelect.addEventListener('change', () => {
+                renderBacktestDashboard();
+            });
+        }
+
         // Trade Log Modal Bindings
         const tradelogModal = document.getElementById('tradelog-modal');
         document.getElementById('btn-close-tradelog').addEventListener('click', () => {
@@ -1624,11 +1653,16 @@ const App = (function() {
             return;
         }
         
+        const backtestPeriodSelect = document.getElementById('sel-backtest-period');
+        const backtestYears = backtestPeriodSelect ? parseInt(backtestPeriodSelect.value) : 1;
+        const lookbackDays = backtestYears * 250;
+
         const backtestResults = [];
         let allSignals = [];
         
         stocksList.forEach(stock => {
-            const res = runRSIBacktestJS(stock.candles);
+            const candlesSlice = stock.candles.slice(-lookbackDays);
+            const res = runRSIBacktestJS(candlesSlice);
             backtestResults.push({
                 ticker: stock.ticker,
                 name: stock.name,
