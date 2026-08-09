@@ -846,6 +846,12 @@ const App = (function() {
         const stock = state.stocks[state.activeTicker];
         if (!stock) return;
 
+        const btnGen = document.getElementById('btn-generate-campaign');
+        if (btnGen) {
+            btnGen.disabled = true;
+            btnGen.innerText = 'Generating Scenario...';
+        }
+
         // Show loading spinner, hide previous details
         const loading = document.getElementById('campaign-loading');
         const content = document.getElementById('campaign-content');
@@ -931,6 +937,11 @@ const App = (function() {
             console.error(error);
             alert(`Failed to generate AI scenario: ${error.message}`);
             loading.classList.add('hidden');
+        } finally {
+            if (btnGen) {
+                btnGen.disabled = false;
+                btnGen.innerHTML = '<i class="fa-solid fa-brain"></i> Generate Dilemma / Learning Scenario';
+            }
         }
     }
 
