@@ -515,12 +515,10 @@ def generate_campaign_view(request):
     5. The output must strictly follow the JSON schema provided.
     """
 
-    # Gemini API fallback endpoints, prioritizing stable 1.5 models for free quota reliability
+    # Gemini API endpoints, using the active gemini-3.5-flash model
     endpoints = [
-        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}",
-        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key={api_key}",
-        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}",
-        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key={api_key}",
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={api_key}",
+        f"https://generativelanguage.googleapis.com/v1/models/gemini-3.5-flash:generateContent?key={api_key}",
     ]
     
     headers = {
