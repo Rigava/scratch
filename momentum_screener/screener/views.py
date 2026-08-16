@@ -12,11 +12,13 @@ from .models import UserProfile, TradeJournal
 import json
 from pathlib import Path
 
-def load_env_file():
+def load_env_file(force=False):
     """
     Manually parses the .env file in the BASE_DIR if it exists
     and sets the environment variables.
     """
+    if not force and os.environ.get('ZERODHA_API_KEY') and os.environ.get('ZERODHA_ACCESS_TOKEN'):
+        return
     base_dir = Path(__file__).resolve().parent.parent
     env_path = base_dir / '.env'
     if env_path.exists():
@@ -136,6 +138,8 @@ def dashboard_view(request):
                 user_status = 'expired'
                 days_left = 0
 
+    # Force reload environment variables to capture newly pasted variables
+    load_env_file(force=True)
     has_zerodha_creds = bool(os.environ.get('ZERODHA_API_KEY') and os.environ.get('ZERODHA_ACCESS_TOKEN'))
     has_gemini_cred = bool(os.environ.get('GEMINI_API_KEY'))
 
@@ -173,10 +177,12 @@ def historical_proxy_view(request):
     access_token = request.headers.get('X-Kite-Access-Token') or request.GET.get('access_token')
 
     # Resolve from environment variables if client requests SERVER_PRECONFIGURED
-    if not api_key or api_key == 'SERVER_PRECONFIGURED':
-        api_key = os.environ.get('ZERODHA_API_KEY')
-    if not access_token or access_token == 'SERVER_PRECONFIGURED':
-        access_token = os.environ.get('ZERODHA_ACCESS_TOKEN')
+    if not api_key or api_key == 'SERVER_PRECONFIGURED' or not access_token or access_token == 'SERVER_PRECONFIGURED':
+        load_env_file(force=True)
+        if not api_key or api_key == 'SERVER_PRECONFIGURED':
+            api_key = os.environ.get('ZERODHA_API_KEY')
+        if not access_token or access_token == 'SERVER_PRECONFIGURED':
+            access_token = os.environ.get('ZERODHA_ACCESS_TOKEN')
 
     if not api_key or not access_token:
         return JsonResponse({
@@ -452,6 +458,7 @@ def generate_campaign_view(request):
 
     api_key = request.headers.get('X-Gemini-API-Key') or request.GET.get('gemini_api_key')
     if not api_key or api_key == 'SERVER_PRECONFIGURED':
+        load_env_file(force=True)
         api_key = os.environ.get('GEMINI_API_KEY')
 
     if not api_key:
@@ -821,6 +828,8 @@ def admin_sync_data_dump(request):
 
     import datetime
     
+    # Force reload environment variables to capture newly pasted variables
+    load_env_file(force=True)
     api_key = os.environ.get('ZERODHA_API_KEY')
     access_token = os.environ.get('ZERODHA_ACCESS_TOKEN')
 
