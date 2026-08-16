@@ -917,6 +917,12 @@ const App = (function() {
         document.getElementById('campaign-content').classList.add('hidden');
         document.getElementById('campaign-feedback').classList.add('hidden');
 
+        // Reset AI Analyst panel
+        const aiLoading = document.getElementById('ai-loading');
+        const aiContent = document.getElementById('ai-content');
+        if (aiLoading) aiLoading.classList.add('hidden');
+        if (aiContent) aiContent.classList.add('hidden');
+
         // Open panel
         document.getElementById('detail-drawer').classList.add('active');
     }
@@ -1185,6 +1191,117 @@ const App = (function() {
         }
     }
 
+    async function runAIConvictionAnalysis() {
+        const geminiKey = sessionStorage.getItem('gemini_api_key') || 'SERVER_PRECONFIGURED';
+        
+        const stock = state.stocks[state.activeTicker];
+        if (!stock) return;
+
+        const btnAnalyze = document.getElementById('btn-analyze-conviction');
+        if (btnAnalyze) {
+            btnAnalyze.disabled = true;
+            btnAnalyze.innerText = 'Analyzing...';
+        }
+
+        // Show loading spinner, hide previous details
+        const loading = document.getElementById('ai-loading');
+        const content = document.getElementById('ai-content');
+        
+        loading.classList.remove('hidden');
+        content.classList.add('hidden');
+
+        try {
+            // Send the last 1250 candles (5 years) to support actual backtesting calculations
+            const candleHistory = stock.candles.slice(-1250);
+
+            const payload = {
+                ticker: stock.ticker,
+                name: stock.name,
+                price: stock.current.price,
+                rsi: stock.current.rsi ?? 'N/A',
+                adx: stock.current.adx ?? 'N/A',
+                drawdown: stock.current.drawdown,
+                above_sma200: stock.current.aboveSMA200,
+                candles: candleHistory
+            };
+
+            const response = await fetch('/api/analyze-stock/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Gemini-API-Key': geminiKey
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.message || `HTTP Error ${response.status}`);
+            }
+
+            const resData = await response.json();
+            if (resData.status !== 'success') {
+                throw new Error(resData.message);
+            }
+
+            const data = resData.data;
+
+            // Render AI content
+            const scoreEl = document.getElementById('ai-score');
+            scoreEl.innerText = data.conviction_score;
+            
+            // Set dynamic background color based on score
+            if (data.conviction_score >= 75) {
+                scoreEl.style.background = 'var(--color-safe)'; // Green
+            } else if (data.conviction_score >= 45) {
+                scoreEl.style.background = 'var(--color-warning)'; // Yellow
+            } else {
+                scoreEl.style.background = 'var(--color-knife)'; // Red
+            }
+
+            document.getElementById('ai-regime').innerText = data.regime;
+            document.getElementById('ai-stop-loss').innerText = `Recommended Stop Loss: ${data.recommended_stop_loss_pct}%`;
+            document.getElementById('ai-rationale').innerText = data.rationale;
+
+            // Render Citations & Sources list
+            const sourcesList = document.getElementById('ai-sources-list');
+            sourcesList.innerHTML = '';
+            if (data.sources_used && data.sources_used.length > 0) {
+                data.sources_used.forEach(source => {
+                    const link = document.createElement('a');
+                    link.href = source.url;
+                    link.target = '_blank';
+                    link.className = 'citation-link';
+                    link.style.display = 'flex';
+                    link.style.alignItems = 'center';
+                    link.style.gap = '6px';
+                    link.style.fontSize = '12px';
+                    link.style.color = 'var(--accent-indigo)';
+                    link.style.textDecoration = 'none';
+                    link.style.padding = '4px 0';
+                    link.style.fontWeight = '500';
+                    link.innerHTML = `<i class="fa-solid fa-arrow-up-right-from-square" style="font-size:10px;"></i> ${source.title}`;
+                    sourcesList.appendChild(link);
+                });
+                document.getElementById('ai-sources-citations').classList.remove('hidden');
+            } else {
+                document.getElementById('ai-sources-citations').classList.add('hidden');
+            }
+
+            loading.classList.add('hidden');
+            content.classList.remove('hidden');
+        } catch (err) {
+            console.error("AI analysis failed:", err);
+            alert(`AI Analysis failed: ${err.message}`);
+            loading.classList.add('hidden');
+        } finally {
+            if (btnAnalyze) {
+                btnAnalyze.disabled = false;
+                btnAnalyze.innerText = 'Analyze Conviction';
+            }
+        }
+    }
+
     // --- Market Batch Scanning ---
 
     function showScanProgress(visible, label = '', countText = '', percent = 0) {
@@ -1431,6 +1548,12 @@ const App = (function() {
 
         // Bind generate campaign button
         document.getElementById('btn-generate-campaign').addEventListener('click', generateAICampaign);
+
+        // Bind analyze conviction button
+        const btnConv = document.getElementById('btn-analyze-conviction');
+        if (btnConv) {
+            btnConv.addEventListener('click', runAIConvictionAnalysis);
+        }
 
         // Add Ticker Click
         document.getElementById('btn-add-ticker').addEventListener('click', () => {

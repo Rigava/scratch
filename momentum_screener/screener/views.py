@@ -960,3 +960,183 @@ def simulation_dump_view(request):
             'message': 'No cached offline simulation dump found. Please run Admin Sync first.'
         }, status=404)
 
+
+import xml.etree.ElementTree as ET
+
+def fetch_google_news_rss(ticker_name):
+    """
+    Fetches the top 5 stock business news stories for a ticker from Google News RSS.
+    """
+    query = f"{ticker_name} stock news"
+    url = f"https://news.google.com/rss/search?q={query}&hl=en-IN&gl=IN&ceid=IN:en"
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+    articles = []
+    try:
+        response = requests.get(url, headers=headers, timeout=8)
+        if response.status_code == 200:
+            root = ET.fromstring(response.content)
+            for item in root.findall('.//item')[:5]:
+                title = item.find('title').text if item.find('title') is not None else ''
+                link = item.find('link').text if item.find('link') is not None else ''
+                pub_date = item.find('pubDate').text if item.find('pubDate') is not None else ''
+                source = item.find('source').text if item.find('source') is not None else 'Google News'
+                
+                # Title typically ends with " - Source Name"
+                clean_title = title
+                if ' - ' in title:
+                    clean_title = title.rsplit(' - ', 1)[0]
+                
+                articles.append({
+                    'title': clean_title,
+                    'url': link,
+                    'pub_date': pub_date,
+                    'source': source
+                })
+    except Exception:
+        pass
+    return articles
+
+
+@csrf_exempt
+@login_required
+def analyze_stock_ai_view(request):
+    """
+    Evaluates a stock configuration using technical data, rsi backtesting results,
+    and live Google News headlines utilizing Gemini 3.5 Flash.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Only POST method is allowed'}, status=405)
+
+    api_key = request.headers.get('X-Gemini-API-Key') or request.GET.get('gemini_api_key')
+    if not api_key or api_key == 'SERVER_PRECONFIGURED':
+        load_env_file(force=True)
+        api_key = os.environ.get('GEMINI_API_KEY')
+
+    if not api_key:
+        return JsonResponse({'status': 'error', 'message': 'Missing Gemini API Key (X-Gemini-API-Key)'}, status=400)
+
+    try:
+        payload = json.loads(request.body)
+    except ValueError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON body'}, status=400)
+
+    ticker = payload.get('ticker', '').strip()
+    name = payload.get('name', '').strip()
+    price = payload.get('price', 0)
+    rsi = payload.get('rsi', 'N/A')
+    adx = payload.get('adx', 'N/A')
+    drawdown = payload.get('drawdown', 0)
+    above_sma200 = payload.get('above_sma200', True)
+    candles = payload.get('candles', [])
+
+    # Fetch news headlines
+    news_list = fetch_google_news_rss(name)
+
+    # Perform micro structure and backtest runs
+    analysis = analyze_micro_structure(candles)
+    backtest = run_backtest_rsi_30_70(candles)
+
+    # Write prompt
+    prompt_text = f"""
+    You are an institutional Risk Manager and Quantitative Finance Strategist.
+    Evaluate the following stock candidate for an active trade setup and assign an objective "conviction_score" from 0 to 100 based on its technical setup and context.
+
+    Stock Profile:
+    - Ticker: {ticker} ({name})
+    - Current Price: ₹{price}
+    
+    Technical Indicators:
+    - Relative Strength Index (RSI): {rsi}
+    - Average Directional Index (ADX): {adx}
+    - Peak-to-Trough Drawdown: {drawdown}%
+    - Position vs 200 SMA: {"Above" if above_sma200 else "Below"} 200 SMA.
+
+    Microstructure analysis over the last 30, 60, and 90 days:
+    - 30-day Return: {analysis.get('ret_30')}% (Consolidation Range: {analysis.get('range_30')}% between ₹{analysis.get('min_30')} and ₹{analysis.get('max_30')})
+    - Trend Stance / Phase: {analysis.get('htf_stance')}
+    - Currently in Tight 30-day Consolidation Range: {"Yes" if analysis.get('in_consolidation_30') else "No"}
+    - Is breaking out upside: {"Yes" if analysis.get('breakout_up_30') else "No"}
+    - Is breaking out downside: {"Yes" if analysis.get('breakout_down_30') else "No"}
+
+    Empirical Backtest Metrics (5-Year Lookback for RSI Mean Reversion):
+    - Total Trades Executed: {backtest.get('total_trades')}
+    - Win Rate: {backtest.get('win_rate')}%
+    - Average Return per Trade (Expectancy): {backtest.get('expectancy')}%
+
+    Catalyst & News Feeds:
+    {json.dumps(news_list, indent=2)}
+
+    Evaluation Guidelines:
+    1. Veto Check: If news articles mention fraud, structural decay, or severe regulatory fines, set conviction_score directly to 0 and explain this in the rationale.
+    2. Expectancy Weight (40%): Higher win rate and positive expectancy scale the conviction score.
+    3. Level Support Alignment (30%): Deeply oversold stocks near key support zones (Near SMA200 / Near EMA50) should receive premium score.
+    4. Momentum Convergence (30%): A MACD crossover or bullish consolidation breakout should receive premium score.
+    5. Citations: In the JSON output, include any sources from the News Feed that directly influenced your rationale under 'sources_used'. Provide the exact title and URL from the input.
+
+    Output must follow the JSON schema provided.
+    """
+
+    schema = {
+        "type": "object",
+        "properties": {
+            "conviction_score": { "type": "integer" },
+            "regime": { "type": "string" },
+            "rationale": { "type": "string" },
+            "recommended_stop_loss_pct": { "type": "number" },
+            "sources_used": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "title": { "type": "string" },
+                        "url": { "type": "string" }
+                    },
+                    "required": ["title", "url"]
+                }
+            }
+        },
+        "required": ["conviction_score", "regime", "rationale", "recommended_stop_loss_pct", "sources_used"]
+    }
+
+    endpoints = [
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={api_key}",
+        f"https://generativelanguage.googleapis.com/v1/models/gemini-3.5-flash:generateContent?key={api_key}",
+    ]
+    
+    headers = {'Content-Type': 'application/json'}
+    body = {
+        "contents": [{"parts": [{"text": prompt_text}]}],
+        "generationConfig": {
+            "responseMimeType": "application/json",
+            "responseSchema": schema
+        }
+    }
+
+    response = None
+    last_error = ""
+    status_code = 502
+
+    for url in endpoints:
+        try:
+            response = requests.post(url, headers=headers, json=body, timeout=25)
+            if response.status_code == 200:
+                break
+            else:
+                last_error = f"Status {response.status_code} - {response.text}"
+                status_code = response.status_code
+        except Exception as e:
+            last_error = str(e)
+
+    if not response or response.status_code != 200:
+        return JsonResponse({'status': 'error', 'message': f"Gemini API failure: {last_error}"}, status=status_code)
+
+    try:
+        res_json = response.json()
+        text_content = res_json['candidates'][0]['content']['parts'][0]['text']
+        data = json.loads(text_content)
+        return JsonResponse({'status': 'success', 'data': data})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': f"Failed to parse Gemini output: {str(e)}"}, status=500)
+

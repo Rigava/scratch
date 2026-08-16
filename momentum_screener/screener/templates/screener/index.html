@@ -564,6 +564,44 @@
                         </div>
                     </div>
 
+                    <!-- AI Conviction Analyst Section -->
+                    <div class="ai-analyst-section" style="margin-top: 24px;">
+                        <div class="ai-card" style="background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); border-radius: var(--border-radius-lg); padding: 20px;">
+                            <div class="ai-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                                <h4 style="font-size: 13px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; margin: 0; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fa-solid fa-robot" style="color: var(--accent-indigo);"></i> AI Conviction Analyst
+                                </h4>
+                                <button id="btn-analyze-conviction" class="primary-btn" style="font-size: 12px; padding: 6px 14px; background: linear-gradient(135deg, var(--accent-indigo), #5850ec); border: none;"><i class="fa-solid fa-brain"></i> Analyze Conviction</button>
+                            </div>
+                            
+                            <!-- Loading Spinner -->
+                            <div id="ai-loading" class="ai-loading-container hidden" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 0; gap: 12px;">
+                                <div class="spinner" style="width: 28px; height: 28px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent-indigo); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                                <span style="font-size: 13px; color: var(--text-secondary);">Querying headlines and running Gemini analysis...</span>
+                            </div>
+
+                            <!-- Generated Content -->
+                            <div id="ai-content" class="ai-content-body hidden" style="display: flex; flex-direction: column; gap: 14px;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div class="ai-score-badge" style="font-size: 22px; font-weight: 700; color: #fff; background: var(--accent-indigo); padding: 8px 16px; border-radius: var(--border-radius-md); display: flex; align-items: center; justify-content: center;" id="ai-score">85</div>
+                                    <div>
+                                        <div style="font-size: 14px; font-weight: 600; color: var(--text-primary);" id="ai-regime">Mean Reversion Pullback on Support</div>
+                                        <div style="font-size: 11px; color: var(--text-secondary);" id="ai-stop-loss">Recommended Stop Loss: 2.5%</div>
+                                    </div>
+                                </div>
+                                <p id="ai-rationale" style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin: 0;">
+                                    Rationale details...
+                                </p>
+                                <div id="ai-sources-citations" style="border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 10px; margin-top: 5px;">
+                                    <strong style="font-size: 11px; display: block; margin-bottom: 6px; color: var(--text-secondary);"><i class="fa-solid fa-link"></i> Citations & Sources:</strong>
+                                    <div id="ai-sources-list" style="display: flex; flex-direction: column; gap: 6px;">
+                                        <!-- Rendered dynamically -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Trading Journal Form Section -->
                     <div class="journal-section" style="margin-top: 24px; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 24px;">
                         <h4 style="font-size: 13px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; margin: 0 0 14px 0; display: flex; align-items: center; gap: 8px; font-family: var(--font-stack);">
