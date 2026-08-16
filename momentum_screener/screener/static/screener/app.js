@@ -209,12 +209,144 @@ const App = (function() {
         const candles = stock.candles;
         const prices = candles.map(c => c.close);
 
+        // EMA Calculator helper
+        function calcEMAArray(vals, period) {
+            const ema = new Array(vals.length).fill(null);
+            if (vals.length < period) return ema;
+
+            let sum = 0;
+            for (let i = 0; i < period; i++) {
+                sum += vals[i];
+            }
+            let currentEma = sum / period;
+            ema[period - 1] = currentEma;
+
+            const alpha = 2 / (period + 1);
+            for (let i = period; i < vals.length; i++) {
+                currentEma = (vals[i] * alpha) + (currentEma * (1 - alpha));
+                ema[i] = currentEma;
+            }
+            return ema;
+        }
+
+        // MACD Calculator helper
+        function calcMACDArray(vals) {
+            const ema12 = calcEMAArray(vals, 12);
+            const ema26 = calcEMAArray(vals, 26);
+            const macdLine = new Array(vals.length).fill(null);
+            
+            for (let i = 0; i < vals.length; i++) {
+                if (ema12[i] !== null && ema26[i] !== null) {
+                    macdLine[i] = ema12[i] - ema26[i];
+                }
+            }
+            
+            const signalLine = new Array(vals.length).fill(null);
+            const nonNullIndices = [];
+            const nonNullValues = [];
+            for (let i = 0; i < vals.length; i++) {
+                if (macdLine[i] !== null) {
+                    nonNullIndices.push(i);
+                    nonNullValues.push(macdLine[i]);
+                }
+            }
+            
+            if (nonNullValues.length >= 9) {
+                const rawSignal = calcEMAArray(nonNullValues, 9);
+                for (let i = 0; i < rawSignal.length; i++) {
+                    if (rawSignal[i] !== null) {
+                        const originalIndex = nonNullIndices[i];
+                        signalLine[originalIndex] = rawSignal[i];
+                    }
+                }
+            }
+            
+            const histogram = new Array(vals.length).fill(null);
+            for (let i = 0; i < vals.length; i++) {
+                if (macdLine[i] !== null && signalLine[i] !== null) {
+                    histogram[i] = macdLine[i] - signalLine[i];
+                }
+            }
+            
+            return { macdLine, signalLine, histogram };
+        }
+
+        // MACD Crossover Backtester helper
+        function runMACDBacktestJS(histCandles) {
+            if (!histCandles || histCandles.length < 40) {
+                return { totalTrades: 0, winRate: 0, avgPnL: 0 };
+            }
+            
+            const p = histCandles.map(c => c.close);
+            const o = histCandles.map(c => c.open);
+            const macd = calcMACDArray(p);
+            const s200 = calculateSMA(p, 200);
+            
+            const p3d = new Array(p.length).fill(0);
+            for (let i = 3; i < p.length; i++) {
+                p3d[i] = ((p[i] - p[i-3]) / p[i-3]) * 100;
+            }
+
+            let inTrade = false;
+            let buyPrice = 0;
+            const trades = [];
+            let holdDays = 0;
+            
+            const n = histCandles.length;
+            for (let i = 200; i < n - 1; i++) {
+                const currentMacd = macd.macdLine[i];
+                const currentSignal = macd.signalLine[i];
+                const prevMacd = macd.macdLine[i-1];
+                const prevSignal = macd.signalLine[i-1];
+                
+                if (currentMacd === null || currentSignal === null || prevMacd === null || prevSignal === null) continue;
+                
+                const isUpwardCrossover = prevMacd <= prevSignal && currentMacd > currentSignal;
+                const isDownwardCrossover = prevMacd >= prevSignal && currentMacd < currentSignal;
+                
+                const priceAboveSma200 = s200[i] ? p[i] >= s200[i] : true;
+                const priceBuildingUp = p3d[i] > 0;
+                
+                if (!inTrade) {
+                    if (isUpwardCrossover && priceAboveSma200 && priceBuildingUp) {
+                        buyPrice = o[i+1];
+                        inTrade = true;
+                        holdDays = 0;
+                    }
+                } else {
+                    holdDays++;
+                    if (isDownwardCrossover || holdDays >= 20) {
+                        const sellPrice = o[i+1];
+                        const pnl = ((sellPrice - buyPrice) / buyPrice) * 100;
+                        trades.push(pnl);
+                        inTrade = false;
+                    }
+                }
+            }
+            
+            if (inTrade) {
+                const sellPrice = p[n-1];
+                const pnl = ((sellPrice - buyPrice) / buyPrice) * 100;
+                trades.push(pnl);
+            }
+            
+            const totalTrades = trades.length;
+            const wins = trades.filter(r => r > 0).length;
+            const winRate = totalTrades > 0 ? Math.round((wins / totalTrades) * 100) : 0;
+            const avgPnL = totalTrades > 0 ? Math.round((trades.reduce((a, b) => a + b, 0) / totalTrades) * 100) / 100 : 0;
+            
+            return { totalTrades, winRate, avgPnL };
+        }
+
         const sma50 = calculateSMA(prices, 50);
         const sma200 = calculateSMA(prices, 200);
         const drawdownPeriod = (state.filters.drawdown.years || 1) * 250;
         const drawdown = calculateDrawdown(prices, drawdownPeriod);
         const rsi = calculateRSI(prices, 14);
         const adxData = calculateADX(candles, 14);
+        
+        const macdData = calcMACDArray(prices);
+        const macdBacktest = runMACDBacktestJS(candles);
 
         stock.indicators = {
             sma50,
@@ -223,7 +355,10 @@ const App = (function() {
             rsi,
             adx: adxData.adx,
             plusDI: adxData.plusDI,
-            minusDI: adxData.minusDI
+            minusDI: adxData.minusDI,
+            macd: macdData.macdLine,
+            signal: macdData.signalLine,
+            histogram: macdData.histogram
         };
 
         // Determine current status based on the latest day's values
@@ -232,6 +367,49 @@ const App = (function() {
         const pctChange = pricePrev ? ((prices[lastIdx] - pricePrev) / pricePrev) * 100 : 0;
         const pricePrev7d = lastIdx >= 7 ? prices[lastIdx - 7] : prices[0];
         const pctChange7d = pricePrev7d ? ((prices[lastIdx] - pricePrev7d) / pricePrev7d) * 100 : 0;
+
+        // Momentum Shift calculation today
+        const isUpwardCrossoverToday = lastIdx > 0 &&
+            macdData.macdLine[lastIdx - 1] !== null &&
+            macdData.signalLine[lastIdx - 1] !== null &&
+            macdData.macdLine[lastIdx] !== null &&
+            macdData.signalLine[lastIdx] !== null &&
+            macdData.macdLine[lastIdx - 1] <= macdData.signalLine[lastIdx - 1] &&
+            macdData.macdLine[lastIdx] > macdData.signalLine[lastIdx];
+
+        const pricePrev3d = lastIdx >= 3 ? prices[lastIdx - 3] : prices[0];
+        const pctChange3d = pricePrev3d ? ((prices[lastIdx] - pricePrev3d) / pricePrev3d) * 100 : 0;
+        const priceAboveSma200 = sma200[lastIdx] ? prices[lastIdx] >= sma200[lastIdx] : true;
+        const priceBuildingUp = pctChange3d > 0;
+        const hasMomentumShift = isUpwardCrossoverToday && priceAboveSma200 && priceBuildingUp;
+
+        // Milestone Key Level evaluation
+        const lookbackPeriod = Math.min(250, candles.length);
+        const slice52w = prices.slice(-lookbackPeriod);
+        const max52w = Math.max(...slice52w);
+        const min52w = Math.min(...slice52w);
+
+        const ema50 = calcEMAArray(prices, 50);
+        const currentEma50 = ema50[lastIdx];
+        const currentSma200 = sma200[lastIdx];
+        const currentPrice = prices[lastIdx];
+
+        let milestone = "Stable";
+        let milestonePriority = 1;
+
+        if (currentPrice >= 0.98 * max52w) {
+            milestone = "52W High";
+            milestonePriority = 5;
+        } else if (currentPrice <= 1.02 * min52w) {
+            milestone = "52W Low";
+            milestonePriority = 2;
+        } else if (currentEma50 && Math.abs((currentPrice - currentEma50) / currentEma50) <= 0.015) {
+            milestone = "Near EMA50";
+            milestonePriority = 4;
+        } else if (currentSma200 && Math.abs((currentPrice - currentSma200) / currentSma200) <= 0.015) {
+            milestone = "Near SMA200";
+            milestonePriority = 3;
+        }
 
         stock.current = {
             price: prices[lastIdx],
@@ -242,7 +420,13 @@ const App = (function() {
             minusDI: adxData.minusDI[lastIdx],
             aboveSMA200: sma200[lastIdx] ? (prices[lastIdx] >= sma200[lastIdx]) : true,
             pctChange: Math.round(pctChange * 100) / 100,
-            pctChange7d: Math.round(pctChange7d * 100) / 100
+            pctChange7d: Math.round(pctChange7d * 100) / 100,
+            hasMomentumShift,
+            macdWinRate: macdBacktest.winRate,
+            macdTrades: macdBacktest.totalTrades,
+            macdAvgPnL: macdBacktest.avgPnL,
+            milestone,
+            milestonePriority
         };
 
         // Compute historical "Knife" flags for chart highlights
@@ -298,6 +482,7 @@ const App = (function() {
             const filterPerfSelect = document.getElementById('sel-filter-performance');
             const filterPerf = filterPerfSelect ? filterPerfSelect.value : 'all';
             const matchesPerf = filterPerf === 'all' || 
+                                (filterPerf === 'momentum-shift' && stock.current.hasMomentumShift) ||
                                 (filterPerf === '1d-winners' && stock.current.pctChange > 0) || 
                                 (filterPerf === '1d-losers' && stock.current.pctChange < 0) || 
                                 (filterPerf === '7d-winners' && stock.current.pctChange7d > 0) || 
@@ -341,6 +526,12 @@ const App = (function() {
             } else if (sortField === 'change1d') {
                 valA = a.current.pctChange;
                 valB = b.current.pctChange;
+            } else if (sortField === 'macd_win') {
+                valA = a.current.macdWinRate ?? 0;
+                valB = b.current.macdWinRate ?? 0;
+            } else if (sortField === 'milestone') {
+                valA = a.current.milestonePriority ?? 1;
+                valB = b.current.milestonePriority ?? 1;
             } else if (sortField === 'drawdown') {
                 valA = a.current.drawdown;
                 valB = b.current.drawdown;
@@ -406,6 +597,18 @@ const App = (function() {
                 </div>
             `;
 
+            const momentumShiftHtml = stock.current.hasMomentumShift 
+                ? `<div class="badge-momentum-shift"><i class="fa-solid fa-rocket"></i> Shift</div>
+                   <div class="macd-backtest-info">Win: ${stock.current.macdWinRate}% (${stock.current.macdTrades} tr)</div>`
+                : `<div class="macd-backtest-info" style="margin-top: 0;">Win: ${stock.current.macdWinRate}% (${stock.current.macdTrades} tr)</div>`;
+
+            let milestoneClass = 'normal';
+            if (stock.current.milestone === '52W High') milestoneClass = 'high';
+            else if (stock.current.milestone === '52W Low') milestoneClass = 'low';
+            else if (stock.current.milestone === 'Near EMA50') milestoneClass = 'ema50';
+            else if (stock.current.milestone === 'Near SMA200') milestoneClass = 'sma200';
+            const milestoneHtml = `<span class="badge-milestone ${milestoneClass}">${stock.current.milestone}</span>`;
+
             tr.innerHTML = `
                 <td><strong>${stock.ticker}</strong></td>
                 <td>
@@ -414,6 +617,8 @@ const App = (function() {
                 </td>
                 <td>₹${stock.current.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                 <td>${perfVisualHtml}</td>
+                <td>${momentumShiftHtml}</td>
+                <td>${milestoneHtml}</td>
                 <td class="${stock.current.drawdown > state.filters.drawdown.threshold && state.filters.drawdown.enabled ? 'text-red' : ''}">${stock.current.drawdown}%</td>
                 <td class="${stock.current.rsi < state.filters.rsi.threshold && state.filters.rsi.enabled ? 'text-red' : ''}">${stock.current.rsi ?? '-'}</td>
                 <td>${stock.current.adx ?? '-'}</td>
@@ -1108,7 +1313,16 @@ const App = (function() {
             if (savedToken) document.getElementById('zerodha-access-token').value = savedToken;
             if (savedGemini) document.getElementById('gemini-api-key').value = savedGemini;
 
-            if (savedKey && savedToken) {
+            const isPreconfigZerodha = (typeof SERVER_HAS_ZERODHA !== 'undefined' && SERVER_HAS_ZERODHA);
+            if (isPreconfigZerodha) {
+                document.getElementById('zerodha-api-key').placeholder = "Preconfigured in .env";
+                document.getElementById('zerodha-access-token').placeholder = "Preconfigured in .env";
+            }
+            if (typeof SERVER_HAS_GEMINI !== 'undefined' && SERVER_HAS_GEMINI) {
+                document.getElementById('gemini-api-key').placeholder = "Preconfigured in .env";
+            }
+
+            if ((savedKey && savedToken) || isPreconfigZerodha) {
                 // Pre-populate some index tickers
                 fetchZerodhaData('RELIANCE');
                 fetchZerodhaData('TCS');
@@ -1713,10 +1927,30 @@ const App = (function() {
         backtestTbody.innerHTML = '';
         signalsTbody.innerHTML = '';
         
-        const stocksList = Object.values(state.stocks);
-        if (stocksList.length === 0) {
-            backtestTbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-secondary); font-size: 13px; padding: 20px;">No stocks loaded. Run Nifty 50 or F&O scan to execute backtests.</td></tr>`;
-            signalsTbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-secondary); font-size: 13px; padding: 20px;">No recent signals found. Run a market scan first.</td></tr>`;
+        const query = document.getElementById('grid-search') ? document.getElementById('grid-search').value.toLowerCase() : '';
+        const filterStatusSelect = document.getElementById('sel-filter-status');
+        const filterStatus = filterStatusSelect ? filterStatusSelect.value : 'all';
+        const filterPerfSelect = document.getElementById('sel-filter-performance');
+        const filterPerf = filterPerfSelect ? filterPerfSelect.value : 'all';
+
+        const filteredStocksList = Object.values(state.stocks).filter(stock => {
+            const matchesSearch = stock.ticker.toLowerCase().includes(query) || 
+                                  stock.name.toLowerCase().includes(query);
+            const matchesStatus = filterStatus === 'all' || 
+                                  (filterStatus === 'safe' && stock.status === 'Safe') || 
+                                  (filterStatus === 'knife' && stock.status === 'Knife');
+            const matchesPerf = filterPerf === 'all' || 
+                                (filterPerf === 'momentum-shift' && stock.current.hasMomentumShift) ||
+                                (filterPerf === '1d-winners' && stock.current.pctChange > 0) || 
+                                (filterPerf === '1d-losers' && stock.current.pctChange < 0) || 
+                                (filterPerf === '7d-winners' && stock.current.pctChange7d > 0) || 
+                                (filterPerf === '7d-losers' && stock.current.pctChange7d < 0);
+            return matchesSearch && matchesStatus && matchesPerf;
+        });
+
+        if (filteredStocksList.length === 0) {
+            backtestTbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-secondary); font-size: 13px; padding: 20px;">No stocks match active filters. Run Nifty 50 or F&O scan or adjust filters.</td></tr>`;
+            signalsTbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-secondary); font-size: 13px; padding: 20px;">No recent signals matching filters.</td></tr>`;
             return;
         }
         
@@ -1727,7 +1961,7 @@ const App = (function() {
         const backtestResults = [];
         let allSignals = [];
         
-        stocksList.forEach(stock => {
+        filteredStocksList.forEach(stock => {
             const candlesSlice = stock.candles.slice(-lookbackDays);
             const res = runRSIBacktestJS(candlesSlice);
             backtestResults.push({
@@ -2283,6 +2517,14 @@ const App = (function() {
         if (savedKey) document.getElementById('zerodha-api-key').value = savedKey;
         if (savedToken) document.getElementById('zerodha-access-token').value = savedToken;
         if (savedGemini) document.getElementById('gemini-api-key').value = savedGemini;
+
+        if (typeof SERVER_HAS_ZERODHA !== 'undefined' && SERVER_HAS_ZERODHA) {
+            document.getElementById('zerodha-api-key').placeholder = "Preconfigured in .env";
+            document.getElementById('zerodha-access-token').placeholder = "Preconfigured in .env";
+        }
+        if (typeof SERVER_HAS_GEMINI !== 'undefined' && SERVER_HAS_GEMINI) {
+            document.getElementById('gemini-api-key').placeholder = "Preconfigured in .env";
+        }
 
         if (USER_STATUS !== 'guest') {
             syncJournalWithBackend();

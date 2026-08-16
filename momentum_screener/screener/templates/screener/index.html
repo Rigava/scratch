@@ -118,6 +118,7 @@
                         </div>
                         <select id="sel-filter-performance" style="width: 100%; margin-top: 8px; background: var(--bg-input); border: 1px solid var(--border-input); border-radius: var(--border-radius-sm); padding: 8px 12px; color: var(--text-primary); font-family: var(--font-stack); font-size: 13px; outline: none; cursor: pointer; transition: all 0.2s;">
                             <option value="all" selected>All Performance</option>
+                            <option value="momentum-shift">🚀 Momentum Shift Today</option>
                             <option value="1d-winners">🏆 1D Winners (Day Up)</option>
                             <option value="1d-losers">📉 1D Losers (Day Down)</option>
                             <option value="7d-winners">🔥 7D Winners (7 Days Up)</option>
@@ -289,6 +290,8 @@
                                     <th class="sortable" data-sort="company">Company <i class="fa-solid fa-sort"></i></th>
                                     <th class="sortable" data-sort="price">Price <i class="fa-solid fa-sort"></i></th>
                                     <th class="sortable" data-sort="change1d">Perf (1D/7D) <i class="fa-solid fa-sort"></i></th>
+                                    <th class="sortable" data-sort="macd_win">Mntm Shift (MACD Win%) <i class="fa-solid fa-sort"></i></th>
+                                    <th class="sortable" data-sort="milestone">Key Level / Stance <i class="fa-solid fa-sort"></i></th>
                                     <th class="sortable" data-sort="drawdown">Drawdown <i class="fa-solid fa-sort"></i></th>
                                     <th class="sortable" data-sort="rsi">RSI (14) <i class="fa-solid fa-sort"></i></th>
                                     <th class="sortable" data-sort="adx">ADX (14) <i class="fa-solid fa-sort"></i></th>
@@ -787,6 +790,11 @@
         const PRE_MAPPED_SYMBOLS = {{ supported_symbols|safe }};
         const USER_STATUS = "{{ user_status }}";
         const USER_DAYS_LEFT = {{ days_left }};
+        
+        // Credentials pre-configuration mappings for Superuser / environment bypasses
+        const IS_SUPERUSER = {% if request.user.is_superuser %}true{% else %}false{% endif %};
+        const SERVER_HAS_ZERODHA = IS_SUPERUSER || {% if has_zerodha_creds %}true{% else %}false{% endif %};
+        const SERVER_HAS_GEMINI = IS_SUPERUSER || {% if has_gemini_cred %}true{% else %}false{% endif %};
     </script>
 
     <!-- Project JS dependencies -->
