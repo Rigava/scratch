@@ -223,6 +223,7 @@ const MockDataEngine = (function() {
         getSimulatedData,
         getSimulatedNifty50,
         getSimulatedFO,
+        generateSimulatedList,
         NIFTY50_LIST,
         FO_LIST
     };

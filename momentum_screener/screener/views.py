@@ -809,3 +809,145 @@ def api_journal_clear(request):
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
 
+
+@csrf_exempt
+@login_required
+def admin_sync_data_dump(request):
+    """
+    Superuser-only view to fetch and sync Zerodha daily candles for Nifty F&O stocks.
+    """
+    if not request.user.is_superuser:
+        return JsonResponse({'status': 'error', 'message': 'Forbidden: Admin access required'}, status=403)
+
+    import datetime
+    
+    api_key = os.environ.get('ZERODHA_API_KEY')
+    access_token = os.environ.get('ZERODHA_ACCESS_TOKEN')
+
+    if not api_key or not access_token:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Zerodha credentials (ZERODHA_API_KEY / ZERODHA_ACCESS_TOKEN) are missing from the server .env file.'
+        }, status=400)
+
+    data_dir = os.path.join(Path(__file__).resolve().parent, 'data')
+    os.makedirs(data_dir, exist_ok=True)
+    db_path = os.path.join(data_dir, 'fo_historical_dump.json')
+
+    # Load existing dump
+    existing_dump = {}
+    if os.path.exists(db_path):
+        try:
+            with open(db_path, 'r', encoding='utf-8') as f:
+                existing_dump = json.load(f)
+        except Exception:
+            existing_dump = {}
+
+    today_str = datetime.date.today().strftime('%Y-%m-%d')
+    sync_count = 0
+    updated_tickers = []
+
+    # Parse symbols list from post request
+    requested_symbols = []
+    if request.method == 'POST' and request.body:
+        try:
+            payload = json.loads(request.body)
+            requested_symbols = payload.get('symbols', [])
+        except Exception:
+            pass
+
+    if not requested_symbols:
+        requested_symbols = list(SYMBOL_TO_TOKEN.keys())
+
+    # Loop over symbols
+    for symbol in requested_symbols:
+        symbol = symbol.strip().upper()
+        token = get_instrument_token(symbol)
+        if not token:
+            continue
+
+        candles = existing_dump.get(symbol, [])
+
+        if candles:
+            # Check the last candle's date for incremental sync
+            last_candle = candles[-1]
+            last_date_str = last_candle[0].split('T')[0]
+            if last_date_str >= today_str:
+                continue
+
+            last_date = datetime.datetime.strptime(last_date_str, '%Y-%m-%d').date()
+            start_date = last_date + datetime.timedelta(days=1)
+        else:
+            # First run: retrieve last 5 years of daily historical candles
+            start_date = datetime.date.today() - datetime.timedelta(days=5 * 365)
+
+        start_str = start_date.strftime('%Y-%m-%d')
+
+        # Connect directly to Zerodha Kite historical URL
+        url = f"https://api.kite.trade/instruments/historical/{token}/day"
+        headers = {
+            'X-Kite-Version': '3',
+            'Authorization': f'token {api_key}:{access_token}',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+        }
+        params = {
+            'from': start_str,
+            'to': today_str
+        }
+
+        try:
+            response = requests.get(url, headers=headers, params=params, timeout=12)
+            if response.status_code == 200:
+                res_data = response.json()
+                new_candles = res_data.get('data', {}).get('candles', [])
+                if new_candles:
+                    if not candles:
+                        candles = new_candles
+                    else:
+                        # Append and filter duplicates based on Split Date
+                        existing_dates = {c[0].split('T')[0] for c in candles}
+                        for nc in new_candles:
+                            d_str = nc[0].split('T')[0]
+                            if d_str not in existing_dates:
+                                candles.append(nc)
+
+                    existing_dump[symbol] = candles
+                    sync_count += len(new_candles)
+                    updated_tickers.append(symbol)
+        except Exception:
+            pass
+
+    # Save cache file if records were updated
+    if updated_tickers:
+        with open(db_path, 'w', encoding='utf-8') as f:
+            json.dump(existing_dump, f)
+
+    return JsonResponse({
+        'status': 'success',
+        'message': 'Successfully completed offline historical simulation sync.',
+        'sync_count': sync_count,
+        'updated_tickers_count': len(updated_tickers),
+        'updated_tickers': updated_tickers
+    })
+
+
+@require_GET
+def simulation_dump_view(request):
+    """
+    Returns the cached offline simulation historical candles database.
+    """
+    data_dir = os.path.join(Path(__file__).resolve().parent, 'data')
+    db_path = os.path.join(data_dir, 'fo_historical_dump.json')
+    if os.path.exists(db_path):
+        try:
+            with open(db_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            return JsonResponse({'status': 'success', 'data': data})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': f"Failed to load cache: {str(e)}"}, status=500)
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'No cached offline simulation dump found. Please run Admin Sync first.'
+        }, status=404)
+

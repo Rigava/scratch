@@ -929,9 +929,44 @@ const App = (function() {
 
     // --- Data Loaders (Simulation vs. Zerodha Proxy) ---
 
-    // Load static high-fidelity simulation pool
-    function loadSimulationData() {
+    async function loadSimulationData() {
+        showScanProgress(true, "Checking server for offline historical dump...", "0%", 0);
+        try {
+            const response = await fetch('/api/simulation/dump/?_t=' + Date.now());
+            if (response.ok) {
+                const result = await response.json();
+                if (result.status === 'success' && result.data) {
+                    state.stocks = {};
+                    for (const [symbol, candles] of Object.entries(result.data)) {
+                        const parsedCandles = candles.map(c => ({
+                            date: c[0].split('T')[0],
+                            open: c[1],
+                            high: c[2],
+                            low: c[3],
+                            close: c[4],
+                            volume: c[5]
+                        }));
+                        state.stocks[symbol] = {
+                            ticker: symbol,
+                            name: `${symbol} Equity`,
+                            candles: parsedCandles
+                        };
+                        processStockIndicators(state.stocks[symbol]);
+                    }
+                    showScanProgress(false);
+                    hydrateActiveJournalTickers();
+                    renderScreenerGrid();
+                    console.log("Loaded actual historical F&O data dump from server!");
+                    return;
+                }
+            }
+        } catch (e) {
+            console.warn("Server offline dump fetch failed, falling back to mock procedural generator.", e);
+        }
+
+        // Fallback to procedurally generated mock data
         state.stocks = MockDataEngine.getSimulatedData();
+        showScanProgress(false);
         hydrateActiveJournalTickers();
         renderScreenerGrid();
     }
@@ -1182,12 +1217,50 @@ const App = (function() {
             closeDetailDrawer();
             
             showScanProgress(true, `Initializing simulated ${listType.toUpperCase()} scan...`, `0 / ${symbols.length}`, 0);
-            
-            let simulatedPool = listType === 'nifty50' ? MockDataEngine.getSimulatedNifty50() : MockDataEngine.getSimulatedFO();
+
+            // Fetch the cached dump from the server to check for actual historical F&O data
+            let historicalDump = null;
+            try {
+                const response = await fetch('/api/simulation/dump/?_t=' + Date.now());
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.status === 'success' && result.data) {
+                        historicalDump = result.data;
+                    }
+                }
+            } catch (e) {
+                console.warn("Failed to check server historical dump, using procedural fallback.", e);
+            }
+
+            let simulatedPool = {};
+            if (historicalDump) {
+                for (const [symbol, candles] of Object.entries(historicalDump)) {
+                    const parsedCandles = candles.map(c => ({
+                        date: c[0].split('T')[0],
+                        open: c[1],
+                        high: c[2],
+                        low: c[3],
+                        close: c[4],
+                        volume: c[5]
+                    }));
+                    simulatedPool[symbol] = {
+                        ticker: symbol,
+                        name: `${symbol} Equity`,
+                        candles: parsedCandles
+                    };
+                }
+            } else {
+                simulatedPool = listType === 'nifty50' ? MockDataEngine.getSimulatedNifty50() : MockDataEngine.getSimulatedFO();
+            }
             
             for (let i = 0; i < symbols.length; i++) {
                 const sym = symbols[i];
-                state.stocks[sym] = simulatedPool[sym];
+                if (simulatedPool[sym]) {
+                    state.stocks[sym] = simulatedPool[sym];
+                } else {
+                    const fallbackSim = MockDataEngine.generateSimulatedList([sym]);
+                    state.stocks[sym] = fallbackSim[sym];
+                }
                 processStockIndicators(state.stocks[sym]);
                 renderScreenerGrid();
                 
@@ -1490,6 +1563,87 @@ const App = (function() {
             renderScreenerGrid();
             if (state.activeTicker) openDetailDrawer(state.activeTicker);
         });
+
+        // Admin Sync Controls
+        const btnAdminSync = document.getElementById('btn-admin-sync-dump');
+        const syncStatusDiv = document.getElementById('admin-sync-status');
+        if (btnAdminSync && syncStatusDiv) {
+            btnAdminSync.addEventListener('click', async () => {
+                btnAdminSync.disabled = true;
+                syncStatusDiv.style.color = 'var(--text-secondary)';
+                syncStatusDiv.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Initializing historical F&O dump sync...';
+
+                try {
+                    // Extract CSRF token from cookie
+                    const getCookie = (name) => {
+                        let cookieValue = null;
+                        if (document.cookie && document.cookie !== '') {
+                            const cookies = document.cookie.split(';');
+                            for (let i = 0; i < cookies.length; i++) {
+                                const cookie = cookies[i].trim();
+                                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                    break;
+                                }
+                            }
+                        }
+                        return cookieValue;
+                    };
+                    const csrftoken = getCookie('csrftoken');
+
+                    // Compile all symbols to sync
+                    const allSymbols = [...new Set([...MockDataEngine.NIFTY50_LIST, ...MockDataEngine.FO_LIST])];
+                    const batchSize = 5;
+                    const batches = [];
+                    for (let i = 0; i < allSymbols.length; i += batchSize) {
+                        batches.push(allSymbols.slice(i, i + batchSize));
+                    }
+
+                    let totalSyncCount = 0;
+                    let totalUpdatedTickers = 0;
+
+                    for (let i = 0; i < batches.length; i++) {
+                        const batch = batches[i];
+                        const pct = Math.round(((i + 1) / batches.length) * 100);
+                        syncStatusDiv.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Syncing batch ${i + 1}/${batches.length} (${pct}%)...<br><span style="font-size:9px; opacity:0.7;">[${batch.join(', ')}]</span>`;
+
+                        const response = await fetch('/api/admin/sync-dump/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrftoken
+                            },
+                            body: JSON.stringify({ symbols: batch })
+                        });
+
+                        if (!response.ok) {
+                            const err = await response.json();
+                            throw new Error(err.message || `HTTP ${response.status}`);
+                        }
+
+                        const result = await response.json();
+                        if (result.status === 'success') {
+                            totalSyncCount += result.sync_count;
+                            totalUpdatedTickers += result.updated_tickers_count;
+                        }
+                    }
+
+                    syncStatusDiv.style.color = 'var(--color-safe)';
+                    syncStatusDiv.innerHTML = `<i class="fa-solid fa-circle-check"></i> Sync complete! Synced ${totalSyncCount} candles across ${totalUpdatedTickers} tickers.`;
+
+                    // If current mode is simulation, reload data to reflect the changes
+                    if (state.dataSource === 'simulation') {
+                        await loadSimulationData();
+                    }
+                } catch (err) {
+                    console.error("Admin sync failed:", err);
+                    syncStatusDiv.style.color = 'var(--color-knife)';
+                    syncStatusDiv.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Sync aborted: ${err.message}`;
+                } finally {
+                    btnAdminSync.disabled = false;
+                }
+            });
+        }
 
         // Close Detail Drawer Bindings
         document.getElementById('btn-close-detail').addEventListener('click', closeDetailDrawer);

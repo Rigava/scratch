@@ -12,6 +12,8 @@ urlpatterns = [
     path('guest-trial/', views.guest_trial_view, name='guest_trial'),
     path('api/historical/', views.historical_proxy_view, name='historical_proxy'),
     path('api/generate-campaign/', views.generate_campaign_view, name='generate_campaign'),
+    path('api/admin/sync-dump/', views.admin_sync_data_dump, name='admin_sync_data_dump'),
+    path('api/simulation/dump/', views.simulation_dump_view, name='simulation_dump_view'),
     
     # Journal API routes
     path('api/journal/', views.api_journal_get, name='api_journal_get'),
