@@ -1575,7 +1575,26 @@ const App = (function() {
                     gpayProcessing.classList.add('hidden');
                     gpaySuccess.classList.add('hidden');
                     document.getElementById('gpay-upi-id').value = '';
+                    document.getElementById('gpay-utr-id').value = '';
                     
+                    // Construct UPI payment URI
+                    const upiId = (typeof DEVELOPER_UPI_ID !== 'undefined' && DEVELOPER_UPI_ID) ? DEVELOPER_UPI_ID : 'arunj@okaxis';
+                    const upiUri = `upi://pay?pa=${upiId}&pn=Aegis%20Premium&am=299.00&cu=INR&tn=Premium%20Upgrade`;
+                    
+                    // Render dynamic QR code locally using qrcode.min.js (works offline, no external API calls)
+                    const qrcodeContainer = document.getElementById('gpay-qrcode-container');
+                    if (qrcodeContainer && typeof QRCode !== 'undefined') {
+                        qrcodeContainer.innerHTML = '';
+                        new QRCode(qrcodeContainer, {
+                            text: upiUri,
+                            width: 120,
+                            height: 120,
+                            colorDark: "#000000",
+                            colorLight: "#ffffff",
+                            correctLevel: QRCode.CorrectLevel.M
+                        });
+                    }
+
                     // Show modal
                     gpayModal.classList.remove('hidden');
                 }
@@ -1595,16 +1614,32 @@ const App = (function() {
         if (btnGPaySubmit) {
             btnGPaySubmit.addEventListener('click', async () => {
                 const upiVal = document.getElementById('gpay-upi-id').value.trim();
+                const utrVal = document.getElementById('gpay-utr-id').value.trim();
+
                 if (!upiVal) {
-                    alert('Please enter a valid GPay UPI ID or phone number to pay ₹299.');
+                    alert('Please enter a valid GPay UPI ID or phone number.');
                     return;
+                }
+                if (!utrVal) {
+                    alert('Please enter the 12-digit payment transaction UTR / Ref No to verify bank transfer.');
+                    return;
+                }
+
+                // If user is on a mobile device, open the UPI deep link directly to GPay / UPI app
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                const upiId = (typeof DEVELOPER_UPI_ID !== 'undefined' && DEVELOPER_UPI_ID) ? DEVELOPER_UPI_ID : 'arunj@okaxis';
+                const upiUri = `upi://pay?pa=${upiId}&pn=Aegis%20Premium&am=299.00&cu=INR&tn=Premium%20Upgrade`;
+
+                if (isMobile) {
+                    // Redirect to native payment apps (e.g. GPay) on phone
+                    window.location.href = upiUri;
                 }
 
                 // Show processing spinner
                 gpayInput.classList.add('hidden');
                 gpayProcessing.classList.remove('hidden');
 
-                // Simulate payment gateway delay (3s approval wait time)
+                // Simulate payment gateway verification (3s approval wait time)
                 setTimeout(async () => {
                     try {
                         const response = await fetch('/api/upgrade-premium/', {
@@ -1615,7 +1650,8 @@ const App = (function() {
                             body: JSON.stringify({
                                 payment_status: 'success',
                                 provider: 'gpay',
-                                amount: 299.00
+                                amount: 299.00,
+                                utr: utrVal
                             })
                         });
 
@@ -1624,7 +1660,7 @@ const App = (function() {
                             gpaySuccess.classList.remove('hidden');
                         } else {
                             const err = await response.json();
-                            alert(`GPay transaction failed: ${err.message}`);
+                            alert(`GPay verification failed: ${err.message}`);
                             gpayProcessing.classList.add('hidden');
                             gpayInput.classList.remove('hidden');
                         }

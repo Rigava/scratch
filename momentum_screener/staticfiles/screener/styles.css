@@ -1314,4 +1314,90 @@ body.light-theme .badge-milestone.sma200 {
     border-color: rgba(148, 163, 184, 0.15);
 }
 
+/* Mobile Responsive Visual Optimizations */
+@media (max-width: 768px) {
+    /* Header layout optimization */
+    .dashboard-header {
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        text-align: center;
+    }
+
+    .header-pill {
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 8px 12px;
+        gap: 8px;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /* Layout spacing */
+    .dashboard-layout {
+        gap: 16px;
+        padding: 10px;
+    }
+
+    /* Cards */
+    .glass-card {
+        padding: 16px;
+        border-radius: var(--border-radius-md);
+    }
+
+    /* Detail panel modal sizing for full screen */
+    .detail-panel {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 20px 16px !important;
+        border-left: none;
+    }
+
+    /* Grid Controls flex wrap */
+    .grid-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .search-box {
+        max-width: 100%;
+    }
+
+    /* Tables text scaling */
+    .screener-table th, 
+    .screener-table td {
+        padding: 8px 6px;
+        font-size: 11px;
+    }
+
+    .screener-table th {
+        font-size: 10px;
+    }
+
+    /* Stats columns */
+    .stats-summary {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .stat-card {
+        padding: 12px;
+    }
+
+    /* Active campaigns selector wrap */
+    .period-selector-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    /* GPay payment modal responsive optimization */
+    #gpay-modal .glass-card {
+        width: 95% !important;
+        max-width: 380px !important;
+        padding: 20px !important;
+    }
+}
+
 

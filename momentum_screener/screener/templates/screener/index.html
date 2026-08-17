@@ -884,9 +884,9 @@
 
                     <div style="text-align: center; margin: 2px 0;">
                         <span style="font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 6px;">-- OR SCAN BANK QR CODE --</span>
-                        <!-- Dynamic real QR Code image element -->
+                        <!-- Dynamic local QR Code container element -->
                         <div style="display: inline-flex; background: #fff; padding: 10px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
-                            <img id="gpay-qr-image" src="" alt="Scan to Pay" style="width: 120px; height: 120px; display: block; border: none; background: #eee;">
+                            <div id="gpay-qrcode-container" style="width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; background: #fff;"></div>
                         </div>
                     </div>
 
@@ -940,6 +940,7 @@
     </script>
 
     <!-- Project JS dependencies -->
+    <script src="{% static 'screener/qrcode.min.js' %}"></script>
     <script src="{% static 'screener/mockData.js' %}?v=3.5"></script>
     <script src="{% static 'screener/app.js' %}?v=3.5"></script>
 </body>

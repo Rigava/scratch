@@ -1581,10 +1581,18 @@ const App = (function() {
                     const upiId = (typeof DEVELOPER_UPI_ID !== 'undefined' && DEVELOPER_UPI_ID) ? DEVELOPER_UPI_ID : 'arunj@okaxis';
                     const upiUri = `upi://pay?pa=${upiId}&pn=Aegis%20Premium&am=299.00&cu=INR&tn=Premium%20Upgrade`;
                     
-                    // Render dynamic QR code image via free QR Generator API
-                    const qrImg = document.getElementById('gpay-qr-image');
-                    if (qrImg) {
-                        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&color=000000&data=${encodeURIComponent(upiUri)}`;
+                    // Render dynamic QR code locally using qrcode.min.js (works offline, no external API calls)
+                    const qrcodeContainer = document.getElementById('gpay-qrcode-container');
+                    if (qrcodeContainer && typeof QRCode !== 'undefined') {
+                        qrcodeContainer.innerHTML = '';
+                        new QRCode(qrcodeContainer, {
+                            text: upiUri,
+                            width: 120,
+                            height: 120,
+                            colorDark: "#000000",
+                            colorLight: "#ffffff",
+                            correctLevel: QRCode.CorrectLevel.M
+                        });
                     }
 
                     // Show modal
