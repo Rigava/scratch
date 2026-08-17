@@ -9,6 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.db import IntegrityError
 from django.utils import timezone
+from django.core.mail import send_mail
 from .models import UserProfile, TradeJournal, AdminNotification, PaymentVerificationRequest, UserNotification
 import json
 import datetime
@@ -1399,6 +1400,68 @@ def upgrade_premium_view(request):
         # Log notification for Admin
         admin_msg = f"PENDING APPROVAL: User @{request.user.username} (Email: {request.user.email}) submitted ₹{amount} for {tier_name} plan. UPI: {upi_id_val}, UTR: {utr}."
         AdminNotification.objects.create(message=admin_msg)
+
+        # Share emails to Admin and User
+        try:
+            subject_admin = f"[TradeKriya] Action Required: Verify UPI Payment from @{request.user.username}"
+            body_admin = f"""Hello Admin,
+
+A user has submitted a UPI payment reference for verification.
+
+User Details:
+- Username: @{request.user.username}
+- Email: {request.user.email or 'N/A'}
+- Plan Requested: {tier_name}
+- Amount: Rs. {amount:.2f}
+- UPI ID/Phone: {upi_id_val}
+- UTR Reference: {utr}
+
+Please check your bank statement for UTR: {utr} and approve/reject the upgrade request in the TradeKriya Admin Controls Panel.
+
+Regards,
+TradeKriya Platform"""
+
+            subject_user = "[TradeKriya] Payment Verification Request Received"
+            body_user = f"""Hello {request.user.username},
+
+Thank you for choosing TradeKriya! We have received your payment reference for the {tier_name} upgrade.
+
+Transaction Details:
+- Reference UTR: {utr}
+- Amount: Rs. {amount:.2f}
+- Plan: {tier_name}
+
+Our risk team is currently verifying the transaction with our bank statements. Your account tier will be updated automatically as soon as it is confirmed.
+
+You will see a notification on your dashboard when active.
+
+Regards,
+Team TradeKriya"""
+
+            admin_email = os.environ.get('ADMIN_EMAIL', 'admin@tradekriya.com')
+
+            # Send to Admin
+            send_mail(
+                subject=subject_admin,
+                message=body_admin,
+                from_email=None,
+                recipient_list=[admin_email],
+                fail_silently=True
+            )
+            
+            # Send to User
+            if request.user.email:
+                send_mail(
+                    subject=subject_user,
+                    message=body_user,
+                    from_email=None,
+                    recipient_list=[request.user.email],
+                    fail_silently=True
+                )
+                
+            print(f"\n[EMAIL SIMULATION] Sent Payment Verification Pending Mail to Admin ({admin_email}) and User ({request.user.email or 'N/A'}) for UTR: {utr}")
+        except Exception as mail_err:
+            print(f"[EMAIL ERROR] Failed to send verification emails: {mail_err}")
 
         return JsonResponse({
             'status': 'pending', 
