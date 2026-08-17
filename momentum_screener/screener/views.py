@@ -8,8 +8,10 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.db import IntegrityError
-from .models import UserProfile, TradeJournal, AdminNotification
+from django.utils import timezone
+from .models import UserProfile, TradeJournal, AdminNotification, PaymentVerificationRequest, UserNotification
 import json
+import datetime
 from pathlib import Path
 
 def load_env_file(force=False):
@@ -123,9 +125,53 @@ def dashboard_view(request):
     plan_tier = 'standard'
     has_used_trial = False
 
+    user_notifications = []
+    pending_payments = []
+    admin_pending_payments = []
+    pro_expires_at_str = ''
+
     if request.user.is_authenticated:
         username = request.user.username
         profile, created = UserProfile.objects.get_or_create(user=request.user)
+        
+        # Check active subscriptions & trigger auto-downgrades or warnings
+        now = timezone.now()
+        if profile.plan_tier == 'pro':
+            if profile.pro_expires_at and now > profile.pro_expires_at:
+                # Expired! Auto-downgrade.
+                profile.plan_tier = 'standard'
+                profile.pro_expires_at = None
+                profile.save()
+                # Create user notification
+                UserNotification.objects.create(
+                    user=request.user, 
+                    message="Your Pro Analyst subscription has expired and your plan has been downgraded to Standard Free."
+                )
+            elif profile.pro_expires_at:
+                # Calculate active remaining days
+                days_left = profile.days_remaining()
+                # Issue alerts dynamically
+                if days_left <= 7 and days_left > 1:
+                    has_7d = UserNotification.objects.filter(
+                        user=request.user, 
+                        message__contains="expires in 7 days or less"
+                    ).exists()
+                    if not has_7d:
+                        UserNotification.objects.create(
+                            user=request.user,
+                            message=f"Reminder: Your Pro Analyst subscription expires in 7 days or less ({days_left} days remaining). Please repeat/renew your subscription to retain AI conviction features."
+                        )
+                elif days_left <= 1 and days_left >= 0:
+                    has_1d = UserNotification.objects.filter(
+                        user=request.user, 
+                        message__contains="expires tomorrow"
+                    ).exists()
+                    if not has_1d:
+                        UserNotification.objects.create(
+                            user=request.user,
+                            message="Critical Reminder: Your Pro Analyst subscription expires tomorrow! Renew now to avoid automatic downgrade."
+                        )
+        
         plan_tier = profile.plan_tier
         has_used_trial = profile.has_used_trial
         
@@ -136,17 +182,26 @@ def dashboard_view(request):
             if profile.is_premium:
                 user_status = 'premium'
                 days_left = 9999
+            elif profile.plan_tier == 'classic':
+                user_status = 'classic'
+                days_left = 9999
+            elif profile.plan_tier == 'pro':
+                user_status = 'pro'
+                days_left = profile.days_remaining()
             elif profile.is_trial_active() and profile.days_remaining() > 0:
                 user_status = 'trial'
                 days_left = profile.days_remaining()
             else:
-                if profile.plan_tier == 'classic':
-                    user_status = 'classic'
-                elif profile.plan_tier == 'pro':
-                    user_status = 'pro'
-                else:
-                    user_status = 'expired'
+                user_status = 'expired'
                 days_left = 0
+
+        # Load context alerts and requests
+        user_notifications = list(UserNotification.objects.filter(user=request.user, is_read=False).order_by('-created_at'))
+        pending_payments = list(PaymentVerificationRequest.objects.filter(user=request.user, status='pending').order_by('-created_at'))
+        if profile.pro_expires_at:
+            pro_expires_at_str = profile.pro_expires_at.strftime('%Y-%m-%d %H:%M')
+        if request.user.is_superuser:
+            admin_pending_payments = list(PaymentVerificationRequest.objects.filter(status='pending').order_by('-created_at'))
 
     # Force reload environment variables to capture newly pasted variables
     load_env_file(force=True)
@@ -165,6 +220,10 @@ def dashboard_view(request):
         'developer_upi_id': developer_upi_id,
         'plan_tier': plan_tier,
         'has_used_trial': has_used_trial,
+        'user_notifications': user_notifications,
+        'pending_payments': pending_payments,
+        'admin_pending_payments': admin_pending_payments,
+        'pro_expires_at': pro_expires_at_str,
     }
     return render(request, 'screener/index.html', context)
 
@@ -1307,6 +1366,14 @@ def upgrade_premium_view(request):
         if not utr:
             return JsonResponse({'status': 'error', 'message': 'Upgrade rejected: Missing transaction UTR / Ref No.'}, status=400)
 
+        # Enforce UTR must be exactly 12 numeric digits
+        if not utr.isdigit() or len(utr) != 12:
+            return JsonResponse({'status': 'error', 'message': 'Upgrade rejected: UTR / Reference Number must be exactly 12 numeric digits.'}, status=400)
+
+        # Enforce UTR uniqueness to prevent replay attacks
+        if PaymentVerificationRequest.objects.filter(utr=utr).exists():
+            return JsonResponse({'status': 'error', 'message': 'Upgrade rejected: This transaction UTR has already been submitted for verification.'}, status=400)
+
         # Map plan tier based on amount or requested plan
         if amount == 299.00 or requested_plan == 'classic':
             target_tier = 'classic'
@@ -1317,15 +1384,26 @@ def upgrade_premium_view(request):
         else:
             return JsonResponse({'status': 'error', 'message': 'Upgrade rejected: Unknown plan configuration.'}, status=400)
 
-        profile, created = UserProfile.objects.get_or_create(user=request.user)
-        profile.plan_tier = target_tier
-        profile.save()
+        upi_id_val = payload.get('upi_id', '').strip() or payload.get('gpay_upi_id', '').strip() or 'GPay User'
+
+        # Queue verification request in the database
+        PaymentVerificationRequest.objects.create(
+            user=request.user,
+            plan=target_tier,
+            amount=amount,
+            utr=utr,
+            upi_id=upi_id_val,
+            status='pending'
+        )
 
         # Log notification for Admin
-        admin_msg = f"User @{request.user.username} (Email: {request.user.email}) successfully upgraded to {tier_name} plan. Received ₹{amount} via GPay. UTR Ref: {utr}."
+        admin_msg = f"PENDING APPROVAL: User @{request.user.username} (Email: {request.user.email}) submitted ₹{amount} for {tier_name} plan. UPI: {upi_id_val}, UTR: {utr}."
         AdminNotification.objects.create(message=admin_msg)
 
-        return JsonResponse({'status': 'success', 'message': f'Account successfully upgraded to {tier_name}! Received ₹{amount} via Google Pay. Ref: {utr}'})
+        return JsonResponse({
+            'status': 'pending', 
+            'message': f'Payment verification request submitted for {tier_name}! Awaiting admin approval. UTR Ref: {utr}'
+        })
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
@@ -1512,4 +1590,119 @@ def admin_notifications_clear(request):
     
     AdminNotification.objects.all().update(is_read=True)
     return JsonResponse({'status': 'success', 'message': 'All notifications cleared.'})
+
+
+@csrf_exempt
+@login_required
+def admin_verify_payment_view(request):
+    """
+    Approves or rejects a pending payment verification request (superuser only).
+    """
+    if not request.user.is_superuser:
+        return JsonResponse({'status': 'error', 'message': 'Forbidden: Admin access required'}, status=403)
+    
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Only POST method is allowed'}, status=405)
+    
+    try:
+        payload = json.loads(request.body)
+        payment_id = payload.get('payment_id')
+        action = payload.get('action', '').strip().lower() # approve, reject
+        
+        if not payment_id or action not in ['approve', 'reject']:
+            return JsonResponse({'status': 'error', 'message': 'Missing payment_id or invalid action.'}, status=400)
+            
+        payment_req = PaymentVerificationRequest.objects.get(id=payment_id)
+        if payment_req.status != 'pending':
+            return JsonResponse({'status': 'error', 'message': 'Payment request has already been processed.'}, status=400)
+            
+        target_profile = UserProfile.objects.get(user=payment_req.user)
+        
+        if action == 'approve':
+            payment_req.status = 'approved'
+            payment_req.save()
+            
+            # Upgrade user's plan tier
+            target_profile.plan_tier = payment_req.plan
+            if payment_req.plan == 'pro':
+                now = timezone.now()
+                # If they are currently Pro and have time left, extend it! Otherwise start from now
+                base_time = target_profile.pro_expires_at if (target_profile.pro_expires_at and target_profile.pro_expires_at > now) else now
+                target_profile.pro_expires_at = base_time + datetime.timedelta(days=30)
+                tier_label = 'Pro Analyst (Monthly)'
+            else:
+                tier_label = 'Classic Engine (One-time)'
+            target_profile.save()
+            
+            # Create user-facing success alert
+            UserNotification.objects.create(
+                user=payment_req.user,
+                message=f"Upgrade Confirmed! Your payment of Rs. {payment_req.amount:.2f} has been verified. Your account is now active on the {tier_label} plan."
+            )
+            
+            # Log admin notifications audit log
+            AdminNotification.objects.create(
+                message=f"APPROVED: User @{payment_req.user.username}'s upgrade to {payment_req.plan} plan (UTR: {payment_req.utr}) has been confirmed by Admin."
+            )
+            
+            return JsonResponse({'status': 'success', 'message': f'Successfully approved payment and upgraded user {payment_req.user.username}.'})
+            
+        elif action == 'reject':
+            payment_req.status = 'rejected'
+            payment_req.save()
+            
+            # Create user-facing rejection alert
+            UserNotification.objects.create(
+                user=payment_req.user,
+                message=f"Rejection Alert: Payment reference UTR: {payment_req.utr} (Rs. {payment_req.amount:.2f}) could not be verified in our bank statement. Please check details and resubmit."
+            )
+            
+            # Log admin notifications audit log
+            AdminNotification.objects.create(
+                message=f"REJECTED: User @{payment_req.user.username}'s payment (UTR: {payment_req.utr}) was rejected by Admin."
+            )
+            
+            return JsonResponse({'status': 'success', 'message': f'Successfully rejected payment request for user {payment_req.user.username}.'})
+            
+    except PaymentVerificationRequest.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Payment request not found.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@csrf_exempt
+@login_required
+def clear_user_notifications_view(request):
+    """
+    Marks all notifications for the current logged-in user as read.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Only POST method is allowed'}, status=405)
+    
+    UserNotification.objects.filter(user=request.user).update(is_read=True)
+    return JsonResponse({'status': 'success', 'message': 'Notifications marked as read.'})
+
+
+@csrf_exempt
+@login_required
+def admin_pending_payments_list_view(request):
+    """
+    Lists all pending payment verification requests (superuser only).
+    """
+    if not request.user.is_superuser:
+        return JsonResponse({'status': 'error', 'message': 'Forbidden: Admin access required'}, status=403)
+    
+    payments = PaymentVerificationRequest.objects.filter(status='pending').order_by('-created_at')
+    data = []
+    for r in payments:
+        data.append({
+            'id': r.id,
+            'username': r.user.username,
+            'plan': r.plan,
+            'amount': r.amount,
+            'utr': r.utr,
+            'upi_id': r.upi_id,
+            'created_at': r.created_at.strftime('%Y-%m-%d %H:%M')
+        })
+    return JsonResponse({'status': 'success', 'payments': data})
 

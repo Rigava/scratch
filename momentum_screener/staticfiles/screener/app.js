@@ -1591,23 +1591,85 @@ const App = (function() {
                     document.getElementById('gpay-upi-id').value = '';
                     document.getElementById('gpay-utr-id').value = '';
                     
-                    // Construct UPI payment URI
-                    const upiId = (typeof DEVELOPER_UPI_ID !== 'undefined' && DEVELOPER_UPI_ID) ? DEVELOPER_UPI_ID : 'arunj@okaxis';
-                    const upiUri = `upi://pay?pa=${upiId}&pn=TradeKriya%20Premium&am=299.00&cu=INR&tn=Premium%20Upgrade`;
-                    
-                    // Render dynamic QR code locally using qrcode.min.js (works offline, no external API calls)
-                    const qrcodeContainer = document.getElementById('gpay-qrcode-container');
-                    if (qrcodeContainer && typeof QRCode !== 'undefined') {
-                        qrcodeContainer.innerHTML = '';
-                        new QRCode(qrcodeContainer, {
-                            text: upiUri,
-                            width: 120,
-                            height: 120,
-                            colorDark: "#000000",
-                            colorLight: "#ffffff",
-                            correctLevel: QRCode.CorrectLevel.M
-                        });
+                    // Render current plan badge and dynamic plan suggestion selector
+                    const currentPlanBadge = document.getElementById('gpay-current-plan-badge');
+                    const suggestionBox = document.getElementById('gpay-plan-suggestion-box');
+                    const planSelector = document.getElementById('gpay-plan-selector');
+
+                    if (currentPlanBadge) {
+                        let displayName = 'Standard Free';
+                        if (typeof PLAN_TIER !== 'undefined') {
+                            if (PLAN_TIER === 'classic') displayName = 'Classic Engine';
+                            else if (PLAN_TIER === 'pro') displayName = 'Pro Analyst';
+                        }
+                        currentPlanBadge.innerText = displayName;
                     }
+
+                    if (suggestionBox && planSelector) {
+                        planSelector.innerHTML = '';
+                        if (typeof PLAN_TIER !== 'undefined') {
+                            if (PLAN_TIER === 'classic') {
+                                suggestionBox.innerHTML = '<i class="fa-solid fa-crown" style="color:#fbbf24;"></i> You are a Classic member! Upgrade to Pro Analyst for ₹199/month to unlock advanced indicators and AI conviction analyst.';
+                                const opt = document.createElement('option');
+                                opt.value = 'pro';
+                                opt.setAttribute('data-amount', '199');
+                                opt.innerText = 'Pro Analyst (₹199.00 / Month)';
+                                planSelector.appendChild(opt);
+                            } else if (PLAN_TIER === 'pro') {
+                                suggestionBox.innerHTML = '<i class="fa-solid fa-arrows-spin" style="color:#60a5fa;"></i> Repeat subscription for next month. Renew Pro Analyst for ₹199 to keep access to all features.';
+                                const opt = document.createElement('option');
+                                opt.value = 'pro';
+                                opt.setAttribute('data-amount', '199');
+                                opt.innerText = 'Pro Analyst Renewal (₹199.00 / Month)';
+                                planSelector.appendChild(opt);
+                            } else {
+                                suggestionBox.innerHTML = '<i class="fa-solid fa-sparkles" style="color:#a78bfa;"></i> Standard Free plan. Upgrade to Classic (₹299 one-time) for technical strategies or Pro (₹199/mo) for everything.';
+                                const opt1 = document.createElement('option');
+                                opt1.value = 'classic';
+                                opt1.setAttribute('data-amount', '299');
+                                opt1.innerText = 'Classic Engine (₹299.00 One-time)';
+                                const opt2 = document.createElement('option');
+                                opt2.value = 'pro';
+                                opt2.setAttribute('data-amount', '199');
+                                opt2.innerText = 'Pro Analyst (₹199.00 / Month)';
+                                planSelector.appendChild(opt1);
+                                planSelector.appendChild(opt2);
+                            }
+                        }
+                    }
+
+                    // Helper function to dynamically update payment link and redraw QR code
+                    function drawGPayQR() {
+                        const selectedOption = planSelector ? planSelector.options[planSelector.selectedIndex] : null;
+                        const plan = planSelector ? planSelector.value : 'classic';
+                        const amount = selectedOption ? selectedOption.getAttribute('data-amount') : '299';
+                        
+                        const upiId = (typeof DEVELOPER_UPI_ID !== 'undefined' && DEVELOPER_UPI_ID) ? DEVELOPER_UPI_ID : 'arunj@okaxis';
+                        const planLabel = plan === 'classic' ? 'Classic%20Engine%20Upgrade' : 'Pro%20Analyst%20Subscription';
+                        const upiUri = `upi://pay?pa=${upiId}&pn=TradeKriya&am=${amount}.00&cu=INR&tn=${planLabel}`;
+                        
+                        const qrcodeContainer = document.getElementById('gpay-qrcode-container');
+                        if (qrcodeContainer && typeof QRCode !== 'undefined') {
+                            qrcodeContainer.innerHTML = '';
+                            new QRCode(qrcodeContainer, {
+                                text: upiUri,
+                                width: 120,
+                                height: 120,
+                                colorDark: "#000000",
+                                colorLight: "#ffffff",
+                                correctLevel: QRCode.CorrectLevel.M
+                            });
+                        }
+                    }
+
+                    // Bind dynamic changes to plan selection
+                    if (planSelector) {
+                        planSelector.removeEventListener('change', drawGPayQR);
+                        planSelector.addEventListener('change', drawGPayQR);
+                    }
+
+                    // Initial draw
+                    drawGPayQR();
 
                     // Show modal
                     gpayModal.classList.remove('hidden');
@@ -1629,23 +1691,30 @@ const App = (function() {
             btnGPaySubmit.addEventListener('click', async () => {
                 const upiVal = document.getElementById('gpay-upi-id').value.trim();
                 const utrVal = document.getElementById('gpay-utr-id').value.trim();
+                const planSelector = document.getElementById('gpay-plan-selector');
+                const plan = planSelector ? planSelector.value : 'classic';
+                const amount = plan === 'classic' ? 299.00 : 199.00;
 
                 if (!upiVal) {
                     alert('Please enter a valid GPay UPI ID or phone number.');
                     return;
                 }
                 if (!utrVal) {
-                    alert('Please enter the 12-digit payment transaction UTR / Ref No to verify bank transfer.');
+                    alert('Please enter the 12-digit payment transaction UTR / Ref No.');
+                    return;
+                }
+                if (!/^\d{12}$/.test(utrVal)) {
+                    alert('Invalid transaction reference! The UTR Number must be exactly 12 numeric digits.');
                     return;
                 }
 
-                // If user is on a mobile device, open the UPI deep link directly to GPay / UPI app
+                // If user is on a mobile device, open the UPI deep link directly
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                 const upiId = (typeof DEVELOPER_UPI_ID !== 'undefined' && DEVELOPER_UPI_ID) ? DEVELOPER_UPI_ID : 'arunj@okaxis';
-                const upiUri = `upi://pay?pa=${upiId}&pn=TradeKriya%20Premium&am=299.00&cu=INR&tn=Premium%20Upgrade`;
+                const planLabel = plan === 'classic' ? 'Classic%20Engine%20Upgrade' : 'Pro%20Analyst%20Subscription';
+                const upiUri = `upi://pay?pa=${upiId}&pn=TradeKriya&am=${amount}.00&cu=INR&tn=${planLabel}`;
 
                 if (isMobile) {
-                    // Redirect to native payment apps (e.g. GPay) on phone
                     window.location.href = upiUri;
                 }
 
@@ -1653,7 +1722,7 @@ const App = (function() {
                 gpayInput.classList.add('hidden');
                 gpayProcessing.classList.remove('hidden');
 
-                // Simulate payment gateway verification (3s approval wait time)
+                // Verify transaction code
                 setTimeout(async () => {
                     try {
                         const response = await fetch('/api/upgrade-premium/', {
@@ -1664,17 +1733,28 @@ const App = (function() {
                             body: JSON.stringify({
                                 payment_status: 'success',
                                 provider: 'gpay',
-                                amount: 299.00,
-                                utr: utrVal
+                                amount: amount,
+                                plan: plan,
+                                utr: utrVal,
+                                upi_id: upiVal
                             })
                         });
 
                         if (response.ok) {
+                            const data = await response.json();
+                            
+                            // Customize success messages to explain manual UTR verification
+                            const title = document.getElementById('gpay-success-title');
+                            const desc = document.getElementById('gpay-success-message');
+                            
+                            if (title) title.innerText = 'Request Submitted!';
+                            if (desc) desc.innerText = `Your payment of ₹${amount}.00 (UTR: ${utrVal}) has been sent for verification. Upgrade will activate shortly once approved by Admin.`;
+                            
                             gpayProcessing.classList.add('hidden');
                             gpaySuccess.classList.remove('hidden');
                         } else {
                             const err = await response.json();
-                            alert(`GPay verification failed: ${err.message}`);
+                            alert(`Verification failed: ${err.message}`);
                             gpayProcessing.classList.add('hidden');
                             gpayInput.classList.remove('hidden');
                         }
@@ -2103,6 +2183,109 @@ const App = (function() {
             }
         }
 
+        const adminPendingPaymentsContainer = document.getElementById('admin-pending-payments-list');
+        if (adminPendingPaymentsContainer) {
+            async function refreshAdminPendingPayments() {
+                try {
+                    const response = await fetch('/api/admin/payments/pending/');
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        adminPendingPaymentsContainer.innerHTML = '';
+                        if (result.payments && result.payments.length > 0) {
+                            result.payments.forEach(pay => {
+                                const el = document.createElement('div');
+                                el.style.cssText = 'background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 8px; border-radius: 6px; font-size: 10px; color: var(--text-secondary); line-height: 1.4; margin-bottom: 6px;';
+                                el.innerHTML = `
+                                    <div style="display: flex; justify-content: space-between; font-weight: 600; color: var(--text-primary); margin-bottom: 2px;">
+                                        <span>@${pay.username}</span>
+                                        <span style="text-transform: uppercase; color: #60a5fa;">${pay.plan}</span>
+                                    </div>
+                                    <div>Amt: ₹${pay.amount}</div>
+                                    <div>UTR: <strong style="color: var(--text-primary);">${pay.utr}</strong></div>
+                                    <div>UPI: ${pay.upi_id}</div>
+                                    <div style="display: flex; gap: 6px; margin-top: 6px;">
+                                        <button class="approve-pay-btn primary-btn" data-id="${pay.id}" style="font-size: 9px; padding: 2px 8px; margin: 0; background: #10b981; border: none; cursor: pointer; color: #fff; border-radius: 4px; font-weight: 600;">Approve</button>
+                                        <button class="reject-pay-btn primary-btn" data-id="${pay.id}" style="font-size: 9px; padding: 2px 8px; margin: 0; background: #ef4444; border: none; cursor: pointer; color: #fff; border-radius: 4px; font-weight: 600;">Reject</button>
+                                    </div>
+                                `;
+                                adminPendingPaymentsContainer.appendChild(el);
+                            });
+
+                            // Attach click listeners to Approve buttons
+                            adminPendingPaymentsContainer.querySelectorAll('.approve-pay-btn').forEach(btn => {
+                                btn.addEventListener('click', async () => {
+                                    const payId = btn.getAttribute('data-id');
+                                    if (confirm('Verify payment and approve upgrade?')) {
+                                        btn.disabled = true;
+                                        btn.innerText = 'Approving...';
+                                        try {
+                                            const res = await fetch('/api/admin/payments/verify/', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ payment_id: payId, action: 'approve' })
+                                            });
+                                            if (res.ok) {
+                                                alert('Payment request approved.');
+                                                refreshAdminPendingPayments();
+                                                if (typeof refreshAdminUserList === 'function') refreshAdminUserList();
+                                            } else {
+                                                const err = await res.json();
+                                                alert('Failed: ' + err.message);
+                                            }
+                                        } catch (e) {
+                                            alert('Error: ' + e.message);
+                                        } finally {
+                                            btn.disabled = false;
+                                            btn.innerText = 'Approve';
+                                        }
+                                    }
+                                });
+                            });
+
+                            // Attach click listeners to Reject buttons
+                            adminPendingPaymentsContainer.querySelectorAll('.reject-pay-btn').forEach(btn => {
+                                btn.addEventListener('click', async () => {
+                                    const payId = btn.getAttribute('data-id');
+                                    if (confirm('Reject payment request?')) {
+                                        btn.disabled = true;
+                                        btn.innerText = 'Rejecting...';
+                                        try {
+                                            const res = await fetch('/api/admin/payments/verify/', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ payment_id: payId, action: 'reject' })
+                                            });
+                                            if (res.ok) {
+                                                alert('Payment request rejected.');
+                                                refreshAdminPendingPayments();
+                                            } else {
+                                                const err = await res.json();
+                                                alert('Failed: ' + err.message);
+                                            }
+                                        } catch (e) {
+                                            alert('Error: ' + e.message);
+                                        } finally {
+                                            btn.disabled = false;
+                                            btn.innerText = 'Reject';
+                                        }
+                                    }
+                                });
+                            });
+                        } else {
+                            adminPendingPaymentsContainer.innerHTML = '<span style="font-size: 10px; color: var(--text-muted);">No pending approvals.</span>';
+                        }
+                    }
+                } catch (e) {
+                    console.error("Failed to load pending payments:", e);
+                    adminPendingPaymentsContainer.innerHTML = '<span style="font-size: 9px; color: var(--color-knife);">Error loading pending approvals.</span>';
+                }
+            }
+
+            refreshAdminPendingPayments();
+            setInterval(refreshAdminPendingPayments, 10000);
+        }
+
         // Close Detail Drawer Bindings
         document.getElementById('btn-close-detail').addEventListener('click', closeDetailDrawer);
         document.getElementById('detail-overlay').addEventListener('click', closeDetailDrawer);
@@ -2119,6 +2302,26 @@ const App = (function() {
             if (e.target === guideModal) {
                 guideModal.classList.add('hidden');
             }
+        });
+
+        // User Notifications Dismiss Bindings
+        const clearNotifBtns = document.querySelectorAll('.clear-user-notif-btn');
+        clearNotifBtns.forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const banner = btn.closest('.user-alert-banner');
+                try {
+                    const res = await fetch('/api/notifications/clear/', { method: 'POST' });
+                    if (res.ok) {
+                        banner.remove();
+                        const container = document.querySelector('.user-alerts-block');
+                        if (container && container.querySelectorAll('.user-alert-banner').length === 0) {
+                            container.remove();
+                        }
+                    }
+                } catch (e) {
+                    console.error("Failed to clear notification:", e);
+                }
+            });
         });
 
         // Tab switching binds

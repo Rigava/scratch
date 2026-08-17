@@ -223,6 +223,14 @@
                         </div>
                     </div>
 
+                    <!-- Admin Payment Approvals Panel -->
+                    <div class="config-group" style="border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 15px; margin-top: 15px;">
+                        <strong style="font-size: 11px; text-transform: uppercase; color: var(--accent-indigo); display: block; margin-bottom: 8px;"><i class="fa-solid fa-square-check"></i> Pending Approvals</strong>
+                        <div id="admin-pending-payments-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto; padding-right: 4px;">
+                            <span style="font-size: 11px; color: var(--text-secondary);">Loading pending approvals...</span>
+                        </div>
+                    </div>
+
                     <!-- Admin Payment Notifications Feed -->
                     <div class="config-group" style="border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 15px; margin-top: 15px;">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
@@ -251,6 +259,28 @@
                         <i class="fa-solid fa-book"></i> Trading Journal
                     </button>
                 </div>
+
+                <!-- User Notification Banner Block -->
+                {% if user_notifications or pending_payments %}
+                <div class="user-alerts-block" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
+                    {% for notif in user_notifications %}
+                    <div class="user-alert-banner glass-card" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(233, 128, 93, 0.08); border: 1px solid rgba(233, 128, 93, 0.2); border-radius: var(--border-radius-md); animation: fadeIn 0.3s ease;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fa-solid fa-circle-exclamation" style="color: var(--accent-orange); font-size: 16px;"></i>
+                            <span style="font-size: 12px; color: var(--text-primary); font-weight: 500;">{{ notif.message }}</span>
+                        </div>
+                        <button class="clear-user-notif-btn" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 11px; font-family: var(--font-stack);"><i class="fa-solid fa-xmark"></i> Dismiss</button>
+                    </div>
+                    {% endfor %}
+                    
+                    {% for pay in pending_payments %}
+                    <div class="user-alert-banner glass-card" style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: rgba(96, 165, 250, 0.08); border: 1px solid rgba(96, 165, 250, 0.2); border-radius: var(--border-radius-md);">
+                        <div class="spinner" style="width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.05); border-top-color: #60a5fa; border-radius: 50%; animation: spin 1s linear infinite; flex-shrink: 0;"></div>
+                        <span style="font-size: 12px; color: var(--text-primary); font-weight: 500;">Upgrade Awaiting Verification: Plan: <strong style="text-transform: uppercase; color: #60a5fa;">{{ pay.plan }}</strong> (UTR: {{ pay.utr }}). We are matching statement details.</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
 
                 <!-- Stats Overview -->
                 <div id="screener-stats-bar" class="stats-bar">
@@ -886,6 +916,13 @@
 
             <!-- Order Summary Card -->
             <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255,255,255,0.05); padding: 16px; border-radius: 8px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; margin-bottom: 4px;">
+                    <span style="font-size: 11px; color: var(--text-secondary); font-weight: 500;">Current Plan:</span>
+                    <span id="gpay-current-plan-badge" style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--accent-indigo); background: rgba(88, 80, 236, 0.1); padding: 2px 8px; border-radius: 4px;">Standard</span>
+                </div>
+                <div id="gpay-plan-suggestion-box" style="font-size: 11px; color: var(--text-primary); line-height: 1.4; padding: 4px 0; font-weight: 500;">
+                    <!-- Suggestions will populate here -->
+                </div>
                 <label style="font-size: 11px; color: var(--text-secondary); font-weight: 500;">Select Upgrade License Plan:</label>
                 <select id="gpay-plan-selector" style="width: 100%; background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); padding: 8px; border-radius: 6px; outline: none; font-size: 13px; font-family: var(--font-stack); cursor: pointer;">
                     <option value="classic" data-amount="299">Classic Engine (₹299.00 One-time)</option>
@@ -939,8 +976,8 @@
                         <i class="fa-solid fa-check"></i>
                     </div>
                     <div>
-                        <h4 style="font-size: 15px; font-weight: 700; color: #10b981;">Payment Successful!</h4>
-                        <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px; line-height: 1.4;">Your account has been successfully upgraded to Aegis Premium.</p>
+                        <h4 id="gpay-success-title" style="font-size: 15px; font-weight: 700; color: #10b981;">Payment Successful!</h4>
+                        <p id="gpay-success-message" style="font-size: 12px; color: var(--text-secondary); margin-top: 4px; line-height: 1.4;">Your account has been successfully upgraded to TradeKriya Premium.</p>
                     </div>
                     <button id="btn-gpay-success-done" class="primary-btn" style="background: #10b981; border: none; width: 100%; font-size: 12px; padding: 10px; cursor: pointer;">Go to Dashboard</button>
                 </div>

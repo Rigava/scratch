@@ -21,6 +21,9 @@ urlpatterns = [
     path('api/admin/upgrade-user/', views.admin_upgrade_user, name='admin_upgrade_user'),
     path('api/admin/notifications/', views.admin_notifications_list, name='admin_notifications_list'),
     path('api/admin/notifications/clear/', views.admin_notifications_clear, name='admin_notifications_clear'),
+    path('api/admin/payments/verify/', views.admin_verify_payment_view, name='admin_verify_payment'),
+    path('api/admin/payments/pending/', views.admin_pending_payments_list_view, name='admin_pending_payments_list'),
+    path('api/notifications/clear/', views.clear_user_notifications_view, name='clear_user_notifications'),
     path('api/simulation/dump/', views.simulation_dump_view, name='simulation_dump_view'),
     
     # Journal API routes

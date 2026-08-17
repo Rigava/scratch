@@ -16,6 +16,7 @@ class UserProfile(models.Model):
     is_premium = models.BooleanField(default=False)
     plan_tier = models.CharField(max_length=15, choices=PLAN_TIERS, default='standard')
     has_used_trial = models.BooleanField(default=False)
+    pro_expires_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.user.username}'s Profile"
@@ -25,14 +26,27 @@ class UserProfile(models.Model):
         return self.trial_duration_days + self.extended_duration_days
 
     def is_trial_active(self):
-        if self.is_premium or self.plan_tier in ['classic', 'pro']:
+        if self.is_premium or self.plan_tier == 'classic':
             return True
+        if self.plan_tier == 'pro':
+            if self.pro_expires_at:
+                return timezone.now() < self.pro_expires_at
+            return False
         expiry = self.trial_started_at + datetime.timedelta(days=self.total_allowed_days)
         return timezone.now() < expiry
 
     def days_remaining(self):
-        if self.is_premium or self.plan_tier in ['classic', 'pro']:
+        if self.is_premium or self.plan_tier == 'classic':
             return 9999
+        if self.plan_tier == 'pro':
+            if not self.pro_expires_at:
+                return 0
+            delta = self.pro_expires_at - timezone.now()
+            total_seconds = delta.total_seconds()
+            if total_seconds <= 0:
+                return 0
+            import math
+            return math.ceil(total_seconds / 86400)
         expiry = self.trial_started_at + datetime.timedelta(days=self.total_allowed_days)
         delta = expiry - timezone.now()
         total_seconds = delta.total_seconds()
@@ -68,4 +82,32 @@ class AdminNotification(models.Model):
 
     def __str__(self):
         return f"Notification - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+
+
+class PaymentVerificationRequest(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Pending Approval'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments')
+    plan = models.CharField(max_length=15)
+    amount = models.FloatField()
+    utr = models.CharField(max_length=20, unique=True)
+    upi_id = models.CharField(max_length=50)
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Payment UTR {self.utr} - {self.user.username} ({self.status})"
+
+
+class UserNotification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_notifications')
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Notification to {self.user.username} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
 
