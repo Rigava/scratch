@@ -4,11 +4,18 @@ from django.utils import timezone
 import datetime
 
 class UserProfile(models.Model):
+    PLAN_TIERS = (
+        ('standard', 'Standard (Free)'),
+        ('classic', 'Classic (₹299 One-time)'),
+        ('pro', 'Pro Analyst (₹199/Month)'),
+    )
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     trial_started_at = models.DateTimeField(default=timezone.now)
     trial_duration_days = models.IntegerField(default=7)
     extended_duration_days = models.IntegerField(default=0)
     is_premium = models.BooleanField(default=False)
+    plan_tier = models.CharField(max_length=15, choices=PLAN_TIERS, default='standard')
+    has_used_trial = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.user.username}'s Profile"
@@ -18,13 +25,13 @@ class UserProfile(models.Model):
         return self.trial_duration_days + self.extended_duration_days
 
     def is_trial_active(self):
-        if self.is_premium:
+        if self.is_premium or self.plan_tier in ['classic', 'pro']:
             return True
         expiry = self.trial_started_at + datetime.timedelta(days=self.total_allowed_days)
         return timezone.now() < expiry
 
     def days_remaining(self):
-        if self.is_premium:
+        if self.is_premium or self.plan_tier in ['classic', 'pro']:
             return 9999
         expiry = self.trial_started_at + datetime.timedelta(days=self.total_allowed_days)
         delta = expiry - timezone.now()
@@ -52,4 +59,13 @@ class TradeJournal(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.ticker} ({self.status})"
+
+
+class AdminNotification(models.Model):
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Notification - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
 

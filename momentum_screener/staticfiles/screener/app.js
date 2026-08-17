@@ -935,8 +935,9 @@ const App = (function() {
 
         const btnAnalyze = document.getElementById('btn-analyze-conviction');
         if (btnAnalyze) {
-            if (USER_STATUS !== 'premium') {
-                btnAnalyze.innerHTML = '<i class="fa-solid fa-lock"></i> Premium Only';
+            const isAIAllowed = USER_STATUS === 'premium' || USER_STATUS === 'pro' || USER_STATUS === 'trial';
+            if (!isAIAllowed) {
+                btnAnalyze.innerHTML = '<i class="fa-solid fa-lock"></i> Pro Analyst Only';
                 btnAnalyze.style.background = 'rgba(255, 255, 255, 0.05)';
                 btnAnalyze.style.border = '1px solid rgba(255, 255, 255, 0.1)';
                 btnAnalyze.style.color = 'var(--text-secondary)';
@@ -1234,8 +1235,9 @@ const App = (function() {
     }
 
     async function runAIConvictionAnalysis() {
-        if (USER_STATUS !== 'premium') {
-            alert('Analyze Conviction is restricted to Premium users only.');
+        const isAIAllowed = USER_STATUS === 'premium' || USER_STATUS === 'pro' || USER_STATUS === 'trial';
+        if (!isAIAllowed) {
+            alert('Analyze Conviction is restricted to Pro Analyst plan users only.');
             return;
         }
 
@@ -1939,7 +1941,11 @@ const App = (function() {
         }
 
         // Admin User License Management
+        // Admin User License Management
         const adminUserListContainer = document.getElementById('admin-user-list');
+        const adminNotificationsListContainer = document.getElementById('admin-notifications-list');
+        const btnClearNotifications = document.getElementById('btn-clear-notifications');
+
         if (adminUserListContainer) {
             async function refreshAdminUserList() {
                 try {
@@ -1953,10 +1959,17 @@ const App = (function() {
                                 const row = document.createElement('div');
                                 row.style.cssText = 'display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 6px; margin-bottom: 4px;';
                                 
+                                let displayStatus = user.status;
+                                if (user.status === 'premium') displayStatus = 'Premium (All)';
+                                else if (user.status === 'classic') displayStatus = 'Classic Engine';
+                                else if (user.status === 'pro') displayStatus = 'Pro Analyst';
+                                else if (user.status === 'trial') displayStatus = 'Trial';
+                                else if (user.status === 'expired') displayStatus = 'Standard (Free)';
+
                                 const info = document.createElement('div');
                                 info.innerHTML = `
                                     <span style="font-size: 11px; font-weight: 600; color: var(--text-primary); display: block;">${user.username}</span>
-                                    <span style="font-size: 9px; font-weight: 500; text-transform: uppercase; color: ${user.status === 'premium' ? '#34d399' : (user.status === 'trial' ? '#60a5fa' : '#f87171')};">${user.status}</span>
+                                    <span style="font-size: 9px; font-weight: 500; text-transform: uppercase; color: ${user.is_premium ? '#34d399' : (user.status === 'trial' ? '#60a5fa' : '#f87171')};">${displayStatus}</span>
                                 `;
                                 row.appendChild(info);
 
@@ -1966,7 +1979,7 @@ const App = (function() {
                                     btnDowngrade.style.cssText = 'font-size: 9px; padding: 3px 8px; margin: 0; background: linear-gradient(135deg, #f87171, #ef4444); border: none; cursor: pointer; color: #fff; border-radius: 4px; font-weight: 600;';
                                     btnDowngrade.innerHTML = '<i class="fa-solid fa-arrow-down"></i> Downgrade';
                                     btnDowngrade.addEventListener('click', async () => {
-                                        if (confirm(`Are you sure you want to downgrade ${user.username} to Standard/Trial?`)) {
+                                        if (confirm(`Are you sure you want to downgrade ${user.username} to Standard Plan?`)) {
                                             btnDowngrade.disabled = true;
                                             btnDowngrade.innerText = 'Updating...';
                                             try {
@@ -1978,7 +1991,7 @@ const App = (function() {
                                                     body: JSON.stringify({ username: user.username })
                                                 });
                                                 if (res.ok) {
-                                                    alert(`Successfully downgraded ${user.username} from Premium.`);
+                                                    alert(`Successfully downgraded ${user.username} to Standard Plan.`);
                                                     refreshAdminUserList();
                                                 } else {
                                                     const err = await res.json();
@@ -1998,7 +2011,13 @@ const App = (function() {
                                     btnUpgrade.style.cssText = 'font-size: 9px; padding: 3px 8px; margin: 0; background: linear-gradient(135deg, #10b981, #059669); border: none; cursor: pointer; color: #fff; border-radius: 4px; font-weight: 600;';
                                     btnUpgrade.innerHTML = '<i class="fa-solid fa-arrow-up"></i> Upgrade';
                                     btnUpgrade.addEventListener('click', async () => {
-                                        if (confirm(`Are you sure you want to upgrade ${user.username} to Premium?`)) {
+                                        const choice = prompt(`Select target plan for ${user.username}. Enter "classic" or "pro":`, "pro");
+                                        if (choice !== null) {
+                                            const cleanChoice = choice.trim().toLowerCase();
+                                            if (cleanChoice !== 'classic' && cleanChoice !== 'pro') {
+                                                alert('Invalid option. Please enter exactly "classic" or "pro".');
+                                                return;
+                                            }
                                             btnUpgrade.disabled = true;
                                             btnUpgrade.innerText = 'Updating...';
                                             try {
@@ -2007,10 +2026,10 @@ const App = (function() {
                                                     headers: {
                                                         'Content-Type': 'application/json'
                                                     },
-                                                    body: JSON.stringify({ username: user.username })
+                                                    body: JSON.stringify({ username: user.username, plan: cleanChoice })
                                                 });
                                                 if (res.ok) {
-                                                    alert(`Successfully upgraded ${user.username} to Premium.`);
+                                                    alert(`Successfully upgraded ${user.username} to ${cleanChoice === 'classic' ? 'Classic Engine' : 'Pro Analyst'}.`);
                                                     refreshAdminUserList();
                                                 } else {
                                                     const err = await res.json();
@@ -2037,6 +2056,51 @@ const App = (function() {
                 }
             }
             refreshAdminUserList();
+        }
+
+        if (adminNotificationsListContainer) {
+            async function refreshAdminNotifications() {
+                try {
+                    const response = await fetch('/api/admin/notifications/');
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        adminNotificationsListContainer.innerHTML = '';
+                        if (result.notifications && result.notifications.length > 0) {
+                            result.notifications.forEach(notif => {
+                                const el = document.createElement('div');
+                                el.style.cssText = 'background: rgba(255,255,255,0.02); border: 1px solid rgba(233,128,93,0.1); padding: 8px; border-radius: 6px; font-size: 10px; color: var(--text-secondary); line-height: 1.4; margin-bottom: 4px;';
+                                el.innerHTML = `
+                                    <div style="font-weight: 600; color: var(--accent-indigo); margin-bottom: 2px;">${notif.created_at}</div>
+                                    <div>${notif.message}</div>
+                                `;
+                                adminNotificationsListContainer.appendChild(el);
+                            });
+                        } else {
+                            adminNotificationsListContainer.innerHTML = '<span style="font-size: 10px; color: var(--text-muted);">No unread notifications.</span>';
+                        }
+                    }
+                } catch (e) {
+                    console.error("Failed to load notifications feed:", e);
+                    adminNotificationsListContainer.innerHTML = '<span style="font-size: 9px; color: var(--color-knife);">Error loading notifications feed.</span>';
+                }
+            }
+
+            refreshAdminNotifications();
+            setInterval(refreshAdminNotifications, 10000);
+
+            if (btnClearNotifications) {
+                btnClearNotifications.addEventListener('click', async () => {
+                    try {
+                        const res = await fetch('/api/admin/notifications/clear/', { method: 'POST' });
+                        if (res.ok) {
+                            refreshAdminNotifications();
+                        }
+                    } catch (e) {
+                        console.error("Failed to clear notifications:", e);
+                    }
+                });
+            }
         }
 
         // Close Detail Drawer Bindings

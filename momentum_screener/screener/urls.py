@@ -19,6 +19,8 @@ urlpatterns = [
     path('api/admin/list-users/', views.admin_list_users, name='admin_list_users'),
     path('api/admin/downgrade-user/', views.admin_downgrade_user, name='admin_downgrade_user'),
     path('api/admin/upgrade-user/', views.admin_upgrade_user, name='admin_upgrade_user'),
+    path('api/admin/notifications/', views.admin_notifications_list, name='admin_notifications_list'),
+    path('api/admin/notifications/clear/', views.admin_notifications_clear, name='admin_notifications_clear'),
     path('api/simulation/dump/', views.simulation_dump_view, name='simulation_dump_view'),
     
     # Journal API routes

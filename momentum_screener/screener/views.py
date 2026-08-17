@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.db import IntegrityError
-from .models import UserProfile, TradeJournal
+from .models import UserProfile, TradeJournal, AdminNotification
 import json
 from pathlib import Path
 
@@ -120,22 +120,32 @@ def dashboard_view(request):
     user_status = 'guest'
     days_left = 0
     username = 'Guest User'
+    plan_tier = 'standard'
+    has_used_trial = False
 
     if request.user.is_authenticated:
         username = request.user.username
+        profile, created = UserProfile.objects.get_or_create(user=request.user)
+        plan_tier = profile.plan_tier
+        has_used_trial = profile.has_used_trial
+        
         if request.user.is_superuser:
             user_status = 'premium'
             days_left = 9999
         else:
-            profile, created = UserProfile.objects.get_or_create(user=request.user)
             if profile.is_premium:
                 user_status = 'premium'
                 days_left = 9999
-            elif profile.is_trial_active():
+            elif profile.is_trial_active() and profile.days_remaining() > 0:
                 user_status = 'trial'
                 days_left = profile.days_remaining()
             else:
-                user_status = 'expired'
+                if profile.plan_tier == 'classic':
+                    user_status = 'classic'
+                elif profile.plan_tier == 'pro':
+                    user_status = 'pro'
+                else:
+                    user_status = 'expired'
                 days_left = 0
 
     # Force reload environment variables to capture newly pasted variables
@@ -153,6 +163,8 @@ def dashboard_view(request):
         'days_left': days_left,
         'username': username,
         'developer_upi_id': developer_upi_id,
+        'plan_tier': plan_tier,
+        'has_used_trial': has_used_trial,
     }
     return render(request, 'screener/index.html', context)
 
@@ -649,10 +661,19 @@ def signup_view(request):
             error_message = "All fields are required."
         else:
             try:
+                # Check if email was used before to abuse free trial
+                email_exists = User.objects.filter(email__iexact=email).exists()
+
                 # Create user
                 user = User.objects.create_user(username=username, email=email, password=password)
-                # Create UserProfile
-                UserProfile.objects.create(user=user)
+                
+                # Create UserProfile with duplicate check
+                profile = UserProfile.objects.create(user=user)
+                if email_exists:
+                    profile.has_used_trial = True
+                    profile.trial_duration_days = 0
+                    profile.save()
+
                 # Authenticate and login
                 authenticated_user = authenticate(request, username=username, password=password)
                 if authenticated_user is not None:
@@ -706,8 +727,10 @@ def api_journal_get(request):
 @csrf_exempt
 @login_required
 def api_journal_add(request):
-    if not request.user.is_superuser and not request.user.profile.is_trial_active():
-        return JsonResponse({'status': 'error', 'message': 'Trial Expired'}, status=403)
+    profile = request.user.profile
+    is_allowed = request.user.is_superuser or (profile.is_trial_active() and profile.days_remaining() > 0) or profile.plan_tier in ['classic', 'pro'] or profile.is_premium
+    if not is_allowed:
+        return JsonResponse({'status': 'error', 'message': 'Premium subscription required'}, status=403)
         
     if request.method == 'POST':
         try:
@@ -758,8 +781,10 @@ def api_journal_add(request):
 @csrf_exempt
 @login_required
 def api_journal_close(request):
-    if not request.user.is_superuser and not request.user.profile.is_trial_active():
-        return JsonResponse({'status': 'error', 'message': 'Trial Expired'}, status=403)
+    profile = request.user.profile
+    is_allowed = request.user.is_superuser or (profile.is_trial_active() and profile.days_remaining() > 0) or profile.plan_tier in ['classic', 'pro'] or profile.is_premium
+    if not is_allowed:
+        return JsonResponse({'status': 'error', 'message': 'Premium subscription required'}, status=403)
         
     if request.method == 'POST':
         try:
@@ -1092,19 +1117,20 @@ def analyze_stock_ai_view(request):
     Evaluates a stock configuration using technical data, rsi backtesting results,
     and live Google News headlines utilizing Gemini 3.5 Flash.
     """
-    # Restrict to Premium users only (includes superusers and premium profile owners)
-    is_premium = False
+    # Restrict to Pro plan or trial users
+    is_allowed = False
     if request.user.is_superuser:
-        is_premium = True
+        is_allowed = True
     else:
         try:
             profile = UserProfile.objects.get(user=request.user)
-            is_premium = profile.is_premium
+            # Allowed for: pro plan, active standard trial, or is_premium
+            is_allowed = profile.plan_tier == 'pro' or (profile.plan_tier == 'standard' and profile.is_trial_active() and profile.days_remaining() > 0) or profile.is_premium
         except UserProfile.DoesNotExist:
             pass
 
-    if not is_premium:
-        return JsonResponse({'status': 'error', 'message': 'Forbidden: Premium subscription required'}, status=403)
+    if not is_allowed:
+        return JsonResponse({'status': 'error', 'message': 'Forbidden: Pro Analyst subscription required'}, status=403)
 
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'Only POST method is allowed'}, status=405)
@@ -1245,7 +1271,7 @@ def analyze_stock_ai_view(request):
 @login_required
 def upgrade_premium_view(request):
     """
-    Simulates upgrading the current logged-in user profile to Premium status upon ₹299 GPay payment verification.
+    Simulates upgrading the current logged-in user profile to Classic or Pro status upon GPay payment verification.
     """
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'Only POST method is allowed'}, status=405)
@@ -1261,8 +1287,9 @@ def upgrade_premium_view(request):
         # Enforce simulated payment metadata checks
         payment_status = payload.get('payment_status')
         provider = payload.get('provider')
-        amount = payload.get('amount')
+        amount_val = payload.get('amount')
         utr = payload.get('utr', '').strip()
+        requested_plan = payload.get('plan', '').strip().lower()
 
         if not payment_status or payment_status != 'success':
             return JsonResponse({'status': 'error', 'message': 'Upgrade rejected: Payment must be completed first.'}, status=400)
@@ -1270,16 +1297,35 @@ def upgrade_premium_view(request):
         if provider != 'gpay':
             return JsonResponse({'status': 'error', 'message': 'Upgrade rejected: Payment must be processed via GPay.'}, status=400)
 
-        if not amount or float(amount) != 299.00:
-            return JsonResponse({'status': 'error', 'message': 'Upgrade rejected: Incorrect transaction amount. Expected ₹299.00.'}, status=400)
+        if not amount_val:
+            return JsonResponse({'status': 'error', 'message': 'Upgrade rejected: Missing transaction amount.'}, status=400)
+
+        amount = float(amount_val)
+        if amount != 299.00 and amount != 199.00:
+            return JsonResponse({'status': 'error', 'message': f'Upgrade rejected: Incorrect transaction amount ₹{amount}. Expected ₹299.00 for Classic or ₹199.00 for Pro.'}, status=400)
 
         if not utr:
             return JsonResponse({'status': 'error', 'message': 'Upgrade rejected: Missing transaction UTR / Ref No.'}, status=400)
 
+        # Map plan tier based on amount or requested plan
+        if amount == 299.00 or requested_plan == 'classic':
+            target_tier = 'classic'
+            tier_name = 'Classic Engine'
+        elif amount == 199.00 or requested_plan == 'pro':
+            target_tier = 'pro'
+            tier_name = 'Pro Analyst'
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Upgrade rejected: Unknown plan configuration.'}, status=400)
+
         profile, created = UserProfile.objects.get_or_create(user=request.user)
-        profile.is_premium = True
+        profile.plan_tier = target_tier
         profile.save()
-        return JsonResponse({'status': 'success', 'message': f'Account successfully upgraded to Premium! Received ₹{amount} via Google Pay. Ref: {utr}'})
+
+        # Log notification for Admin
+        admin_msg = f"User @{request.user.username} (Email: {request.user.email}) successfully upgraded to {tier_name} plan. Received ₹{amount} via GPay. UTR Ref: {utr}."
+        AdminNotification.objects.create(message=admin_msg)
+
+        return JsonResponse({'status': 'success', 'message': f'Account successfully upgraded to {tier_name}! Received ₹{amount} via Google Pay. Ref: {utr}'})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
@@ -1296,16 +1342,25 @@ def admin_list_users(request):
     profiles = UserProfile.objects.all().select_related('user').order_by('user__username')
     data = []
     for p in profiles:
-        # Resolve user status
         status = 'trial'
         if p.is_premium:
             status = 'premium'
-        elif not p.is_trial_active():
-            status = 'expired'
+        elif not p.is_trial_active() or p.trial_duration_days == 0:
+            if p.plan_tier == 'classic':
+                status = 'classic'
+            elif p.plan_tier == 'pro':
+                status = 'pro'
+            else:
+                status = 'expired'
+        else:
+            status = 'trial'
 
         data.append({
             'username': p.user.username,
-            'is_premium': p.is_premium,
+            'email': p.user.email,
+            'is_premium': p.is_premium or p.plan_tier in ['classic', 'pro'],
+            'plan_tier': p.plan_tier,
+            'has_used_trial': p.has_used_trial,
             'status': status
         })
     return JsonResponse({'status': 'success', 'users': data})
@@ -1332,10 +1387,11 @@ def admin_downgrade_user(request):
         # Retrieve user and downgrade their profile
         target_user = User.objects.get(username=target_username)
         profile, created = UserProfile.objects.get_or_create(user=target_user)
+        profile.plan_tier = 'standard'
         profile.is_premium = False
         profile.save()
 
-        return JsonResponse({'status': 'success', 'message': f'Successfully downgraded {target_username} from Premium.'})
+        return JsonResponse({'status': 'success', 'message': f'Successfully downgraded {target_username} to Standard Plan.'})
     except User.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'User not found'}, status=404)
     except Exception as e:
@@ -1357,16 +1413,20 @@ def admin_upgrade_user(request):
     try:
         payload = json.loads(request.body)
         target_username = payload.get('username')
+        requested_plan = payload.get('plan', 'pro').strip().lower()
         if not target_username:
             return JsonResponse({'status': 'error', 'message': 'Missing target username'}, status=400)
 
-        # Retrieve user and upgrade their profile
+        if requested_plan not in ['classic', 'pro']:
+            return JsonResponse({'status': 'error', 'message': 'Invalid plan requested. Use classic or pro.'}, status=400)
+
         target_user = User.objects.get(username=target_username)
         profile, created = UserProfile.objects.get_or_create(user=target_user)
+        profile.plan_tier = requested_plan
         profile.is_premium = True
         profile.save()
 
-        return JsonResponse({'status': 'success', 'message': f'Successfully upgraded {target_username} to Premium.'})
+        return JsonResponse({'status': 'success', 'message': f'Successfully upgraded {target_username} to {requested_plan.capitalize()} Plan.'})
     except User.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'User not found'}, status=404)
     except Exception as e:
@@ -1416,4 +1476,40 @@ def forgot_password_view(request):
         })
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@csrf_exempt
+@login_required
+def admin_notifications_list(request):
+    """
+    Lists all unread admin payment alerts (superuser only).
+    """
+    if not request.user.is_superuser:
+        return JsonResponse({'status': 'error', 'message': 'Forbidden: Admin access required'}, status=403)
+    
+    notifications = AdminNotification.objects.filter(is_read=False).order_by('-created_at')
+    data = []
+    for n in notifications:
+        data.append({
+            'id': n.id,
+            'message': n.message,
+            'created_at': n.created_at.strftime('%Y-%m-%d %H:%M')
+        })
+    return JsonResponse({'status': 'success', 'notifications': data})
+
+
+@csrf_exempt
+@login_required
+def admin_notifications_clear(request):
+    """
+    Marks all admin notifications as read (superuser only).
+    """
+    if not request.user.is_superuser:
+        return JsonResponse({'status': 'error', 'message': 'Forbidden: Admin access required'}, status=403)
+    
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Only POST method is allowed'}, status=405)
+    
+    AdminNotification.objects.all().update(is_read=True)
+    return JsonResponse({'status': 'success', 'message': 'All notifications cleared.'})
 

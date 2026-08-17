@@ -39,16 +39,18 @@
                 <div class="user-profile-badge" style="display: flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.05); padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.08); font-size: 11px; margin-right: 5px;">
                     <span style="font-weight: 600; color: var(--text-primary);"><i class="fa-solid fa-circle-user" style="color: var(--accent-indigo); margin-right: 4px;"></i> {{ username }}</span>
                     <span style="color: rgba(255, 255, 255, 0.15);">|</span>
-                    {% if user_status == 'premium' %}
-                        <span style="color: #34d399; font-weight: 600;"><i class="fa-solid fa-crown" style="color: #fbbf24; margin-right: 2px;"></i> Premium</span>
+                    {% if user_status == 'premium' or user_status == 'pro' %}
+                        <span style="color: #34d399; font-weight: 600;"><i class="fa-solid fa-crown" style="color: #fbbf24; margin-right: 2px;"></i> Pro Analyst</span>
+                    {% elif user_status == 'classic' %}
+                        <span style="color: #60a5fa; font-weight: 600;"><i class="fa-solid fa-gem" style="color: #60a5fa; margin-right: 2px;"></i> Classic Plan</span>
                     {% elif user_status == 'trial' %}
-                        <span style="color: #60a5fa; font-weight: 600;"><i class="fa-solid fa-bolt" style="color: #f59e0b; margin-right: 2px;"></i> Trial: {{ days_left }} days left</span>
+                        <span style="color: #fb7185; font-weight: 600;"><i class="fa-solid fa-bolt" style="color: #f59e0b; margin-right: 2px;"></i> Trial: {{ days_left }} days left</span>
                     {% elif user_status == 'expired' %}
-                        <span style="color: #f87171; font-weight: 600;"><i class="fa-solid fa-triangle-exclamation" style="margin-right: 2px;"></i> Trial Expired</span>
+                        <span style="color: #94a3b8; font-weight: 600;"><i class="fa-solid fa-triangle-exclamation" style="margin-right: 2px;"></i> Standard (Free)</span>
                     {% else %}
                         <span style="color: #f472b6; font-weight: 600;"><i class="fa-solid fa-user-astronaut" style="margin-right: 2px;"></i> Guest Demo</span>
                     {% endif %}
-                    {% if user_status == 'expired' or user_status == 'trial' %}
+                    {% if user_status != 'premium' and user_status != 'pro' %}
                         <span style="color: rgba(255, 255, 255, 0.15);">|</span>
                         <button id="btn-header-upgrade" class="btn-trigger-upgrade" style="background: linear-gradient(135deg, #10b981, #059669); border: none; color: #fff; padding: 2px 8px; border-radius: 10px; cursor: pointer; font-size: 10px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;" title="Unlock Full Premium Access"><i class="fa-solid fa-crown" style="color: #fbbf24;"></i> Upgrade</button>
                     {% endif %}
@@ -96,6 +98,16 @@
         </section>
 
         <!-- Main Dashboard Content -->
+        {% if has_used_trial %}
+        <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); padding: 12px 20px; border-radius: var(--border-radius-md); margin: 15px 20px 0 20px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px; color: #fecaca; font-size: 12px; font-weight: 500;">
+                <i class="fa-solid fa-triangle-exclamation" style="color: #ef4444; font-size: 16px;"></i>
+                <span>Your registered email address has already utilized its free trial on a previous account. You have been placed on the <strong>Standard Free Plan</strong>. Would you like to select a premium plan to unlock full capabilities?</span>
+            </div>
+            <button class="btn-trigger-upgrade" style="background: linear-gradient(135deg, var(--accent-indigo), #c76543); border: none; color: #fff; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; flex-shrink: 0;">Upgrade Now</button>
+        </div>
+        {% endif %}
+
         <main class="dashboard-layout">
             
             <!-- Left Panel: Filter & Screener Configurations -->
@@ -208,6 +220,17 @@
                         <strong style="font-size: 11px; text-transform: uppercase; color: var(--accent-indigo); display: block; margin-bottom: 8px;"><i class="fa-solid fa-users-gear"></i> User Licenses</strong>
                         <div id="admin-user-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 160px; overflow-y: auto; padding-right: 4px;">
                             <span style="font-size: 11px; color: var(--text-secondary);">Loading licenses...</span>
+                        </div>
+                    </div>
+
+                    <!-- Admin Payment Notifications Feed -->
+                    <div class="config-group" style="border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 15px; margin-top: 15px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <strong style="font-size: 11px; text-transform: uppercase; color: var(--accent-indigo);"><i class="fa-solid fa-bell"></i> Payment Alerts</strong>
+                            <button id="btn-clear-notifications" class="text-btn" style="font-size: 10px; color: var(--text-muted); cursor: pointer; background: transparent; border: none;">Clear All</button>
+                        </div>
+                        <div id="admin-notifications-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 140px; overflow-y: auto; padding-right: 4px;">
+                            <span style="font-size: 10px; color: var(--text-muted);">No unread notifications.</span>
                         </div>
                     </div>
                     {% endif %}
@@ -862,15 +885,12 @@
             </div>
 
             <!-- Order Summary Card -->
-            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255,255,255,0.05); padding: 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <h4 style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin: 0;">TradeKriya Premium License</h4>
-                    <p style="font-size: 11px; color: var(--text-secondary); margin: 2px 0 0 0;">Unlimited AI & Backtest Access</p>
-                </div>
-                <div style="text-align: right;">
-                    <span style="font-size: 16px; font-weight: 700; color: #34d399;">₹299.00</span>
-                    <p style="font-size: 10px; color: var(--text-muted); margin: 0;">One-time fee</p>
-                </div>
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255,255,255,0.05); padding: 16px; border-radius: 8px; display: flex; flex-direction: column; gap: 10px;">
+                <label style="font-size: 11px; color: var(--text-secondary); font-weight: 500;">Select Upgrade License Plan:</label>
+                <select id="gpay-plan-selector" style="width: 100%; background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); padding: 8px; border-radius: 6px; outline: none; font-size: 13px; font-family: var(--font-stack); cursor: pointer;">
+                    <option value="classic" data-amount="299">Classic Engine (₹299.00 One-time)</option>
+                    <option value="pro" data-amount="199">Pro Analyst (₹199.00 / Month)</option>
+                </select>
             </div>
 
             <!-- Dynamic States Container -->
@@ -901,7 +921,7 @@
                         </div>
                     </div>
 
-                    <button id="btn-gpay-submit" class="primary-btn" style="background: #4285F4; border: none; color: #fff; padding: 12px; font-size: 13px; font-weight: 600; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; border-radius: 6px;"><i class="fa-solid fa-shield-halved"></i> Pay ₹299 via Google Pay</button>
+                    <button id="btn-gpay-submit" class="primary-btn" style="background: #4285F4; border: none; color: #fff; padding: 12px; font-size: 13px; font-weight: 600; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; border-radius: 6px;"><i class="fa-solid fa-shield-halved"></i> Verify & Upgrade Account</button>
                 </div>
 
                 <!-- State 2: Processing -->
@@ -934,6 +954,8 @@
         const PRE_MAPPED_SYMBOLS = {{ supported_symbols|safe }};
         const USER_STATUS = "{{ user_status }}";
         const USER_DAYS_LEFT = {{ days_left }};
+        const PLAN_TIER = "{{ plan_tier }}";
+        const HAS_USED_TRIAL = {% if has_used_trial %}true{% else %}false{% endif %};
         
         // Credentials pre-configuration mappings for Superuser / environment bypasses
         const IS_SUPERUSER = {% if request.user.is_superuser %}true{% else %}false{% endif %};
