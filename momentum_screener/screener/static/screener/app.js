@@ -1579,7 +1579,7 @@ const App = (function() {
                     
                     // Construct UPI payment URI
                     const upiId = (typeof DEVELOPER_UPI_ID !== 'undefined' && DEVELOPER_UPI_ID) ? DEVELOPER_UPI_ID : 'arunj@okaxis';
-                    const upiUri = `upi://pay?pa=${upiId}&pn=Aegis%20Premium&am=299.00&cu=INR&tn=Premium%20Upgrade`;
+                    const upiUri = `upi://pay?pa=${upiId}&pn=TradeKriya%20Premium&am=299.00&cu=INR&tn=Premium%20Upgrade`;
                     
                     // Render dynamic QR code locally using qrcode.min.js (works offline, no external API calls)
                     const qrcodeContainer = document.getElementById('gpay-qrcode-container');
@@ -1628,7 +1628,7 @@ const App = (function() {
                 // If user is on a mobile device, open the UPI deep link directly to GPay / UPI app
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                 const upiId = (typeof DEVELOPER_UPI_ID !== 'undefined' && DEVELOPER_UPI_ID) ? DEVELOPER_UPI_ID : 'arunj@okaxis';
-                const upiUri = `upi://pay?pa=${upiId}&pn=Aegis%20Premium&am=299.00&cu=INR&tn=Premium%20Upgrade`;
+                const upiUri = `upi://pay?pa=${upiId}&pn=TradeKriya%20Premium&am=299.00&cu=INR&tn=Premium%20Upgrade`;
 
                 if (isMobile) {
                     // Redirect to native payment apps (e.g. GPay) on phone

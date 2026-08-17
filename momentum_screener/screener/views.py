@@ -1294,3 +1294,48 @@ def admin_upgrade_user(request):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
+
+import random
+import string
+
+@csrf_exempt
+def forgot_password_view(request):
+    """
+    Handles password retrieval/reset by generating a simulated one-time temporary recovery password
+    associated with the registered user email address.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Only POST method is allowed'}, status=405)
+
+    try:
+        payload = json.loads(request.body)
+        email = payload.get('email', '').strip().lower()
+        if not email:
+            return JsonResponse({'status': 'error', 'message': 'Please enter a valid email address'}, status=400)
+
+        # Look up user by email
+        users = User.objects.filter(email__iexact=email)
+        if not users.exists():
+            return JsonResponse({'status': 'error', 'message': 'No account associated with this email.'}, status=404)
+
+        # Get first user and generate random temporary password
+        target_user = users.first()
+        temp_chars = string.ascii_letters + string.digits
+        temp_pass = 'Temp-' + ''.join(random.choice(temp_chars) for _ in range(8))
+
+        # Save new temporary password on user
+        target_user.set_password(temp_pass)
+        target_user.save()
+
+        # Log password reset internally (to backend console for auditing / PythonAnywhere debugging)
+        print(f"[RECOVERY AUDIT] Generated recovery credentials for {target_user.username} ({email}): {temp_pass}")
+
+        return JsonResponse({
+            'status': 'success',
+            'email': email,
+            'username': target_user.username,
+            'temp_password': temp_pass
+        })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
