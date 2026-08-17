@@ -59,12 +59,15 @@
                 </div>
                 <button id="btn-open-guide" class="guide-btn"><i class="fa-solid fa-circle-info"></i> How it Works</button>
                 <button id="btn-toggle-credentials" class="guide-btn"><i class="fa-solid fa-gears"></i> API Setup</button>
-                <div class="data-source-selector">
-                    <span class="source-label"><i class="fa-solid fa-database"></i> Source:</span>
-                    <div class="toggle-container">
-                        <button id="btn-source-sim" class="toggle-btn active">Simulation</button>
-                        <button id="btn-source-zerodha" class="toggle-btn">Zerodha API</button>
+                <div class="data-source-selector" style="position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="source-label"><i class="fa-solid fa-database"></i> Source:</span>
+                        <div class="toggle-container">
+                            <button id="btn-source-sim" class="toggle-btn active">Simulation</button>
+                            <button id="btn-source-zerodha" class="toggle-btn">Zerodha API</button>
+                        </div>
                     </div>
+                    <span id="sim-last-refreshed" style="font-size: 9px; color: var(--text-muted); display: block; margin-top: 1px; font-weight: 500; text-transform: uppercase;"></span>
                 </div>
             </div>
         </header>

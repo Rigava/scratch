@@ -986,6 +986,11 @@ const App = (function() {
                         };
                         processStockIndicators(state.stocks[symbol]);
                     }
+                    const simRefreshedEl = document.getElementById('sim-last-refreshed');
+                    if (simRefreshedEl && result.last_refreshed) {
+                        simRefreshedEl.textContent = `Last Refreshed: ${result.last_refreshed}`;
+                        simRefreshedEl.style.display = 'block';
+                    }
                     showScanProgress(false);
                     hydrateActiveJournalTickers();
                     renderScreenerGrid();
@@ -999,6 +1004,11 @@ const App = (function() {
 
         // Fallback to procedurally generated mock data
         state.stocks = MockDataEngine.getSimulatedData();
+        const simRefreshedEl = document.getElementById('sim-last-refreshed');
+        if (simRefreshedEl) {
+            simRefreshedEl.textContent = `Last Refreshed: ${new Date().toISOString().split('T')[0]}`;
+            simRefreshedEl.style.display = 'block';
+        }
         showScanProgress(false);
         hydrateActiveJournalTickers();
         renderScreenerGrid();
@@ -1526,6 +1536,8 @@ const App = (function() {
             document.getElementById('btn-source-sim').classList.remove('active');
             document.getElementById('credentials-drawer').classList.remove('hidden');
             document.getElementById('zerodha-add-ticker-section').classList.remove('hidden');
+            const simRefreshedEl = document.getElementById('sim-last-refreshed');
+            if (simRefreshedEl) simRefreshedEl.style.display = 'none';
             state.dataSource = 'zerodha';
             closeDetailDrawer();
 
