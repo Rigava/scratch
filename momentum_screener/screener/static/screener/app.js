@@ -923,6 +923,33 @@ const App = (function() {
         if (aiLoading) aiLoading.classList.add('hidden');
         if (aiContent) aiContent.classList.add('hidden');
 
+        // Apply Premium & Superuser UI Restrictions
+        const btnGen = document.getElementById('btn-generate-campaign');
+        if (btnGen) {
+            if (!IS_SUPERUSER) {
+                btnGen.style.display = 'none';
+            } else {
+                btnGen.style.display = 'block';
+            }
+        }
+
+        const btnAnalyze = document.getElementById('btn-analyze-conviction');
+        if (btnAnalyze) {
+            if (USER_STATUS !== 'premium') {
+                btnAnalyze.innerHTML = '<i class="fa-solid fa-lock"></i> Premium Only';
+                btnAnalyze.style.background = 'rgba(255, 255, 255, 0.05)';
+                btnAnalyze.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+                btnAnalyze.style.color = 'var(--text-secondary)';
+                btnAnalyze.style.cursor = 'not-allowed';
+            } else {
+                btnAnalyze.innerHTML = '<i class="fa-solid fa-brain"></i> Analyze Conviction';
+                btnAnalyze.style.background = 'linear-gradient(135deg, var(--accent-indigo), #5850ec)';
+                btnAnalyze.style.border = 'none';
+                btnAnalyze.style.color = '#fff';
+                btnAnalyze.style.cursor = 'pointer';
+            }
+        }
+
         // Open panel
         document.getElementById('detail-drawer').classList.add('active');
     }
@@ -1082,6 +1109,11 @@ const App = (function() {
 
     // Call the Gemini API via Django backend to generate a quantitative finance campaign
     async function generateAICampaign() {
+        if (!IS_SUPERUSER) {
+            alert('Forbidden: Generate AI Dilemma is restricted to Superusers only.');
+            return;
+        }
+
         const geminiKey = sessionStorage.getItem('gemini_api_key') || (typeof SERVER_HAS_GEMINI !== 'undefined' && SERVER_HAS_GEMINI ? 'SERVER_PRECONFIGURED' : '');
         if (!geminiKey) {
             alert('Please enter your Gemini API Key in the "API Setup" drawer first.');
@@ -1192,6 +1224,11 @@ const App = (function() {
     }
 
     async function runAIConvictionAnalysis() {
+        if (USER_STATUS !== 'premium') {
+            alert('Analyze Conviction is restricted to Premium users only.');
+            return;
+        }
+
         const geminiKey = sessionStorage.getItem('gemini_api_key') || 'SERVER_PRECONFIGURED';
         
         const stock = state.stocks[state.activeTicker];
@@ -1524,6 +1561,119 @@ const App = (function() {
             }
         });
 
+        // Bind Upgrade Premium Click Triggers (GPay Payment Modal Gate)
+        const gpayModal = document.getElementById('gpay-modal');
+        const gpayInput = document.getElementById('gpay-state-input');
+        const gpayProcessing = document.getElementById('gpay-state-processing');
+        const gpaySuccess = document.getElementById('gpay-state-success');
+
+        document.querySelectorAll('.btn-trigger-upgrade').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (gpayModal) {
+                    // Reset modal states
+                    gpayInput.classList.remove('hidden');
+                    gpayProcessing.classList.add('hidden');
+                    gpaySuccess.classList.add('hidden');
+                    document.getElementById('gpay-upi-id').value = '';
+                    document.getElementById('gpay-utr-id').value = '';
+                    
+                    // Construct UPI payment URI
+                    const upiId = (typeof DEVELOPER_UPI_ID !== 'undefined' && DEVELOPER_UPI_ID) ? DEVELOPER_UPI_ID : 'arunj@okaxis';
+                    const upiUri = `upi://pay?pa=${upiId}&pn=Aegis%20Premium&am=299.00&cu=INR&tn=Premium%20Upgrade`;
+                    
+                    // Render dynamic QR code image via free QR Generator API
+                    const qrImg = document.getElementById('gpay-qr-image');
+                    if (qrImg) {
+                        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&color=000000&data=${encodeURIComponent(upiUri)}`;
+                    }
+
+                    // Show modal
+                    gpayModal.classList.remove('hidden');
+                }
+            });
+        });
+
+        // Close GPay Modal
+        const btnCloseGPay = document.getElementById('btn-close-gpay');
+        if (btnCloseGPay) {
+            btnCloseGPay.addEventListener('click', () => {
+                gpayModal.classList.add('hidden');
+            });
+        }
+
+        // Handle GPay Submission
+        const btnGPaySubmit = document.getElementById('btn-gpay-submit');
+        if (btnGPaySubmit) {
+            btnGPaySubmit.addEventListener('click', async () => {
+                const upiVal = document.getElementById('gpay-upi-id').value.trim();
+                const utrVal = document.getElementById('gpay-utr-id').value.trim();
+
+                if (!upiVal) {
+                    alert('Please enter a valid GPay UPI ID or phone number.');
+                    return;
+                }
+                if (!utrVal) {
+                    alert('Please enter the 12-digit payment transaction UTR / Ref No to verify bank transfer.');
+                    return;
+                }
+
+                // If user is on a mobile device, open the UPI deep link directly to GPay / UPI app
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                const upiId = (typeof DEVELOPER_UPI_ID !== 'undefined' && DEVELOPER_UPI_ID) ? DEVELOPER_UPI_ID : 'arunj@okaxis';
+                const upiUri = `upi://pay?pa=${upiId}&pn=Aegis%20Premium&am=299.00&cu=INR&tn=Premium%20Upgrade`;
+
+                if (isMobile) {
+                    // Redirect to native payment apps (e.g. GPay) on phone
+                    window.location.href = upiUri;
+                }
+
+                // Show processing spinner
+                gpayInput.classList.add('hidden');
+                gpayProcessing.classList.remove('hidden');
+
+                // Simulate payment gateway verification (3s approval wait time)
+                setTimeout(async () => {
+                    try {
+                        const response = await fetch('/api/upgrade-premium/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                payment_status: 'success',
+                                provider: 'gpay',
+                                amount: 299.00,
+                                utr: utrVal
+                            })
+                        });
+
+                        if (response.ok) {
+                            gpayProcessing.classList.add('hidden');
+                            gpaySuccess.classList.remove('hidden');
+                        } else {
+                            const err = await response.json();
+                            alert(`GPay verification failed: ${err.message}`);
+                            gpayProcessing.classList.add('hidden');
+                            gpayInput.classList.remove('hidden');
+                        }
+                    } catch (e) {
+                        alert(`Network error during payment verification: ${e.message}`);
+                        gpayProcessing.classList.add('hidden');
+                        gpayInput.classList.remove('hidden');
+                    }
+                }, 3000);
+            });
+        }
+
+        // Close success and reload dashboard
+        const btnGPaySuccessDone = document.getElementById('btn-gpay-success-done');
+        if (btnGPaySuccessDone) {
+            btnGPaySuccessDone.addEventListener('click', () => {
+                gpayModal.classList.add('hidden');
+                window.location.reload();
+            });
+        }
+
         // Save Configurations Click (Zerodha + Gemini)
         document.getElementById('btn-auth-save').addEventListener('click', () => {
             const key = document.getElementById('zerodha-api-key').value.trim();
@@ -1766,6 +1916,107 @@ const App = (function() {
                     btnAdminSync.disabled = false;
                 }
             });
+        }
+
+        // Admin User License Management
+        const adminUserListContainer = document.getElementById('admin-user-list');
+        if (adminUserListContainer) {
+            async function refreshAdminUserList() {
+                try {
+                    const response = await fetch('/api/admin/list-users/');
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        adminUserListContainer.innerHTML = '';
+                        if (result.users && result.users.length > 0) {
+                            result.users.forEach(user => {
+                                const row = document.createElement('div');
+                                row.style.cssText = 'display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 6px; margin-bottom: 4px;';
+                                
+                                const info = document.createElement('div');
+                                info.innerHTML = `
+                                    <span style="font-size: 11px; font-weight: 600; color: var(--text-primary); display: block;">${user.username}</span>
+                                    <span style="font-size: 9px; font-weight: 500; text-transform: uppercase; color: ${user.status === 'premium' ? '#34d399' : (user.status === 'trial' ? '#60a5fa' : '#f87171')};">${user.status}</span>
+                                `;
+                                row.appendChild(info);
+
+                                if (user.is_premium) {
+                                    const btnDowngrade = document.createElement('button');
+                                    btnDowngrade.className = 'primary-btn';
+                                    btnDowngrade.style.cssText = 'font-size: 9px; padding: 3px 8px; margin: 0; background: linear-gradient(135deg, #f87171, #ef4444); border: none; cursor: pointer; color: #fff; border-radius: 4px; font-weight: 600;';
+                                    btnDowngrade.innerHTML = '<i class="fa-solid fa-arrow-down"></i> Downgrade';
+                                    btnDowngrade.addEventListener('click', async () => {
+                                        if (confirm(`Are you sure you want to downgrade ${user.username} to Standard/Trial?`)) {
+                                            btnDowngrade.disabled = true;
+                                            btnDowngrade.innerText = 'Updating...';
+                                            try {
+                                                const res = await fetch('/api/admin/downgrade-user/', {
+                                                    method: 'POST',
+                                                    headers: {
+                                                        'Content-Type': 'application/json'
+                                                    },
+                                                    body: JSON.stringify({ username: user.username })
+                                                });
+                                                if (res.ok) {
+                                                    alert(`Successfully downgraded ${user.username} from Premium.`);
+                                                    refreshAdminUserList();
+                                                } else {
+                                                    const err = await res.json();
+                                                    alert(`Downgrade failed: ${err.message}`);
+                                                }
+                                            } catch (e) {
+                                                alert(`Error downgrading: ${e.message}`);
+                                            } finally {
+                                                btnDowngrade.disabled = false;
+                                            }
+                                        }
+                                    });
+                                    row.appendChild(btnDowngrade);
+                                } else {
+                                    const btnUpgrade = document.createElement('button');
+                                    btnUpgrade.className = 'primary-btn';
+                                    btnUpgrade.style.cssText = 'font-size: 9px; padding: 3px 8px; margin: 0; background: linear-gradient(135deg, #10b981, #059669); border: none; cursor: pointer; color: #fff; border-radius: 4px; font-weight: 600;';
+                                    btnUpgrade.innerHTML = '<i class="fa-solid fa-arrow-up"></i> Upgrade';
+                                    btnUpgrade.addEventListener('click', async () => {
+                                        if (confirm(`Are you sure you want to upgrade ${user.username} to Premium?`)) {
+                                            btnUpgrade.disabled = true;
+                                            btnUpgrade.innerText = 'Updating...';
+                                            try {
+                                                const res = await fetch('/api/admin/upgrade-user/', {
+                                                    method: 'POST',
+                                                    headers: {
+                                                        'Content-Type': 'application/json'
+                                                    },
+                                                    body: JSON.stringify({ username: user.username })
+                                                });
+                                                if (res.ok) {
+                                                    alert(`Successfully upgraded ${user.username} to Premium.`);
+                                                    refreshAdminUserList();
+                                                } else {
+                                                    const err = await res.json();
+                                                    alert(`Upgrade failed: ${err.message}`);
+                                                }
+                                            } catch (e) {
+                                                alert(`Error upgrading: ${e.message}`);
+                                            } finally {
+                                                btnUpgrade.disabled = false;
+                                            }
+                                        }
+                                    });
+                                    row.appendChild(btnUpgrade);
+                                }
+                                adminUserListContainer.appendChild(row);
+                            });
+                        } else {
+                            adminUserListContainer.innerHTML = '<span style="font-size: 11px; color: var(--text-secondary);">No user records found.</span>';
+                        }
+                    }
+                } catch (e) {
+                    console.error("Failed to load user licenses:", e);
+                    adminUserListContainer.innerHTML = '<span style="font-size: 10px; color: var(--color-knife);"><i class="fa-solid fa-triangle-exclamation"></i> Error loading licenses.</span>';
+                }
+            }
+            refreshAdminUserList();
         }
 
         // Close Detail Drawer Bindings

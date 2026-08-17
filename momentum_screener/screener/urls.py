@@ -13,7 +13,11 @@ urlpatterns = [
     path('api/historical/', views.historical_proxy_view, name='historical_proxy'),
     path('api/generate-campaign/', views.generate_campaign_view, name='generate_campaign'),
     path('api/analyze-stock/', views.analyze_stock_ai_view, name='analyze_stock_ai'),
+    path('api/upgrade-premium/', views.upgrade_premium_view, name='upgrade_premium'),
     path('api/admin/sync-dump/', views.admin_sync_data_dump, name='admin_sync_data_dump'),
+    path('api/admin/list-users/', views.admin_list_users, name='admin_list_users'),
+    path('api/admin/downgrade-user/', views.admin_downgrade_user, name='admin_downgrade_user'),
+    path('api/admin/upgrade-user/', views.admin_upgrade_user, name='admin_upgrade_user'),
     path('api/simulation/dump/', views.simulation_dump_view, name='simulation_dump_view'),
     
     # Journal API routes

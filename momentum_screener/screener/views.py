@@ -142,6 +142,7 @@ def dashboard_view(request):
     load_env_file(force=True)
     has_zerodha_creds = bool(os.environ.get('ZERODHA_API_KEY') and os.environ.get('ZERODHA_ACCESS_TOKEN'))
     has_gemini_cred = bool(os.environ.get('GEMINI_API_KEY'))
+    developer_upi_id = os.environ.get('DEVELOPER_UPI_ID', 'arunj@okaxis').strip()
 
     # Pass the list of pre-mapped symbols to the template so the UI dropdown can render them
     context = {
@@ -151,6 +152,7 @@ def dashboard_view(request):
         'user_status': user_status,
         'days_left': days_left,
         'username': username,
+        'developer_upi_id': developer_upi_id,
     }
     return render(request, 'screener/index.html', context)
 
@@ -448,11 +450,15 @@ def analyze_micro_structure(candles):
     }
 
 @csrf_exempt
+@login_required
 def generate_campaign_view(request):
     """
     Calls the Gemini API to generate a quantitative finance dilemma/campaign for a stock
     based on its current technical indicators, micro-structure trends, and actual strategy backtest statistics.
     """
+    if not request.user.is_superuser:
+        return JsonResponse({'status': 'error', 'message': 'Forbidden: Admin / Superuser access required'}, status=403)
+
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'Only POST method is allowed'}, status=405)
 
@@ -665,6 +671,8 @@ def logout_view(request):
     return redirect('screener:login')
 
 def guest_trial_view(request):
+    if not request.user.is_authenticated or not request.user.is_superuser:
+        return redirect('screener:login')
     request.session.flush()
     request.session['is_guest_user'] = True
     request.session['scan_count'] = 0
@@ -1006,6 +1014,20 @@ def analyze_stock_ai_view(request):
     Evaluates a stock configuration using technical data, rsi backtesting results,
     and live Google News headlines utilizing Gemini 3.5 Flash.
     """
+    # Restrict to Premium users only (includes superusers and premium profile owners)
+    is_premium = False
+    if request.user.is_superuser:
+        is_premium = True
+    else:
+        try:
+            profile = UserProfile.objects.get(user=request.user)
+            is_premium = profile.is_premium
+        except UserProfile.DoesNotExist:
+            pass
+
+    if not is_premium:
+        return JsonResponse({'status': 'error', 'message': 'Forbidden: Premium subscription required'}, status=403)
+
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'Only POST method is allowed'}, status=405)
 
@@ -1139,4 +1161,136 @@ def analyze_stock_ai_view(request):
         return JsonResponse({'status': 'success', 'data': data})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': f"Failed to parse Gemini output: {str(e)}"}, status=500)
+
+
+@csrf_exempt
+@login_required
+def upgrade_premium_view(request):
+    """
+    Simulates upgrading the current logged-in user profile to Premium status upon ₹299 GPay payment verification.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Only POST method is allowed'}, status=405)
+    
+    try:
+        payload = {}
+        if request.body:
+            try:
+                payload = json.loads(request.body)
+            except ValueError:
+                pass
+        
+        # Enforce simulated payment metadata checks
+        payment_status = payload.get('payment_status')
+        provider = payload.get('provider')
+        amount = payload.get('amount')
+        utr = payload.get('utr', '').strip()
+
+        if not payment_status or payment_status != 'success':
+            return JsonResponse({'status': 'error', 'message': 'Upgrade rejected: Payment must be completed first.'}, status=400)
+        
+        if provider != 'gpay':
+            return JsonResponse({'status': 'error', 'message': 'Upgrade rejected: Payment must be processed via GPay.'}, status=400)
+
+        if not amount or float(amount) != 299.00:
+            return JsonResponse({'status': 'error', 'message': 'Upgrade rejected: Incorrect transaction amount. Expected ₹299.00.'}, status=400)
+
+        if not utr:
+            return JsonResponse({'status': 'error', 'message': 'Upgrade rejected: Missing transaction UTR / Ref No.'}, status=400)
+
+        profile, created = UserProfile.objects.get_or_create(user=request.user)
+        profile.is_premium = True
+        profile.save()
+        return JsonResponse({'status': 'success', 'message': f'Account successfully upgraded to Premium! Received ₹{amount} via Google Pay. Ref: {utr}'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@csrf_exempt
+@login_required
+def admin_list_users(request):
+    """
+    Returns a list of all user profiles and their subscription states (superuser only).
+    """
+    if not request.user.is_superuser:
+        return JsonResponse({'status': 'error', 'message': 'Forbidden: Admin access required'}, status=403)
+    
+    profiles = UserProfile.objects.all().select_related('user').order_by('user__username')
+    data = []
+    for p in profiles:
+        # Resolve user status
+        status = 'trial'
+        if p.is_premium:
+            status = 'premium'
+        elif not p.is_trial_active():
+            status = 'expired'
+
+        data.append({
+            'username': p.user.username,
+            'is_premium': p.is_premium,
+            'status': status
+        })
+    return JsonResponse({'status': 'success', 'users': data})
+
+
+@csrf_exempt
+@login_required
+def admin_downgrade_user(request):
+    """
+    Downgrades a specific user's profile from Premium to Standard (superuser only).
+    """
+    if not request.user.is_superuser:
+        return JsonResponse({'status': 'error', 'message': 'Forbidden: Admin access required'}, status=403)
+    
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Only POST method is allowed'}, status=405)
+
+    try:
+        payload = json.loads(request.body)
+        target_username = payload.get('username')
+        if not target_username:
+            return JsonResponse({'status': 'error', 'message': 'Missing target username'}, status=400)
+
+        # Retrieve user and downgrade their profile
+        target_user = User.objects.get(username=target_username)
+        profile, created = UserProfile.objects.get_or_create(user=target_user)
+        profile.is_premium = False
+        profile.save()
+
+        return JsonResponse({'status': 'success', 'message': f'Successfully downgraded {target_username} from Premium.'})
+    except User.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'User not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@csrf_exempt
+@login_required
+def admin_upgrade_user(request):
+    """
+    Manually upgrades a specific user's profile to Premium status (superuser only).
+    """
+    if not request.user.is_superuser:
+        return JsonResponse({'status': 'error', 'message': 'Forbidden: Admin access required'}, status=403)
+    
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Only POST method is allowed'}, status=405)
+
+    try:
+        payload = json.loads(request.body)
+        target_username = payload.get('username')
+        if not target_username:
+            return JsonResponse({'status': 'error', 'message': 'Missing target username'}, status=400)
+
+        # Retrieve user and upgrade their profile
+        target_user = User.objects.get(username=target_username)
+        profile, created = UserProfile.objects.get_or_create(user=target_user)
+        profile.is_premium = True
+        profile.save()
+
+        return JsonResponse({'status': 'success', 'message': f'Successfully upgraded {target_username} to Premium.'})
+    except User.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'User not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 

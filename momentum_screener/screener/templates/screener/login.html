@@ -385,10 +385,12 @@
                 <button type="submit" class="primary-btn"><i class="fa-solid fa-user-plus"></i> Register & Start 7-Day Trial</button>
             </form>
 
+            {% if request.user.is_superuser %}
             <div class="divider">OR</div>
 
             <!-- Guest Demo Bypass -->
-            <a href="{% url 'screener:guest_trial' %}" class="guest-btn"><i class="fa-solid fa-wand-magic-sparkles"></i> Try Guest Demo Mode</a>
+            <a href="{% url 'screener:guest_trial' %}" class="guest-btn"><i class="fa-solid fa-wand-magic-sparkles"></i> Try Guest Demo Mode (Admin Only)</a>
+            {% endif %}
 
             <!-- Features Alert Box -->
             <div class="features-alert">
