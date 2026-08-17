@@ -607,6 +607,191 @@
                 padding: 50px 20px;
             }
         }
+
+        /* Pricing Section styling */
+        .pricing-section {
+            padding: 80px 40px;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.4));
+            border-top: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            max-width: 1200px;
+            margin: 40px auto 0 auto;
+            align-items: stretch;
+        }
+
+        .pricing-card {
+            background: rgba(26, 23, 20, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 35px 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(233, 128, 93, 0.4);
+            box-shadow: 0 12px 40px rgba(233, 128, 93, 0.1);
+        }
+
+        .pricing-card.featured {
+            border-color: var(--accent-indigo);
+            background: rgba(26, 23, 20, 0.85);
+            box-shadow: 0 10px 30px rgba(233, 128, 93, 0.15);
+        }
+
+        .pricing-card.featured::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-indigo), #4f46e5);
+        }
+
+        .pricing-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: linear-gradient(135deg, var(--accent-indigo), #c76543);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .pricing-header {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .pricing-header h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .pricing-price {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+            margin-top: 10px;
+        }
+
+        .pricing-price .amount {
+            font-size: 38px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .pricing-price .period {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .pricing-description {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.45;
+            min-height: 40px;
+        }
+
+        .pricing-divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 5px 0;
+        }
+
+        .pricing-features {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex-grow: 1;
+        }
+
+        .pricing-features li {
+            font-size: 13px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            line-height: 1.4;
+        }
+
+        .pricing-features li i {
+            color: #10b981;
+            font-size: 12px;
+            margin-top: 3px;
+        }
+
+        .pricing-features li.disabled i {
+            color: var(--text-muted);
+        }
+        
+        .pricing-features li.disabled {
+            color: var(--text-muted);
+            text-decoration: line-through;
+        }
+
+        .pricing-btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: block;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .pricing-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .pricing-btn.btn-featured {
+            background: linear-gradient(135deg, var(--accent-indigo), #c76543);
+            border: none;
+            color: #fff;
+        }
+
+        .pricing-btn.btn-featured:hover {
+            box-shadow: 0 0 15px rgba(233, 128, 93, 0.4);
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 992px) {
+            .pricing-grid {
+                grid-template-columns: 1fr;
+                max-width: 480px;
+                gap: 24px;
+            }
+            .pricing-section {
+                padding: 60px 20px;
+            }
+        }
     </style>
 </head>
 <body class="home-main">
@@ -621,6 +806,7 @@
         <div class="nav-links">
             <a href="#how-it-works" class="nav-link">How it Works</a>
             <a href="#features" class="nav-link">Features</a>
+            <a href="#pricing" class="nav-link">Pricing</a>
         </div>
 
         <div class="nav-actions">
@@ -812,6 +998,86 @@
         </div>
     </section>
 
+    <!-- Pricing Section -->
+    <section id="pricing" class="pricing-section">
+        <div class="section-header">
+            <h2>Simple, Transparent Pricing</h2>
+            <p>Choose the tier that fits your trading style and unlock powerful quantitative tools.</p>
+        </div>
+
+        <div class="pricing-grid">
+            <!-- Tier 1: Free -->
+            <div class="pricing-card">
+                <div class="pricing-header">
+                    <h3>Basic Screener</h3>
+                    <div class="pricing-price">
+                        <span class="amount">₹0</span>
+                        <span class="period">/ Free Forever</span>
+                    </div>
+                </div>
+                <p class="pricing-description">Perfect for tracking daily market momentum and screening for clean safe setups.</p>
+                <div class="pricing-divider"></div>
+                <ul class="pricing-features">
+                    <li><i class="fa-solid fa-circle-check"></i> Real-time Nifty 50 & F&O stocks list</li>
+                    <li><i class="fa-solid fa-circle-check"></i> Peak-to-Trough Drawdown calculations</li>
+                    <li><i class="fa-solid fa-circle-check"></i> 200-Day SMA & RSI Crossover rules</li>
+                    <li><i class="fa-solid fa-circle-check"></i> Basic search and sorting filters</li>
+                    <li class="disabled"><i class="fa-solid fa-circle-xmark"></i> 5-Year RSI Backtesting Engine</li>
+                    <li class="disabled"><i class="fa-solid fa-circle-xmark"></i> Database-backed Trading Journal</li>
+                    <li class="disabled"><i class="fa-solid fa-circle-xmark"></i> AI Conviction Analyst (Gemini 3.5)</li>
+                    <li class="disabled"><i class="fa-solid fa-circle-xmark"></i> Advanced Indicator Strategy preset builder</li>
+                </ul>
+                <a href="{% url 'screener:login' %}" class="pricing-btn">Get Started</a>
+            </div>
+
+            <!-- Tier 2: Classic (One-time 299) -->
+            <div class="pricing-card featured">
+                <span class="pricing-badge">Popular</span>
+                <div class="pricing-header">
+                    <h3>Classic Engine</h3>
+                    <div class="pricing-price">
+                        <span class="amount">₹299</span>
+                        <span class="period">/ One-time fee</span>
+                    </div>
+                </div>
+                <p class="pricing-description">Extend your capability with backtesting capabilities and persistent journal logs.</p>
+                <div class="pricing-divider"></div>
+                <ul class="pricing-features">
+                    <li><i class="fa-solid fa-circle-check"></i> Everything in Basic Screener</li>
+                    <li><i class="fa-solid fa-circle-check"></i> <strong>5-Year RSI Backtester Engine</strong></li>
+                    <li><i class="fa-solid fa-circle-check"></i> <strong>Database-persisted Trading Journal</strong></li>
+                    <li><i class="fa-solid fa-circle-check"></i> Detailed trade logs & Stop-Loss track</li>
+                    <li><i class="fa-solid fa-circle-check"></i> Lifetime access with no recurring bills</li>
+                    <li class="disabled"><i class="fa-solid fa-circle-xmark"></i> AI Conviction Analyst (Gemini 3.5)</li>
+                    <li class="disabled"><i class="fa-solid fa-circle-xmark"></i> Advanced Indicator Strategy preset builder</li>
+                </ul>
+                <a href="{% url 'screener:login' %}?tab=signup" class="pricing-btn btn-featured">Upgrade to Classic</a>
+            </div>
+
+            <!-- Tier 3: Pro (199 / month) -->
+            <div class="pricing-card">
+                <div class="pricing-header">
+                    <h3>Pro Analyst</h3>
+                    <div class="pricing-price">
+                        <span class="amount">₹199</span>
+                        <span class="period">/ Month</span>
+                    </div>
+                </div>
+                <p class="pricing-description">Maximize your conviction using deep AI analysis and advanced multi-indicator strategies.</p>
+                <div class="pricing-divider"></div>
+                <ul class="pricing-features">
+                    <li><i class="fa-solid fa-circle-check"></i> Everything in Classic Engine</li>
+                    <li><i class="fa-solid fa-circle-check"></i> <strong>AI Conviction Analyst (Gemini 3.5 Flash)</strong></li>
+                    <li><i class="fa-solid fa-circle-check"></i> <strong>Google News RSS sentiment analysis</strong></li>
+                    <li><i class="fa-solid fa-circle-check"></i> <strong>Advanced Indicator Strategy preset builder</strong></li>
+                    <li><i class="fa-solid fa-circle-check"></i> Multi-factor trade setup scoring</li>
+                    <li><i class="fa-solid fa-circle-check"></i> Unlimited backtest runs & priority server queues</li>
+                </ul>
+                <a href="{% url 'screener:login' %}?tab=signup" class="pricing-btn">Unlock Pro Analyst</a>
+            </div>
+        </div>
+    </section>
+
     <!-- Footer -->
     <footer class="footer-section">
         <div class="footer-container">
@@ -823,6 +1089,7 @@
             <div class="footer-links">
                 <a href="#how-it-works">How it Works</a>
                 <a href="#features">Features</a>
+                <a href="#pricing">Pricing</a>
                 {% if not request.user.is_authenticated and not request.session.is_guest_user %}
                     <a href="{% url 'screener:login' %}">Sign In</a>
                     <a href="{% url 'screener:login' %}?tab=signup">Register</a>
