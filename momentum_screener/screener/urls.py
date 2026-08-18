@@ -5,6 +5,7 @@ app_name = 'screener'
 
 urlpatterns = [
     path('', views.home_view, name='home'),
+    path('community/', views.community_view, name='community'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
     path('login/', views.login_view, name='login'),
     path('signup/', views.signup_view, name='signup'),
@@ -23,6 +24,7 @@ urlpatterns = [
     path('api/admin/notifications/clear/', views.admin_notifications_clear, name='admin_notifications_clear'),
     path('api/admin/payments/verify/', views.admin_verify_payment_view, name='admin_verify_payment'),
     path('api/admin/payments/pending/', views.admin_pending_payments_list_view, name='admin_pending_payments_list'),
+    path('api/admin/run-marketing-agent/', views.admin_run_marketing_agent_view, name='admin_run_marketing_agent'),
     path('api/notifications/clear/', views.clear_user_notifications_view, name='clear_user_notifications'),
     path('api/simulation/dump/', views.simulation_dump_view, name='simulation_dump_view'),
     

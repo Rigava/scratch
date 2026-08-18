@@ -113,6 +113,65 @@ def home_view(request):
     """
     return render(request, 'screener/home.html')
 
+def community_view(request):
+    """
+    Renders the public Community Use Cases & Mindset Blog page.
+    """
+    from screener.models import CommunityPost
+    db_posts = CommunityPost.objects.all().order_by('-created_at')
+    
+    posts = []
+    for p in db_posts:
+        try:
+            twitter_thread = json.loads(p.twitter_thread_json)
+        except Exception:
+            twitter_thread = []
+            
+        try:
+            youtube_script = json.loads(p.youtube_shorts_script_json)
+        except Exception:
+            youtube_script = {}
+            
+        posts.append({
+            'id': p.id,
+            'title': p.title,
+            'stock_symbol': p.stock_symbol,
+            'theme': p.theme,
+            'theme_display': p.theme_display,
+            'twitter_thread': twitter_thread,
+            'linkedin_post': p.linkedin_post,
+            'telegram_digest': p.telegram_digest,
+            'youtube_script': youtube_script,
+            'created_at': p.created_at
+        })
+
+    user_status = 'guest'
+    days_left = 0
+    username = 'Guest User'
+    plan_tier = 'standard'
+    has_used_trial = False
+
+    if request.user.is_authenticated:
+        username = request.user.username
+        profile = getattr(request.user, 'profile', None)
+        if profile:
+            user_status = 'premium' if profile.is_premium else ('pro' if profile.plan_tier == 'pro' else 'trial')
+            if profile.plan_tier == 'classic':
+                user_status = 'classic'
+            days_left = profile.days_remaining()
+            plan_tier = profile.plan_tier
+            has_used_trial = profile.has_used_trial
+
+    context = {
+        'posts': posts,
+        'user_status': user_status,
+        'days_left': days_left,
+        'username': username,
+        'plan_tier': plan_tier,
+        'has_used_trial': has_used_trial,
+    }
+    return render(request, 'screener/community.html', context)
+
 def dashboard_view(request):
     """
     Renders the main dashboard page.
@@ -1768,4 +1827,62 @@ def admin_pending_payments_list_view(request):
             'created_at': r.created_at.strftime('%Y-%m-%d %H:%M')
         })
     return JsonResponse({'status': 'success', 'payments': data})
+
+
+import io
+from django.core.management import call_command
+
+@csrf_exempt
+@login_required
+def admin_run_marketing_agent_view(request):
+    """
+    Superuser-only view to trigger the TradeKriya Marketing & Insights Agent.
+    Allows passing options like 'symbol' or 'theme' via JSON payload.
+    """
+    if not request.user.is_superuser:
+        return JsonResponse({'status': 'error', 'message': 'Forbidden: Admin / Superuser access required'}, status=403)
+
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Only POST method is allowed'}, status=405)
+
+    symbol = None
+    theme = None
+
+    if request.body:
+        try:
+            payload = json.loads(request.body)
+            symbol = payload.get('symbol')
+            theme = payload.get('theme')
+        except ValueError:
+            pass
+
+    out = io.StringIO()
+    try:
+        kwargs = {}
+        if symbol:
+            kwargs['symbol'] = symbol.strip().upper()
+        if theme:
+            kwargs['theme'] = theme.strip().lower()
+
+        call_command('run_marketing_agent', stdout=out, stderr=out, **kwargs)
+        output_logs = out.getvalue()
+        
+        if "[ERROR]" in output_logs:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Marketing agent run completed with errors.',
+                'logs': output_logs
+            }, status=500)
+            
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Marketing agent run triggered and completed successfully.',
+            'logs': output_logs
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': f"Unexpected error executing marketing agent: {str(e)}",
+            'logs': out.getvalue()
+        }, status=500)
 

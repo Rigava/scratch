@@ -111,3 +111,18 @@ class UserNotification(models.Model):
     def __str__(self):
         return f"Notification to {self.user.username} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
 
+
+class CommunityPost(models.Model):
+    title = models.CharField(max_length=200)
+    stock_symbol = models.CharField(max_length=20)
+    theme = models.CharField(max_length=50)
+    theme_display = models.TextField(blank=True, default='')
+    twitter_thread_json = models.TextField(default='[]') # JSON stringified array
+    linkedin_post = models.TextField(blank=True, default='')
+    telegram_digest = models.TextField(blank=True, default='')
+    youtube_shorts_script_json = models.TextField(default='{}') # JSON stringified object
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title} ({self.stock_symbol})"
+

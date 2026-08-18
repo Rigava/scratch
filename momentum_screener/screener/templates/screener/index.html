@@ -13,7 +13,7 @@
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     {% load static %}
-    <link rel="stylesheet" href="{% static 'screener/styles.css' %}?v=3.5">
+    <link rel="stylesheet" href="{% static 'screener/styles.css' %}?v=3.6">
 </head>
 <body>
     <script>
@@ -59,6 +59,7 @@
                     <span style="color: rgba(255, 255, 255, 0.15);">|</span>
                     <a href="{% url 'screener:logout' %}" style="color: var(--text-secondary); text-decoration: none; font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='var(--text-secondary)'"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
                 </div>
+                <a href="{% url 'screener:community' %}" class="guide-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-bullhorn"></i> Use Cases</a>
                 <button id="btn-open-guide" class="guide-btn"><i class="fa-solid fa-circle-info"></i> How it Works</button>
                 <button id="btn-toggle-credentials" class="guide-btn"><i class="fa-solid fa-gears"></i> API Setup</button>
                 <div class="data-source-selector" style="position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
@@ -240,6 +241,27 @@
                         <div id="admin-notifications-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 140px; overflow-y: auto; padding-right: 4px;">
                             <span style="font-size: 10px; color: var(--text-muted);">No unread notifications.</span>
                         </div>
+                    </div>
+
+                    <!-- Admin Marketing Campaign Creator -->
+                    <div class="config-group" style="border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 15px; margin-top: 15px;">
+                        <strong style="font-size: 11px; text-transform: uppercase; color: var(--accent-indigo); display: block; margin-bottom: 8px;"><i class="fa-solid fa-bullhorn"></i> Marketing Campaign Agent</strong>
+                        <div style="margin-bottom: 8px;">
+                            <label for="sel-marketing-theme" style="font-size: 10px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Theme</label>
+                            <select id="sel-marketing-theme" style="width: 100%; font-size: 11px; padding: 8px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: var(--text-primary); border-radius: var(--border-radius-sm); outline: none;">
+                                <option value="">Auto-Detect Theme</option>
+                                <option value="patience">Patience (Avoid Knives)</option>
+                                <option value="discipline">Discipline (Crossovers)</option>
+                                <option value="fomo">FOMO (Breakouts)</option>
+                                <option value="loss_aversion">Loss Aversion (Drawdown)</option>
+                            </select>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <label for="txt-marketing-symbol" style="font-size: 10px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Symbol (Optional)</label>
+                            <input type="text" id="txt-marketing-symbol" placeholder="e.g. RELIANCE" style="width: 100%; font-size: 11px; padding: 8px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: var(--text-primary); border-radius: var(--border-radius-sm); box-sizing: border-box; outline: none;">
+                        </div>
+                        <button id="btn-admin-marketing-agent" class="primary-btn" style="width: 100%; font-size: 11px; padding: 10px; margin: 0; background: linear-gradient(135deg, #10b981, #059669); border: none; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; border-radius: var(--border-radius-sm); color: #fff; font-weight: 600; margin-bottom: 8px;"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate Campaigns</button>
+                        <div id="admin-marketing-status" style="margin-top: 8px; font-size: 11px; color: var(--text-secondary); text-align: center; font-weight: 500;"></div>
                     </div>
                     {% endif %}
                 </div>
@@ -1004,6 +1026,6 @@
     <!-- Project JS dependencies -->
     <script src="{% static 'screener/qrcode.min.js' %}"></script>
     <script src="{% static 'screener/mockData.js' %}?v=3.5"></script>
-    <script src="{% static 'screener/app.js' %}?v=3.5"></script>
+    <script src="{% static 'screener/app.js' %}?v=3.6"></script>
 </body>
 </html>

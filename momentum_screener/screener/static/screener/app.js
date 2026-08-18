@@ -2020,6 +2020,65 @@ const App = (function() {
             });
         }
 
+        // Admin Marketing Agent controls
+        const btnAdminMarketing = document.getElementById('btn-admin-marketing-agent');
+        const marketingStatusDiv = document.getElementById('admin-marketing-status');
+        if (btnAdminMarketing && marketingStatusDiv) {
+            btnAdminMarketing.addEventListener('click', async () => {
+                const themeVal = document.getElementById('sel-marketing-theme').value;
+                const symbolVal = document.getElementById('txt-marketing-symbol').value.trim();
+
+                btnAdminMarketing.disabled = true;
+                marketingStatusDiv.style.color = 'var(--text-secondary)';
+                marketingStatusDiv.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Triggering campaign generation...';
+
+                try {
+                    const getCookie = (name) => {
+                        let cookieValue = null;
+                        if (document.cookie && document.cookie !== '') {
+                            const cookies = document.cookie.split(';');
+                            for (let i = 0; i < cookies.length; i++) {
+                                const cookie = cookies[i].trim();
+                                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                    break;
+                                }
+                            }
+                        }
+                        return cookieValue;
+                    };
+                    const csrftoken = getCookie('csrftoken');
+
+                    const response = await fetch('/api/admin/run-marketing-agent/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrftoken
+                        },
+                        body: JSON.stringify({
+                            theme: themeVal || null,
+                            symbol: symbolVal || null
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (response.ok && data.status === 'success') {
+                        marketingStatusDiv.style.color = '#10b981';
+                        marketingStatusDiv.innerHTML = '<i class="fa-solid fa-circle-check"></i> Campaign generated successfully! Draft saved under marketing_campaigns/ directory.';
+                        console.log("Marketing Agent logs:", data.logs);
+                    } else {
+                        throw new Error(data.message || 'Server returned an error');
+                    }
+                } catch (err) {
+                    console.error("Marketing agent trigger failed:", err);
+                    marketingStatusDiv.style.color = '#ef4444';
+                    marketingStatusDiv.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Failed: ${err.message}`;
+                } finally {
+                    btnAdminMarketing.disabled = false;
+                }
+            });
+        }
+
         // Admin User License Management
         // Admin User License Management
         const adminUserListContainer = document.getElementById('admin-user-list');

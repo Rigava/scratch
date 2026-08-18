@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import UserProfile, TradeJournal
+from .models import UserProfile, TradeJournal, CommunityPost
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
@@ -25,4 +25,11 @@ class TradeJournalAdmin(admin.ModelAdmin):
     list_display = ('user', 'ticker', 'trade_type', 'status', 'entry_date', 'entry_price', 'exit_date', 'exit_price', 'pnl')
     search_fields = ('user__username', 'ticker')
     list_filter = ('status', 'trade_type')
+
+
+@admin.register(CommunityPost)
+class CommunityPostAdmin(admin.ModelAdmin):
+    list_display = ('title', 'stock_symbol', 'theme', 'created_at')
+    search_fields = ('title', 'stock_symbol', 'theme')
+    list_filter = ('theme', 'created_at')
 

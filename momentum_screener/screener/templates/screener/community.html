@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradeKriya - Community Use Cases & Trading Mindset</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Yatra+One&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'screener/styles.css' %}?v=3.6">
+    <style>
+        .community-main {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-stack);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .community-main::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(233, 128, 93, 0.04) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(244, 162, 97, 0.03) 0%, transparent 45%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .nav-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 40px;
+            border-bottom: 1px solid var(--border-color);
+            z-index: 10;
+            background: rgba(18, 16, 14, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .logo-section i {
+            font-size: 24px;
+            color: var(--accent-indigo);
+            text-shadow: 0 0 10px var(--accent-indigo-glow);
+        }
+
+        .logo-section h1 {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: var(--transition-smooth);
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--accent-indigo);
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .nav-btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: var(--transition-smooth);
+        }
+
+        .nav-btn.login-btn {
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .nav-btn.login-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--text-secondary);
+        }
+
+        .nav-btn.signup-btn {
+            background: var(--accent-indigo);
+            color: white;
+            box-shadow: 0 4px 12px var(--accent-indigo-glow);
+        }
+
+        .nav-btn.signup-btn:hover {
+            background: var(--accent-indigo-hover);
+            transform: translateY(-1px);
+        }
+
+        .content-section {
+            flex: 1;
+            padding: 60px 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+
+        .community-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .community-badge {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent-indigo);
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(99, 102, 241, 0.08);
+            padding: 6px 12px;
+            border-radius: 100px;
+            margin-bottom: 15px;
+        }
+
+        .community-title {
+            font-size: 42px;
+            font-weight: 700;
+            letter-spacing: -1px;
+            margin: 0 0 15px 0;
+            color: var(--text-primary);
+        }
+
+        .community-desc {
+            font-size: 15px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Filter Controls */
+        .filter-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .filter-badge {
+            padding: 8px 16px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .filter-badge:hover, .filter-badge.active {
+            background: var(--accent-indigo);
+            border-color: var(--accent-indigo);
+            color: #fff;
+            box-shadow: 0 4px 10px var(--accent-indigo-glow);
+        }
+
+        /* Feed Grid */
+        .feed-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+
+        .post-card {
+            background: rgba(26, 23, 20, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 30px;
+            transition: var(--transition-smooth);
+            position: relative;
+        }
+
+        .post-card:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        .post-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .stock-anchor-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .stock-badge {
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+
+        .post-date {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .theme-indicator-badge {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 100px;
+            letter-spacing: 0.5px;
+        }
+
+        .theme-patience {
+            background: rgba(233, 128, 93, 0.1);
+            color: #e9805d;
+            border: 1px solid rgba(233, 128, 93, 0.2);
+        }
+
+        .theme-discipline {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .theme-fomo {
+            background: rgba(99, 102, 241, 0.1);
+            color: #818cf8;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .theme-loss_aversion {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .post-card-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin: 0 0 10px 0;
+            color: var(--text-primary);
+        }
+
+        .theme-explanation {
+            font-size: 12px;
+            color: var(--text-secondary);
+            background: rgba(0, 0, 0, 0.15);
+            padding: 10px 14px;
+            border-radius: 6px;
+            border-left: 3px solid var(--accent-indigo);
+            margin-bottom: 25px;
+            line-height: 1.4;
+        }
+
+        /* Tabs Navigation within Card */
+        .card-tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 20px;
+            gap: 15px;
+        }
+
+        .card-tab-btn {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 8px 4px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .card-tab-btn:hover, .card-tab-btn.active {
+            color: var(--accent-indigo);
+            border-bottom-color: var(--accent-indigo);
+        }
+
+        /* Draft display blocks */
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        .draft-container {
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        /* X Thread style */
+        .tweet-bubble {
+            background: rgba(0,0,0,0.15);
+            border: 1px solid rgba(255,255,255,0.03);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .tweet-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .tweet-header i {
+            color: var(--accent-indigo);
+        }
+
+        /* YouTube Shorts Script Format */
+        .shorts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .shorts-visual-box {
+            background: rgba(0,0,0,0.25);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .shorts-visual-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--accent-indigo);
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .shorts-audio-box {
+            background: rgba(16, 185, 129, 0.03);
+            border: 1px solid rgba(16, 185, 129, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .shorts-audio-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #10b981;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .shorts-overlay-callout {
+            grid-column: 1 / -1;
+            background: rgba(233, 128, 93, 0.05);
+            border: 1px solid rgba(233, 128, 93, 0.1);
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 12px;
+            color: #e9805d;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 40px;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+        }
+
+        .empty-state h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .empty-state p {
+            font-size: 13px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .nav-container {
+                padding: 15px 20px;
+            }
+            .content-section {
+                padding: 40px 20px;
+            }
+            .shorts-grid {
+                grid-template-columns: 1fr;
+            }
+            .community-title {
+                font-size: 32px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="community-main">
+        <!-- Header Navbar -->
+        <header class="nav-container">
+            <a href="/" class="logo-section">
+                <i class="fa-solid fa-chart-line"></i>
+                <h1 style="font-family: 'Yatra One', cursive; font-size: 24px; color: var(--accent-indigo);">ट्रेडKriya</h1>
+            </a>
+            
+            <nav class="nav-links">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/dashboard/" class="nav-link">Dashboard</a>
+                <a href="/community/" class="nav-link active">Use Cases</a>
+            </nav>
+
+            <div class="nav-actions">
+                {% if request.user.is_authenticated or user_status == 'guest' and request.session.is_guest_user %}
+                    <span style="font-size: 12px; color: var(--text-secondary); font-weight: 500;">
+                        Hi, <strong style="color: var(--text-primary);">{{ username }}</strong>
+                    </span>
+                    <a href="/dashboard/" class="nav-btn signup-btn">Go to App</a>
+                {% else %}
+                    <a href="/login/" class="nav-btn login-btn">Login</a>
+                    <a href="/signup/" class="nav-btn signup-btn">Get Started</a>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Main Body -->
+        <main class="content-section">
+            <div class="community-header">
+                <div class="community-badge"><span></span> Educational Library</div>
+                <h2 class="community-title">Trading Mindset & Use Cases</h2>
+                <p class="community-desc">
+                    Learn technical discipline, patience, and risk management through real-world market situations dynamically identified by our Quantitative Scan engine.
+                </p>
+            </div>
+
+            <!-- Theme Filter Row -->
+            <div class="filter-row">
+                <button class="filter-badge active" data-filter="all">All Case Studies</button>
+                <button class="filter-badge" data-filter="patience">Patience (Avoid Knives)</button>
+                <button class="filter-badge" data-filter="discipline">Discipline (Rules-Based)</button>
+                <button class="filter-badge" data-filter="fomo">FOMO (Breakouts)</button>
+                <button class="filter-badge" data-filter="loss_aversion">Loss Aversion (Cutting Losses)</button>
+            </div>
+
+            <!-- Use Case Posts Feed -->
+            <div class="feed-grid">
+                {% if posts %}
+                    {% for post in posts %}
+                        <div class="post-card" data-theme="{{ post.theme }}">
+                            <!-- Meta Row -->
+                            <div class="post-meta">
+                                <div class="stock-anchor-info">
+                                    <span class="stock-badge">{{ post.stock_symbol }}</span>
+                                    <span class="post-date">{{ post.created_at|date:"M d, Y" }}</span>
+                                </div>
+                                <span class="theme-indicator-badge theme-{{ post.theme }}">
+                                    {{ post.theme|upper }}
+                                </span>
+                            </div>
+
+                            <!-- Title -->
+                            <h3 class="post-card-title">{{ post.title }}</h3>
+                            
+                            <!-- Teachable Explanation Box -->
+                            <div class="theme-explanation">
+                                <strong>Psychological Focus:</strong> {{ post.theme_display }}
+                            </div>
+
+                            {% if request.user.is_superuser %}
+                             <!-- Platform Tabs (Admin Only) -->
+                             <div class="card-tabs">
+                                 <button class="card-tab-btn active" onclick="switchCardTab(this, 'x-thread-{{ post.id }}')">X Thread</button>
+                                 <button class="card-tab-btn" onclick="switchCardTab(this, 'linkedin-{{ post.id }}')">LinkedIn Post</button>
+                                 <button class="card-tab-btn" onclick="switchCardTab(this, 'telegram-{{ post.id }}')">Telegram Alert</button>
+                                 <button class="card-tab-btn" onclick="switchCardTab(this, 'youtube-{{ post.id }}')">YouTube Shorts Script</button>
+                             </div>
+
+                             <!-- Content Panes (Admin Only) -->
+                             <div class="draft-container">
+                                 <!-- X Thread Tab -->
+                                 <div id="x-thread-{{ post.id }}" class="tab-pane active">
+                                     {% if post.twitter_thread %}
+                                         {% for tweet in post.twitter_thread %}
+                                             <div class="tweet-bubble">
+                                                 <div class="tweet-header">
+                                                     <i class="fa-brands fa-twitter"></i> Thread {{ forloop.counter }}/{{ post.twitter_thread|length }}
+                                                 </div>
+                                                 <p style="margin: 0; white-space: pre-wrap;">{{ tweet }}</p>
+                                             </div>
+                                         {% endfor %}
+                                     {% else %}
+                                         <p style="color: var(--text-muted);">No thread content available.</p>
+                                     {% endif %}
+                                 </div>
+
+                                 <!-- LinkedIn Post Tab -->
+                                 <div id="linkedin-{{ post.id }}" class="tab-pane">
+                                     <div class="tweet-bubble" style="background: rgba(10, 102, 194, 0.02); border-color: rgba(10, 102, 194, 0.1);">
+                                         <div class="tweet-header" style="color: #0a66c2;">
+                                             <i class="fa-brands fa-linkedin"></i> LinkedIn Storytelling
+                                         </div>
+                                         <p style="margin: 0; white-space: pre-wrap;">{{ post.linkedin_post }}</p>
+                                     </div>
+                                 </div>
+
+                                 <!-- Telegram Tab -->
+                                 <div id="telegram-{{ post.id }}" class="tab-pane">
+                                     <div class="tweet-bubble" style="background: rgba(0, 136, 204, 0.02); border-color: rgba(0, 136, 204, 0.1);">
+                                         <div class="tweet-header" style="color: #0088cc;">
+                                             <i class="fa-solid fa-paper-plane"></i> Telegram Channel Digest
+                                         </div>
+                                         <p style="margin: 0; white-space: pre-wrap;">{{ post.telegram_digest }}</p>
+                                     </div>
+                                 </div>
+
+                                 <!-- YouTube Shorts Tab -->
+                                 <div id="youtube-{{ post.id }}" class="tab-pane">
+                                     <div class="shorts-grid">
+                                         <div class="shorts-visual-box">
+                                             <div class="shorts-visual-title"><i class="fa-solid fa-eye"></i> On-Screen Video Visuals</div>
+                                             <p style="margin: 0; font-style: italic;">{{ post.youtube_script.visuals_description }}</p>
+                                         </div>
+                                         <div class="shorts-audio-box">
+                                             <div class="shorts-audio-title"><i class="fa-solid fa-volume-high"></i> Narrative Voiceover</div>
+                                             <p style="margin: 0; white-space: pre-wrap;">{{ post.youtube_script.voiceover_script }}</p>
+                                         </div>
+                                         <div class="shorts-overlay-callout">
+                                             <strong><i class="fa-solid fa-font"></i> Caption / Text Overlays:</strong> {{ post.youtube_script.on_screen_text }}
+                                         </div>
+                                     </div>
+                                 </div>
+                             </div>
+                             {% else %}
+                             <!-- Expose only LinkedIn story post as a public Mindset Article / Blog -->
+                             <div class="draft-container">
+                                 <div class="tweet-bubble" style="background: rgba(255, 255, 255, 0.01); border-color: rgba(255, 255, 255, 0.04); padding: 20px;">
+                                     <div style="font-size: 11px; color: var(--accent-indigo); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                                         <i class="fa-solid fa-book-open"></i> Mindset Article
+                                     </div>
+                                     <p style="margin: 0; white-space: pre-wrap; font-size: 14px; line-height: 1.7; color: var(--text-secondary);">{{ post.linkedin_post }}</p>
+                                 </div>
+                             </div>
+                             {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fa-solid fa-folder-open"></i>
+                        <h3>No Case Studies Found</h3>
+                        <p>
+                            We haven't generated any quantitative use cases yet. Please run the Marketing Agent from the admin panel to automatically publish campaigns to this section!
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Client-Side Page Scripting -->
+    <script>
+        // Platform Tab Switching inside Card
+        function switchCardTab(button, paneId) {
+            // Find parent card container
+            const card = button.closest('.post-card');
+            
+            // Deactivate all tab buttons in this card
+            const tabButtons = card.querySelectorAll('.card-tab-btn');
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // Deactivate all content panes in this card
+            const tabPanes = card.querySelectorAll('.tab-pane');
+            tabPanes.forEach(pane => pane.classList.remove('active'));
+            
+            // Activate target button and pane
+            button.classList.add('active');
+            card.querySelector('#' + paneId).classList.add('active');
+        }
+
+        // Filter Rows Selection
+        document.addEventListener('DOMContentLoaded', () => {
+            const filterButtons = document.querySelectorAll('.filter-badge');
+            const cards = document.querySelectorAll('.post-card');
+
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Toggle active button highlight
+                    filterButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    // Filter cards
+                    const filterValue = btn.getAttribute('data-filter');
+                    cards.forEach(card => {
+                        const cardTheme = card.getAttribute('data-theme');
+                        if (filterValue === 'all' || cardTheme === filterValue) {
+                            card.style.display = 'block';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
