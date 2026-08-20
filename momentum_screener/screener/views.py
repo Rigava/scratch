@@ -10,6 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db import IntegrityError
 from django.utils import timezone
 from django.core.mail import send_mail
+from django.conf import settings
 from .models import UserProfile, TradeJournal, AdminNotification, PaymentVerificationRequest, UserNotification
 import json
 import datetime
@@ -1497,24 +1498,30 @@ You will see a notification on your dashboard when active.
 Regards,
 Team TradeKriya"""
 
-            admin_email = os.environ.get('ADMIN_EMAIL', 'admin@tradekriya.com')
+            sender_email = getattr(settings, 'EMAIL_HOST_USER', None)
+            admin_email = os.environ.get('ADMIN_EMAIL', sender_email or 'admin@tradekriya.com')
 
             # Send to Admin
             send_mail(
                 subject=subject_admin,
                 message=body_admin,
-                from_email=None,
+                from_email=sender_email,
                 recipient_list=[admin_email],
                 fail_silently=True
             )
             
             # Send to User
-            if request.user.email:
+            user_target_email = request.user.email
+            if not user_target_email and request.user.is_superuser:
+                # Fallback to sender email for superuser testing so they see user copy
+                user_target_email = sender_email
+                
+            if user_target_email:
                 send_mail(
                     subject=subject_user,
                     message=body_user,
-                    from_email=None,
-                    recipient_list=[request.user.email],
+                    from_email=sender_email,
+                    recipient_list=[user_target_email],
                     fail_silently=True
                 )
                 
@@ -1740,6 +1747,13 @@ def admin_verify_payment_view(request):
             
         target_profile = UserProfile.objects.get(user=payment_req.user)
         
+        # Build dynamic sign-in link and resolve emails
+        signin_link = request.build_absolute_uri('/login/')
+        sender_email = getattr(settings, 'EMAIL_HOST_USER', None)
+        user_email = payment_req.user.email
+        if not user_email and payment_req.user.is_superuser:
+            user_email = sender_email
+
         if action == 'approve':
             payment_req.status = 'approved'
             payment_req.save()
@@ -1752,8 +1766,10 @@ def admin_verify_payment_view(request):
                 base_time = target_profile.pro_expires_at if (target_profile.pro_expires_at and target_profile.pro_expires_at > now) else now
                 target_profile.pro_expires_at = base_time + datetime.timedelta(days=30)
                 tier_label = 'Pro Analyst (Monthly)'
+                expiry_str = target_profile.pro_expires_at.strftime('%Y-%m-%d %H:%M:%S UTC')
             else:
                 tier_label = 'Classic Engine (One-time)'
+                expiry_str = 'Lifetime Access'
             target_profile.save()
             
             # Create user-facing success alert
@@ -1766,6 +1782,37 @@ def admin_verify_payment_view(request):
             AdminNotification.objects.create(
                 message=f"APPROVED: User @{payment_req.user.username}'s upgrade to {payment_req.plan} plan (UTR: {payment_req.utr}) has been confirmed by Admin."
             )
+
+            # Send approval email to user
+            if user_email:
+                try:
+                    subject = "[TradeKriya] Subscription Approved - Access Unlocked!"
+                    body = f"""Hello {payment_req.user.username},
+
+Great news! Your payment verification request of Rs. {payment_req.amount:.2f} (UTR: {payment_req.utr}) has been approved by our administrator.
+
+Your account is now fully upgraded.
+
+Account Details:
+- Username: @{payment_req.user.username}
+- Plan Tier: {tier_label}
+- Expiry Date: {expiry_str}
+
+Please sign in to your dashboard to access your premium features:
+{signin_link}
+
+Regards,
+Team TradeKriya"""
+                    send_mail(
+                        subject=subject,
+                        message=body,
+                        from_email=sender_email,
+                        recipient_list=[user_email],
+                        fail_silently=True
+                    )
+                    print(f"\n[EMAIL SIMULATION] Sent payment approval email to user {user_email} for plan {payment_req.plan}")
+                except Exception as mail_err:
+                    print(f"[EMAIL ERROR] Failed to send approval email: {mail_err}")
             
             return JsonResponse({'status': 'success', 'message': f'Successfully approved payment and upgraded user {payment_req.user.username}.'})
             
@@ -1783,6 +1830,36 @@ def admin_verify_payment_view(request):
             AdminNotification.objects.create(
                 message=f"REJECTED: User @{payment_req.user.username}'s payment (UTR: {payment_req.utr}) was rejected by Admin."
             )
+
+            # Send rejection email to user
+            if user_email:
+                try:
+                    subject = "[TradeKriya] Action Required: Payment Verification Rejected"
+                    body = f"""Hello {payment_req.user.username},
+
+We were unable to verify your payment transaction reference (UTR: {payment_req.utr}) of Rs. {payment_req.amount:.2f} for the {payment_req.plan.capitalize()} Engine upgrade.
+
+Reason: The transaction reference details did not match our bank statements.
+
+Please doublecheck your payment reference UTR / transaction record and submit again via the upgrade modal on your dashboard.
+
+Link to sign in and resubmit details:
+{signin_link}
+
+If you believe this is an error, please contact our support team.
+
+Regards,
+Team TradeKriya"""
+                    send_mail(
+                        subject=subject,
+                        message=body,
+                        from_email=sender_email,
+                        recipient_list=[user_email],
+                        fail_silently=True
+                    )
+                    print(f"\n[EMAIL SIMULATION] Sent payment rejection email to user {user_email}")
+                except Exception as mail_err:
+                    print(f"[EMAIL ERROR] Failed to send rejection email: {mail_err}")
             
             return JsonResponse({'status': 'success', 'message': f'Successfully rejected payment request for user {payment_req.user.username}.'})
             
