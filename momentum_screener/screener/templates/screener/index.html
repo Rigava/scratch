@@ -66,7 +66,7 @@
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span class="source-label"><i class="fa-solid fa-database"></i> Source:</span>
                         <div class="toggle-container">
-                            <button id="btn-source-sim" class="toggle-btn active">Simulation</button>
+                            <button id="btn-source-sim" class="toggle-btn active">Historical Snapshot</button>
                             <button id="btn-source-zerodha" class="toggle-btn">Zerodha API</button>
                         </div>
                     </div>
@@ -93,6 +93,7 @@
                         <input type="password" id="gemini-api-key" placeholder="Enter Gemini API Key" autocomplete="off">
                     </div>
                     <button id="btn-auth-save" class="primary-btn">Save Settings</button>
+                    <button id="btn-auth-reset" class="primary-btn" style="background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5;">Reset to Defaults</button>
                 </div>
                 <p class="auth-tip"><i class="fa-solid fa-circle-info"></i> Your API credentials are stored securely in session storage and are never saved on the server.</p>
             </div>
@@ -1026,6 +1027,6 @@
     <!-- Project JS dependencies -->
     <script src="{% static 'screener/qrcode.min.js' %}"></script>
     <script src="{% static 'screener/mockData.js' %}?v=3.5"></script>
-    <script src="{% static 'screener/app.js' %}?v=3.6"></script>
+    <script src="{% static 'screener/app.js' %}?v=3.7"></script>
 </body>
 </html>

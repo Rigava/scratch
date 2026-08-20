@@ -1782,21 +1782,66 @@ const App = (function() {
             const token = document.getElementById('zerodha-access-token').value.trim();
             const gemini = document.getElementById('gemini-api-key').value.trim();
 
-            if (key) sessionStorage.setItem('zerodha_api_key', key);
-            if (token) sessionStorage.setItem('zerodha_access_token', token);
-            if (gemini) sessionStorage.setItem('gemini_api_key', gemini);
+            if (key) {
+                sessionStorage.setItem('zerodha_api_key', key);
+            } else {
+                sessionStorage.removeItem('zerodha_api_key');
+            }
 
-            alert('API settings saved successfully.');
+            if (token) {
+                sessionStorage.setItem('zerodha_access_token', token);
+            } else {
+                sessionStorage.removeItem('zerodha_access_token');
+            }
 
-            // If in Zerodha API mode, trigger load
-            if (state.dataSource === 'zerodha' && key && token) {
+            if (gemini) {
+                sessionStorage.setItem('gemini_api_key', gemini);
+            } else {
+                sessionStorage.removeItem('gemini_api_key');
+            }
+
+            alert('API settings saved successfully. Empty values reverted back to preconfigured .env settings.');
+
+            // If in Zerodha API mode, reload data
+            if (state.dataSource === 'zerodha') {
                 state.stocks = {};
-                fetchZerodhaData('RELIANCE');
-                fetchZerodhaData('TCS');
-                fetchZerodhaData('INFY');
+                const activeKey = key || (typeof SERVER_HAS_ZERODHA !== 'undefined' && SERVER_HAS_ZERODHA);
+                const activeToken = token || (typeof SERVER_HAS_ZERODHA !== 'undefined' && SERVER_HAS_ZERODHA);
+                if (activeKey && activeToken) {
+                    fetchZerodhaData('RELIANCE');
+                    fetchZerodhaData('TCS');
+                    fetchZerodhaData('INFY');
+                }
                 hydrateActiveJournalTickers();
             }
         });
+
+        // Reset to preconfigured .env settings Click
+        const btnAuthReset = document.getElementById('btn-auth-reset');
+        if (btnAuthReset) {
+            btnAuthReset.addEventListener('click', () => {
+                document.getElementById('zerodha-api-key').value = '';
+                document.getElementById('zerodha-access-token').value = '';
+                document.getElementById('gemini-api-key').value = '';
+
+                sessionStorage.removeItem('zerodha_api_key');
+                sessionStorage.removeItem('zerodha_access_token');
+                sessionStorage.removeItem('gemini_api_key');
+
+                alert('API configurations reset successfully. Reverted back to preconfigured .env settings.');
+
+                // If in Zerodha API mode, reload data
+                if (state.dataSource === 'zerodha') {
+                    state.stocks = {};
+                    if (typeof SERVER_HAS_ZERODHA !== 'undefined' && SERVER_HAS_ZERODHA) {
+                        fetchZerodhaData('RELIANCE');
+                        fetchZerodhaData('TCS');
+                        fetchZerodhaData('INFY');
+                    }
+                    hydrateActiveJournalTickers();
+                }
+            });
+        }
 
         // Bind generate campaign button
         document.getElementById('btn-generate-campaign').addEventListener('click', generateAICampaign);
