@@ -1029,16 +1029,17 @@ def admin_sync_data_dump(request):
             continue
 
         candles = existing_dump.get(symbol, [])
-
         if candles:
             # Check the last candle's date for incremental sync
+            # To overwrite any dummy/placeholder candles, we roll back the sync start date by 15 days
             last_candle = candles[-1]
             last_date_str = last_candle[0].split('T')[0]
-            if last_date_str >= today_str:
-                continue
-
             last_date = datetime.datetime.strptime(last_date_str, '%Y-%m-%d').date()
-            start_date = last_date + datetime.timedelta(days=1)
+            start_date = last_date - datetime.timedelta(days=15)
+            # Ensure we don't go before the first candle's date
+            first_candle_date = datetime.datetime.strptime(candles[0][0].split('T')[0], '%Y-%m-%d').date()
+            if start_date < first_candle_date:
+                start_date = first_candle_date
         else:
             # First run: retrieve last 5 years of daily historical candles
             start_date = datetime.date.today() - datetime.timedelta(days=5 * 365)
@@ -1066,23 +1067,37 @@ def admin_sync_data_dump(request):
                     if not candles:
                         candles = new_candles
                     else:
-                        # Append and filter duplicates based on Split Date
-                        existing_dates = {c[0].split('T')[0] for c in candles}
+                        # Overwrite existing dates with the fresh fetched candles
+                        new_candles_dict = {nc[0].split('T')[0]: nc for nc in new_candles}
+                        merged_candles = []
+                        
+                        # Keep existing candles that are NOT in the fresh fetch range
+                        # or update them if they are in the range
+                        for c in candles:
+                            d_str = c[0].split('T')[0]
+                            if d_str in new_candles_dict:
+                                merged_candles.append(new_candles_dict[d_str])
+                                del new_candles_dict[d_str] # Remove so we don't double append
+                            else:
+                                merged_candles.append(c)
+                                
+                        # Append any remaining new candles that weren't in the original list
                         for nc in new_candles:
                             d_str = nc[0].split('T')[0]
-                            if d_str not in existing_dates:
-                                candles.append(nc)
+                            if d_str in new_candles_dict:
+                                merged_candles.append(nc)
+                                
+                        candles = merged_candles
+                    
                     sync_count += len(new_candles)
+                    if symbol not in updated_tickers:
+                        updated_tickers.append(symbol)
         except Exception:
             pass
 
-        # Now fill in any remaining missing weekdays (e.g. today 17th Aug) procedurally
+        # Save actual candles fetched directly from Zerodha
         if candles:
-            filled_candles = fill_missing_weekdays_procedurally(candles, datetime.date.today())
-            if len(filled_candles) > len(existing_dump.get(symbol, [])):
-                existing_dump[symbol] = filled_candles
-                if symbol not in updated_tickers:
-                    updated_tickers.append(symbol)
+            existing_dump[symbol] = candles
 
     # Save cache file if records were updated
     if updated_tickers:
@@ -1161,14 +1176,7 @@ def simulation_dump_view(request):
             
             today_date = datetime.date.today()
             latest_refreshed_str = "N/A"
-            processed_data = {}
-            
-            for symbol, candles in data.items():
-                if candles:
-                    filled_candles = fill_missing_weekdays_procedurally(candles, today_date)
-                    processed_data[symbol] = filled_candles
-                else:
-                    processed_data[symbol] = candles
+            processed_data = data # Return raw database dump directly without dummy placeholder generation
 
             # Find the latest date among all processed symbols
             all_dates = []
