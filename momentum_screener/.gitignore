@@ -1,5 +1,5 @@
 db.sqlite3
 .venv
 .env
-fo_historical_dump.json
-screener\data\fo_historical_dump.json
+screener/data/
+**/fo_historical_dump.json
