@@ -40,6 +40,7 @@ const App = (function() {
         dataSource: 'simulation', // 'simulation' or 'zerodha'
         stocks: {},               // Holds all loaded stock records
         activeTicker: null,       // Currently selected stock
+        zerodhaAuthErrorAlerted: false, // Flag to prevent alert floods on API auth errors
         filters: {
             status: 'all',
             sma: { enabled: true },
@@ -1114,7 +1115,15 @@ const App = (function() {
 
         } catch (err) {
             console.error(err);
-            alert(`Failed to load historical data for ${symbol}: ${err.message}`);
+            const isAuthError = err.message.includes("403") || err.message.includes("401") || err.message.toLowerCase().includes("invalid") || err.message.toLowerCase().includes("token") || err.message.toLowerCase().includes("key") || err.message.toLowerCase().includes("credentials");
+            if (isAuthError) {
+                if (!state.zerodhaAuthErrorAlerted) {
+                    state.zerodhaAuthErrorAlerted = true;
+                    alert(`Failed to load Zerodha historical data: Your API credentials or Daily Access Token are invalid, missing, or expired (Status 403/401). Please verify and update them in the API Configurations drawer.`);
+                }
+            } else {
+                alert(`Failed to load historical data for ${symbol}: ${err.message}`);
+            }
         }
     }
 
@@ -1534,6 +1543,7 @@ const App = (function() {
         });
 
         document.getElementById('btn-source-zerodha').addEventListener('click', (e) => {
+            state.zerodhaAuthErrorAlerted = false; // Reset auth alert flag
             document.getElementById('btn-source-zerodha').classList.add('active');
             document.getElementById('btn-source-sim').classList.remove('active');
             document.getElementById('credentials-drawer').classList.remove('hidden');
@@ -1778,6 +1788,7 @@ const App = (function() {
 
         // Save Configurations Click (Zerodha + Gemini)
         document.getElementById('btn-auth-save').addEventListener('click', () => {
+            state.zerodhaAuthErrorAlerted = false; // Reset auth alert flag
             const key = document.getElementById('zerodha-api-key').value.trim();
             const token = document.getElementById('zerodha-access-token').value.trim();
             const gemini = document.getElementById('gemini-api-key').value.trim();
@@ -1820,6 +1831,7 @@ const App = (function() {
         const btnAuthReset = document.getElementById('btn-auth-reset');
         if (btnAuthReset) {
             btnAuthReset.addEventListener('click', () => {
+                state.zerodhaAuthErrorAlerted = false; // Reset auth alert flag
                 document.getElementById('zerodha-api-key').value = '';
                 document.getElementById('zerodha-access-token').value = '';
                 document.getElementById('gemini-api-key').value = '';
