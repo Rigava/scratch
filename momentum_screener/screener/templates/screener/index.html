@@ -14,6 +14,86 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     {% load static %}
     <link rel="stylesheet" href="{% static 'screener/styles.css' %}?v=3.6">
+    <style>
+        /* Responsive navigation fix to prevent brand & details overlap */
+        @media (max-width: 1024px) {
+            .app-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: center;
+                text-align: center;
+                padding: 15px;
+            }
+            .logo-area {
+                flex-direction: column;
+                gap: 6px;
+            }
+            .header-actions {
+                flex-direction: column;
+                gap: 12px;
+                width: 100%;
+                align-items: center;
+            }
+            .user-profile-badge {
+                flex-wrap: wrap;
+                justify-content: center;
+                width: 100%;
+                margin-right: 0 !important;
+                gap: 6px;
+            }
+            .data-source-selector {
+                align-items: center !important;
+            }
+        }
+
+        /* Collapsible Sidebar Filter Drawer for Mobile */
+        @media (max-width: 1024px) {
+            .sidebar-config {
+                position: fixed !important;
+                top: 0;
+                left: -100% !important;
+                width: 320px !important;
+                height: 100% !important;
+                background: rgba(18, 16, 14, 0.96) !important;
+                backdrop-filter: blur(20px) !important;
+                -webkit-backdrop-filter: blur(20px) !important;
+                z-index: 1000 !important;
+                transition: left 0.3s ease !important;
+                padding: 20px !important;
+                box-sizing: border-box !important;
+                border-right: 1px solid var(--border-color) !important;
+                overflow-y: auto !important;
+                margin: 0 !important;
+            }
+            
+            .sidebar-config.show-filters {
+                left: 0 !important;
+            }
+            
+            .filters-backdrop {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.6);
+                z-index: 999;
+            }
+            
+            .filters-backdrop.show {
+                display: block;
+            }
+            
+            #btn-toggle-filters {
+                display: flex !important;
+            }
+            
+            .sidebar-mobile-header {
+                display: flex !important;
+            }
+        }
+    </style>
 </head>
 <body>
     <script>
@@ -114,6 +194,11 @@
             
             <!-- Left Panel: Filter & Screener Configurations -->
             <aside class="sidebar-config glass-card">
+                <!-- Mobile Sidebar Close Header -->
+                <div class="sidebar-mobile-header" style="display: none; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;">
+                    <strong style="font-size: 13px; text-transform: uppercase; color: var(--accent-indigo); display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-sliders"></i> Filters</strong>
+                    <button id="btn-close-filters" style="background: transparent; border: none; color: var(--text-secondary); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px;"><i class="fa-solid fa-xmark"></i></button>
+                </div>
                 <div class="card-header">
                     <h2><i class="fa-solid fa-sliders"></i> Filter Parameters</h2>
                     <button id="btn-reset-filters" class="text-btn">Reset</button>
@@ -297,6 +382,10 @@
 
             <!-- Center Panel: Screener Grid & Stats -->
             <section class="screener-results">
+                <!-- Mobile Filters Toggle Button -->
+                <button id="btn-toggle-filters" class="primary-btn" style="display: none; width: 100%; margin-bottom: 20px; background: linear-gradient(135deg, var(--accent-indigo), #4f46e5); border: none; align-items: center; justify-content: center; gap: 8px; cursor: pointer; border-radius: var(--border-radius-md); padding: 12px 20px; font-weight: 600; font-size: 13px; color: #fff;">
+                    <i class="fa-solid fa-sliders"></i> Filter Parameters
+                </button>
                 <!-- Navigation Tabs -->
                 <div class="view-tabs" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 10px; font-family: var(--font-stack);">
                     <button id="btn-tab-screener" class="tab-btn active" style="background: rgba(255,255,255,0.05); border: none; color: var(--text-primary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
@@ -591,6 +680,8 @@
                     </div>
                 </div>
             </section>
+            <!-- Filters Backdrop for mobile drawer -->
+            <div id="filters-backdrop" class="filters-backdrop"></div>
         </main>
 
         <!-- Floating Detail Drawer (Expands when stock is selected) -->
@@ -1055,5 +1146,37 @@
     <script src="{% static 'screener/qrcode.min.js' %}"></script>
     <script src="{% static 'screener/mockData.js' %}?v=3.5"></script>
     <script src="{% static 'screener/app.js' %}?v=3.8"></script>
+
+    <!-- Sidebar mobile drawer toggling -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const btnToggleFilters = document.getElementById('btn-toggle-filters');
+            const btnCloseFilters = document.getElementById('btn-close-filters');
+            const sidebarConfig = document.querySelector('.sidebar-config');
+            const filtersBackdrop = document.getElementById('filters-backdrop');
+
+            function openFilters() {
+                if (sidebarConfig) sidebarConfig.classList.add('show-filters');
+                if (filtersBackdrop) filtersBackdrop.classList.add('show');
+            }
+
+            function closeFilters() {
+                if (sidebarConfig) sidebarConfig.classList.remove('show-filters');
+                if (filtersBackdrop) filtersBackdrop.classList.remove('show');
+            }
+
+            if (btnToggleFilters) {
+                btnToggleFilters.addEventListener('click', openFilters);
+            }
+
+            if (btnCloseFilters) {
+                btnCloseFilters.addEventListener('click', closeFilters);
+            }
+
+            if (filtersBackdrop) {
+                filtersBackdrop.addEventListener('click', closeFilters);
+            }
+        });
+    </script>
 </body>
 </html>
