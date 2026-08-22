@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradeKriya Mindset Poll - {{ post.title }}</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Yatra+One&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'screener/styles.css' %}?v=3.6">
+    <style>
+        .detail-main {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-stack);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .detail-main::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(233, 128, 93, 0.03) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(244, 162, 97, 0.02) 0%, transparent 45%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .nav-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 40px;
+            border-bottom: 1px solid var(--border-color);
+            z-index: 10;
+            background: rgba(18, 16, 14, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .logo-section i {
+            font-size: 24px;
+            color: var(--accent-indigo);
+            text-shadow: 0 0 10px var(--accent-indigo-glow);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: var(--transition-smooth);
+        }
+
+        .nav-link:hover {
+            color: var(--accent-indigo);
+        }
+
+        .content-container {
+            flex: 1;
+            padding: 40px;
+            max-width: 1100px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+            z-index: 10;
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 40px;
+        }
+
+        .article-card {
+            background: rgba(26, 23, 20, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 30px;
+            box-sizing: border-box;
+        }
+
+        .article-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .stock-badge {
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .theme-badge {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 100px;
+            letter-spacing: 0.5px;
+            background: rgba(99, 102, 241, 0.1);
+            color: #818cf8;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .article-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0 0 15px 0;
+            color: var(--text-primary);
+            line-height: 1.3;
+        }
+
+        .article-body {
+            font-size: 14.5px;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            white-space: pre-wrap;
+        }
+
+        .poll-card {
+            background: rgba(36, 32, 28, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 30px;
+            box-sizing: border-box;
+            height: fit-content;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        .poll-header {
+            margin-bottom: 25px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 15px;
+        }
+
+        .poll-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .poll-title i {
+            color: var(--accent-indigo);
+        }
+
+        .poll-desc {
+            font-size: 12.5px;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .poll-group {
+            margin-bottom: 25px;
+        }
+
+        .question-text {
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        /* Voting options */
+        .vote-options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .vote-option-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border-color);
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12.5px;
+            transition: var(--transition-smooth);
+            font-weight: 500;
+        }
+
+        .vote-option-label:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(99, 102, 241, 0.4);
+        }
+
+        .vote-option-label input[type="radio"] {
+            accent-color: var(--accent-indigo);
+            width: 16px;
+            height: 16px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            background: var(--accent-indigo);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 13.5px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            box-shadow: 0 4px 12px var(--accent-indigo-glow);
+        }
+
+        .submit-btn:hover {
+            background: var(--accent-indigo-hover);
+            transform: translateY(-1px);
+        }
+
+        /* Results display */
+        .result-bar-container {
+            margin-bottom: 12px;
+        }
+
+        .result-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        .result-pct {
+            font-weight: 700;
+        }
+
+        .progress-bar-bg {
+            background: rgba(255,255,255,0.05);
+            border-radius: 100px;
+            height: 8px;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 100px;
+        }
+
+        .fill-bullish {
+            background: #10b981; /* Green */
+        }
+
+        .fill-bearish {
+            background: #ef4444; /* Red */
+        }
+
+        .fill-wait {
+            background: #f59e0b; /* Amber */
+        }
+
+        /* Signup CTA Card */
+        .signup-cta {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(16, 185, 129, 0.05));
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .signup-cta-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .signup-cta-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .cta-btn {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            text-decoration: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 12.5px;
+            transition: var(--transition-smooth);
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+        }
+
+        .cta-btn:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 900px) {
+            .content-container {
+                grid-template-columns: 1fr;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="detail-main">
+        <!-- Header -->
+        <header class="nav-container">
+            <a href="/" class="logo-section">
+                <i class="fa-solid fa-chart-line"></i>
+                <h1 style="font-family: 'Yatra One', cursive; font-size: 24px; color: var(--accent-indigo);">ट्रेडKriya</h1>
+            </a>
+            
+            <nav class="nav-links">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/dashboard/" class="nav-link">Dashboard</a>
+                <a href="/community/" class="nav-link">Use Cases</a>
+            </nav>
+
+            <div class="nav-actions">
+                {% if request.user.is_authenticated %}
+                    <span style="font-size: 12px; color: var(--text-secondary); font-weight: 500; margin-right: 10px;">
+                        Hi, <strong>{{ username }}</strong>
+                    </span>
+                    <a href="/dashboard/" class="nav-btn signup-btn">Dashboard</a>
+                {% else %}
+                    <a href="/login/" class="nav-btn login-btn">Login</a>
+                    <a href="/signup/?ref_post={{ post.id }}" class="nav-btn signup-btn">Get Started</a>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Main Body -->
+        <div class="content-container">
+            <!-- Left Side: Mindset Article -->
+            <section class="article-card">
+                <div class="article-meta">
+                    <span class="stock-badge">{{ post.stock_symbol }} Case Study</span>
+                    <span class="theme-badge">{{ post.theme|upper }}</span>
+                </div>
+                <h2 class="article-title">{{ post.title }}</h2>
+                <div class="article-body">{{ post.linkedin_post }}</div>
+            </section>
+
+            <!-- Right Side: Opinion Poll -->
+            <section class="poll-card">
+                <div class="poll-header">
+                    <h3 class="poll-title"><i class="fa-solid fa-square-poll-vertical"></i> Mindset Survey</h3>
+                    <p class="poll-desc">Cast your vote to participate and compare your bias with the TradeKriya community!</p>
+                </div>
+
+                {% if not has_voted %}
+                    <form method="POST">
+                        {% csrf_token %}
+                        <!-- Question 1 -->
+                        <div class="poll-group">
+                            <div class="question-text">Q1: {{ post.question_1 }}</div>
+                            <div class="vote-options">
+                                <label class="vote-option-label">
+                                    <input type="radio" name="q1" value="bullish" required>
+                                    <span>Bullish (Buy / Long)</span>
+                                </label>
+                                <label class="vote-option-label">
+                                    <input type="radio" name="q1" value="bearish">
+                                    <span>Bearish (Short / Sell)</span>
+                                </label>
+                                <label class="vote-option-label">
+                                    <input type="radio" name="q1" value="wait">
+                                    <span>Wait (Hold / Consolidate)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Question 2 -->
+                        <div class="poll-group">
+                            <div class="question-text">Q2: {{ post.question_2 }}</div>
+                            <div class="vote-options">
+                                <label class="vote-option-label">
+                                    <input type="radio" name="q2" value="bullish" required>
+                                    <span>Bullish (Buy / Long)</span>
+                                </label>
+                                <label class="vote-option-label">
+                                    <input type="radio" name="q2" value="bearish">
+                                    <span>Bearish (Short / Sell)</span>
+                                </label>
+                                <label class="vote-option-label">
+                                    <input type="radio" name="q2" value="wait">
+                                    <span>Wait (Hold / Consolidate)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Question 3 -->
+                        <div class="poll-group">
+                            <div class="question-text">Q3: {{ post.question_3 }}</div>
+                            <div class="vote-options">
+                                <label class="vote-option-label">
+                                    <input type="radio" name="q3" value="bullish" required>
+                                    <span>Bullish (Buy / Long)</span>
+                                </label>
+                                <label class="vote-option-label">
+                                    <input type="radio" name="q3" value="bearish">
+                                    <span>Bearish (Short / Sell)</span>
+                                </label>
+                                <label class="vote-option-label">
+                                    <input type="radio" name="q3" value="wait">
+                                    <span>Wait (Hold / Consolidate)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="submit-btn">Cast My Opinion</button>
+                    </form>
+                {% else %}
+                    <!-- User Has Voted -->
+                    {% if request.user.is_authenticated %}
+                        <!-- SHOW RESULTS TO REGISTERED USERS -->
+                        <div class="poll-group">
+                            <div class="question-text">Q1: {{ post.question_1 }}</div>
+                            
+                            <div class="result-bar-container">
+                                <div class="result-info"><span>Bullish</span><span class="result-pct">{{ q1_pcts.bullish }}%</span></div>
+                                <div class="progress-bar-bg"><div class="progress-bar-fill fill-bullish" style="width: {{ q1_pcts.bullish }}%"></div></div>
+                            </div>
+                            <div class="result-bar-container">
+                                <div class="result-info"><span>Bearish</span><span class="result-pct">{{ q1_pcts.bearish }}%</span></div>
+                                <div class="progress-bar-bg"><div class="progress-bar-fill fill-bearish" style="width: {{ q1_pcts.bearish }}%"></div></div>
+                            </div>
+                            <div class="result-bar-container">
+                                <div class="result-info"><span>Wait</span><span class="result-pct">{{ q1_pcts.wait }}%</span></div>
+                                <div class="progress-bar-bg"><div class="progress-bar-fill fill-wait" style="width: {{ q1_pcts.wait }}%"></div></div>
+                            </div>
+                        </div>
+
+                        <div class="poll-group">
+                            <div class="question-text">Q2: {{ post.question_2 }}</div>
+                            
+                            <div class="result-bar-container">
+                                <div class="result-info"><span>Bullish</span><span class="result-pct">{{ q2_pcts.bullish }}%</span></div>
+                                <div class="progress-bar-bg"><div class="progress-bar-fill fill-bullish" style="width: {{ q2_pcts.bullish }}%"></div></div>
+                            </div>
+                            <div class="result-bar-container">
+                                <div class="result-info"><span>Bearish</span><span class="result-pct">{{ q2_pcts.bearish }}%</span></div>
+                                <div class="progress-bar-bg"><div class="progress-bar-fill fill-bearish" style="width: {{ q2_pcts.bearish }}%"></div></div>
+                            </div>
+                            <div class="result-bar-container">
+                                <div class="result-info"><span>Wait</span><span class="result-pct">{{ q2_pcts.wait }}%</span></div>
+                                <div class="progress-bar-bg"><div class="progress-bar-fill fill-wait" style="width: {{ q2_pcts.wait }}%"></div></div>
+                            </div>
+                        </div>
+
+                        <div class="poll-group">
+                            <div class="question-text">Q3: {{ post.question_3 }}</div>
+                            
+                            <div class="result-bar-container">
+                                <div class="result-info"><span>Bullish</span><span class="result-pct">{{ q3_pcts.bullish }}%</span></div>
+                                <div class="progress-bar-bg"><div class="progress-bar-fill fill-bullish" style="width: {{ q3_pcts.bullish }}%"></div></div>
+                            </div>
+                            <div class="result-bar-container">
+                                <div class="result-info"><span>Bearish</span><span class="result-pct">{{ q3_pcts.bearish }}%</span></div>
+                                <div class="progress-bar-bg"><div class="progress-bar-fill fill-bearish" style="width: {{ q3_pcts.bearish }}%"></div></div>
+                            </div>
+                            <div class="result-bar-container">
+                                <div class="result-info"><span>Wait</span><span class="result-pct">{{ q3_pcts.wait }}%</span></div>
+                                <div class="progress-bar-bg"><div class="progress-bar-fill fill-wait" style="width: {{ q3_pcts.wait }}%"></div></div>
+                            </div>
+                        </div>
+
+                        <p style="font-size: 11px; text-align: center; color: var(--text-muted); margin-top: 10px;">
+                            Sentiment calculations based on total of {{ q1_total }} votes.
+                        </p>
+                    {% else %}
+                        <!-- VOTED BUT ANONYMOUS: BLUR & REVEAL ON SIGNUP -->
+                        <div style="text-align: center; padding: 20px 0;">
+                            <i class="fa-solid fa-lock" style="font-size: 32px; color: var(--accent-indigo); margin-bottom: 15px;"></i>
+                            <h4 style="font-size: 16px; margin: 0 0 10px 0; color: var(--text-primary);">Response Registered!</h4>
+                            <p style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 25px;">
+                                Your trade bias has been recorded. To view the community sentiment breakdown percentage and compare your results, create a free TradeKriya account!
+                            </p>
+                            
+                            <div class="signup-cta">
+                                <div class="signup-cta-title">Unlock Community Sentiment</div>
+                                <div class="signup-cta-desc">
+                                    Join TradeKriya to get full access to rule-based momentum screeners, persistence journals, and structural breakout filters.
+                                </div>
+                                <a href="{% url 'screener:signup' %}?ref_post={{ post.id }}" class="cta-btn">
+                                    Register & Reveal Results
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </section>
+        </div>
+    </div>
+</body>
+</html>

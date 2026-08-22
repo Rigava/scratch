@@ -11,7 +11,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('--symbol', type=str, default=None, help='Target stock symbol to write about')
-        parser.add_argument('--theme', type=str, default=None, choices=['patience', 'discipline', 'fomo', 'loss_aversion'], help='Focus trading psychology theme')
+        parser.add_argument('--theme', type=str, default=None, choices=['patience', 'discipline', 'fomo', 'loss_aversion', 'failed_breakout', 'failed_breakdown', 'sudden_reversal'], help='Focus trading psychology theme')
 
     def handle(self, *args, **options):
         self.stdout.write("====================================================")
@@ -155,7 +155,10 @@ class Command(BaseCommand):
             'patience': 'Patience: Waiting for trend validation rather than jumping in early on a "cheap" asset (avoiding falling knives).',
             'discipline': 'Discipline: Sticking to rule-based setups (such as validated MACD crossovers) and utilizing strict exit stop losses rather than trading on emotions.',
             'fomo': 'FOMO (Fear Of Missing Out): Chasing breakouts blindly without volume/micro-structure confirmation.',
-            'loss_aversion': 'Loss Aversion: The psychological bias that causes traders to hold losing trades, hoping to break even, instead of cutting losses cleanly.'
+            'loss_aversion': 'Loss Aversion: The psychological bias that causes traders to hold losing trades, hoping to break even, instead of cutting losses cleanly.',
+            'failed_breakout': 'Failed Breakouts / Bull Traps: Showing trapped buyer emotions, stop-loss clusters just below the breakout level, and why chasing FOMO makes buyers emotionally vulnerable.',
+            'failed_breakdown': 'Failed Breakdowns / Bear Traps: Showing trapped seller emotions, stop-loss clusters just above the breakdown levels, and why panic selling makes bears emotionally vulnerable.',
+            'sudden_reversal': 'Sudden Trend Reversals: Illustrating stop-loss cascades, emotional shock/denial, and the capitulation of trapped trend-followers.'
         }
 
         selected_theme_desc = theme_descriptions.get(theme, theme_descriptions['patience'])
@@ -186,17 +189,25 @@ class Command(BaseCommand):
         - Theme: {selected_theme_desc}
 
         INSTRUCTIONS:
-        - Address the psychological values of trading (Patience, Discipline, or emotional biases like Loss Aversion and FOMO).
+        - Address the psychological values of trading (Patience, Discipline, or emotional biases like Loss Aversion, FOMO, Trapped Traders, Stop-loss Clusters, and Emotional Vulnerability).
+        - Explicitly analyze:
+          1. Where stop-losses are likely clustered for bulls and bears.
+          2. Which side of the market is emotionally vulnerable and why.
+          3. How the trapped traders' emotions (shock, denial, panic) play out.
         - DO NOT make a boring data dump. The post must focus on the mindset, using the stock's indicators only to illustrate the lesson.
+        - Generate EXACTLY 3 interesting, distinct questions related to this stock setup. Each question must ask the user whether they would be Bullish, Bearish, or Wait in this scenario.
         - Create EXACTLY 4 drafts:
-          1. Twitter/X Thread (3-4 tweets. Start with an emotional or psychological hook, explain the setup as a lesson, and call to action to scan with TradeKriya).
-          2. LinkedIn Post (A detailed professional, storytelling post discussing the mindset required for trading, risk management, and quantitative systems).
-          3. Telegram Alert (A concise bulleted digest with a clear takeaway on discipline).
+          1. Twitter/X Thread (3-4 tweets. Start with an emotional or psychological hook, explain the setup as a lesson, and call to action to vote at [VOTING_LINK]).
+          2. LinkedIn Post (A detailed professional storytelling post discussing the mindset required for trading, risk management, and quantitative systems. End with a call to action to vote at [VOTING_LINK]).
+          3. Telegram Alert (A concise bulleted digest with a takeaway on discipline and the link [VOTING_LINK]).
           4. YouTube Shorts / Reels Script (A 60-second video script with visual instructions, spoken narration, and text overlays that illustrate the psychological lesson using the stock's chart behavior).
         
         Return the result in JSON format conforming strictly to this JSON schema:
         {{
             "title": "Title of the Campaign",
+            "question_1": "Mindset question 1 related to this stock setup?",
+            "question_2": "Mindset question 2 related to this stock setup?",
+            "question_3": "Mindset question 3 related to this stock setup?",
             "twitter_thread": ["Tweet 1 text", "Tweet 2 text", "Tweet 3 text", "Tweet 4 text"],
             "linkedin_post": "Full text of the LinkedIn post",
             "telegram_digest": "Full text of the Telegram alert",
@@ -224,6 +235,9 @@ class Command(BaseCommand):
                     "type": "object",
                     "properties": {
                         "title": { "type": "string" },
+                        "question_1": { "type": "string" },
+                        "question_2": { "type": "string" },
+                        "question_3": { "type": "string" },
                         "twitter_thread": {
                             "type": "array",
                             "items": { "type": "string" }
@@ -240,14 +254,14 @@ class Command(BaseCommand):
                             "required": ["visuals_description", "voiceover_script", "on_screen_text"]
                         }
                     },
-                    "required": ["title", "twitter_thread", "linkedin_post", "telegram_digest", "youtube_shorts_script"]
+                    "required": ["title", "question_1", "question_2", "question_3", "twitter_thread", "linkedin_post", "telegram_digest", "youtube_shorts_script"]
                 }
             }
         }
 
         self.stdout.write("[INFO] Submitting payload to Gemini API...")
         try:
-            response = requests.post(url, headers=headers, json=body, timeout=20)
+            response = requests.post(url, headers=headers, json=body, timeout=45)
             if response.status_code == 200:
                 result_json = response.json()
                 content = result_json['candidates'][0]['content']['parts'][0]['text']
@@ -255,7 +269,45 @@ class Command(BaseCommand):
 
                 self.stdout.write(self.style.SUCCESS(f"\n[SUCCESS] Successfully generated campaign: {campaign['title']}"))
                 
-                # Create marketing_campaigns at project root (parent of screener app)
+                # 1. Auto-Publish to Community Use Cases DB to get post ID
+                post_id = None
+                try:
+                    from screener.models import CommunityPost
+                    post = CommunityPost.objects.create(
+                        title=campaign['title'],
+                        stock_symbol=selected_stock['symbol'],
+                        theme=theme,
+                        theme_display=selected_theme_desc,
+                        twitter_thread_json=json.dumps(campaign['twitter_thread']),
+                        linkedin_post=campaign['linkedin_post'],
+                        telegram_digest=campaign['telegram_digest'],
+                        youtube_shorts_script_json=json.dumps(campaign['youtube_shorts_script']),
+                        question_1=campaign['question_1'],
+                        question_2=campaign['question_2'],
+                        question_3=campaign['question_3']
+                    )
+                    post_id = post.id
+                    
+                    # Generate dynamic voting/mindset poll URL
+                    voting_link = f"http://127.0.0.1:8000/community/post/{post.id}/"
+                    
+                    # Replace [VOTING_LINK] in text fields
+                    campaign['linkedin_post'] = campaign['linkedin_post'].replace('[VOTING_LINK]', voting_link)
+                    campaign['telegram_digest'] = campaign['telegram_digest'].replace('[VOTING_LINK]', voting_link)
+                    campaign['twitter_thread'] = [t.replace('[VOTING_LINK]', voting_link) for t in campaign['twitter_thread']]
+                    
+                    # Update database post with replaced contents
+                    post.linkedin_post = campaign['linkedin_post']
+                    post.telegram_digest = campaign['telegram_digest']
+                    post.twitter_thread_json = json.dumps(campaign['twitter_thread'])
+                    post.save()
+                    
+                    self.stdout.write(self.style.SUCCESS(f"[SUCCESS] Campaign successfully published to DB (ID: {post.id}) with Voting Link: {voting_link}"))
+                except Exception as db_err:
+                    self.stdout.write(self.style.ERROR(f"[ERROR] Failed to auto-publish campaign to database: {str(db_err)}"))
+                    voting_link = "[VOTING_LINK_MISSING]"
+
+                # 2. Create marketing_campaigns at project root (parent of screener app)
                 project_root = base_dir.parent
                 marketing_dir = project_root / 'marketing_campaigns'
                 marketing_dir.mkdir(exist_ok=True)
@@ -266,6 +318,13 @@ class Command(BaseCommand):
 **Date:** {datetime.date.today().strftime('%B %d, %Y')}  
 **Stock Anchor:** {selected_stock['symbol']} (Price: Rs {selected_stock['price']})  
 **Core Theme:** {theme.upper()} - {selected_theme_desc}  
+
+---
+
+## 🗳️ Interactive Mindset Poll Questions
+1. **Q1:** {campaign['question_1']}
+2. **Q2:** {campaign['question_2']}
+3. **Q3:** {campaign['question_3']}
 
 ---
 
@@ -296,23 +355,6 @@ class Command(BaseCommand):
 
                 with open(draft_path, 'w', encoding='utf-8') as f_out:
                     f_out.write(md_content)
-
-                # Auto-Publish to Community Use Cases DB
-                try:
-                    from screener.models import CommunityPost
-                    CommunityPost.objects.create(
-                        title=campaign['title'],
-                        stock_symbol=selected_stock['symbol'],
-                        theme=theme,
-                        theme_display=selected_theme_desc,
-                        twitter_thread_json=json.dumps(campaign['twitter_thread']),
-                        linkedin_post=campaign['linkedin_post'],
-                        telegram_digest=campaign['telegram_digest'],
-                        youtube_shorts_script_json=json.dumps(campaign['youtube_shorts_script'])
-                    )
-                    self.stdout.write(self.style.SUCCESS("[SUCCESS] Campaign successfully published to public Community section database."))
-                except Exception as db_err:
-                    self.stdout.write(self.style.ERROR(f"[ERROR] Failed to auto-publish campaign to database: {str(db_err)}"))
 
                 self.stdout.write(self.style.SUCCESS(f"[SUCCESS] Draft archived successfully at: {draft_path}"))
                 self.stdout.write("====================================================\n")

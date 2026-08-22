@@ -208,6 +208,33 @@
                         <p class="config-description">Excludes stocks with drawdowns exceeding the threshold from their rolling peak over the selected years.</p>
                         <input type="range" id="rng-filter-drawdown" min="10" max="60" value="30" class="slider">
                     </div>
+                    <!-- Mindset Poll Widget (For All Logged-in Users) -->
+                    {% if latest_poll_post %}
+                    <div class="config-group" style="border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 15px; margin-top: 15px; background: rgba(99, 102, 241, 0.03); border-radius: var(--border-radius-sm); padding: 12px; border: 1px solid rgba(99, 102, 241, 0.1);">
+                        <strong style="font-size: 11px; text-transform: uppercase; color: var(--accent-indigo); display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                            <i class="fa-solid fa-square-poll-vertical"></i> Mindset poll: {{ latest_poll_post.stock_symbol }}
+                        </strong>
+                        <p style="font-size: 11px; color: var(--text-secondary); margin: 0 0 10px 0; line-height: 1.4;">
+                            {{ latest_poll_post.title }}
+                        </p>
+                        
+                        {% if has_voted_latest %}
+                            <div style="font-size: 11px; display: flex; flex-direction: column; gap: 8px;">
+                                <div style="font-weight: 600; color: #10b981;">Your opinion is recorded!</div>
+                                <a href="{% url 'screener:community_post_detail' latest_poll_post.id %}" style="color: var(--accent-indigo); text-decoration: none; font-weight: 600; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                                    View community breakdown <i class="fa-solid fa-arrow-right-long"></i>
+                                </a>
+                            </div>
+                        {% else %}
+                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                                <span style="font-size: 10px; color: var(--text-muted);">Q: {{ latest_poll_post.question_1 }}</span>
+                                <a href="{% url 'screener:community_post_detail' latest_poll_post.id %}" class="primary-btn" style="width: 100%; font-size: 11px; padding: 8px; margin: 0; background: var(--accent-indigo); border: none; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; border-radius: var(--border-radius-sm); color: #fff; font-weight: 600; text-decoration: none;">
+                                    Vote to Unlock Sentiment
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
 
                     {% if request.user.is_superuser %}
                     <!-- Rule 5: Admin Sync Controls -->

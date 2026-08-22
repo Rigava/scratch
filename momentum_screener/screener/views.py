@@ -1,6 +1,6 @@
 import os
 import requests
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponseForbidden
 from django.views.decorators.http import require_GET
 from django.contrib.auth import authenticate, login, logout
@@ -173,6 +173,103 @@ def community_view(request):
     }
     return render(request, 'screener/community.html', context)
 
+def community_post_detail(request, post_id):
+    """
+    Renders the mindset poll/article detail page for a single CommunityPost.
+    Tracks votes, shows sentiment percentages for registered users, and provides
+    referral CTAs for guest voters.
+    """
+    from screener.models import CommunityPost
+    post = get_object_or_404(CommunityPost, id=post_id)
+    
+    session_vote_key = f'has_voted_{post.id}'
+    has_voted = request.session.get(session_vote_key, False)
+    
+    if request.method == 'POST':
+        q1_ans = request.POST.get('q1')
+        q2_ans = request.POST.get('q2')
+        q3_ans = request.POST.get('q3')
+        
+        # Track Q1
+        if q1_ans == 'bullish':
+            post.q1_bullish += 1
+        elif q1_ans == 'bearish':
+            post.q1_bearish += 1
+        elif q1_ans == 'wait':
+            post.q1_wait += 1
+
+        # Track Q2
+        if q2_ans == 'bullish':
+            post.q2_bullish += 1
+        elif q2_ans == 'bearish':
+            post.q2_bearish += 1
+        elif q2_ans == 'wait':
+            post.q2_wait += 1
+
+        # Track Q3
+        if q3_ans == 'bullish':
+            post.q3_bullish += 1
+        elif q3_ans == 'bearish':
+            post.q3_bearish += 1
+        elif q3_ans == 'wait':
+            post.q3_wait += 1
+
+        post.save()
+        request.session[session_vote_key] = True
+        return redirect('screener:community_post_detail', post_id=post.id)
+
+    # Compute percentages if voted
+    q1_total = post.q1_bullish + post.q1_bearish + post.q1_wait
+    q2_total = post.q2_bullish + post.q2_bearish + post.q2_wait
+    q3_total = post.q3_bullish + post.q3_bearish + post.q3_wait
+
+    def get_pcts(bull, bear, wait, total):
+        if total == 0:
+            return {'bullish': 0, 'bearish': 0, 'wait': 0}
+        return {
+            'bullish': round((bull / total) * 100),
+            'bearish': round((bear / total) * 100),
+            'wait': round((wait / total) * 100)
+        }
+
+    q1_pcts = get_pcts(post.q1_bullish, post.q1_bearish, post.q1_wait, q1_total)
+    q2_pcts = get_pcts(post.q2_bullish, post.q2_bearish, post.q2_wait, q2_total)
+    q3_pcts = get_pcts(post.q3_bullish, post.q3_bearish, post.q3_wait, q3_total)
+
+    user_status = 'guest'
+    days_left = 0
+    username = 'Guest User'
+    plan_tier = 'standard'
+    has_used_trial = False
+
+    if request.user.is_authenticated:
+        username = request.user.username
+        profile = getattr(request.user, 'profile', None)
+        if profile:
+            user_status = 'premium' if profile.is_premium else ('pro' if profile.plan_tier == 'pro' else 'trial')
+            if profile.plan_tier == 'classic':
+                user_status = 'classic'
+            days_left = profile.days_remaining()
+            plan_tier = profile.plan_tier
+            has_used_trial = profile.has_used_trial
+
+    context = {
+        'post': post,
+        'has_voted': has_voted,
+        'q1_pcts': q1_pcts,
+        'q2_pcts': q2_pcts,
+        'q3_pcts': q3_pcts,
+        'q1_total': q1_total,
+        'q2_total': q2_total,
+        'q3_total': q3_total,
+        'user_status': user_status,
+        'days_left': days_left,
+        'username': username,
+        'plan_tier': plan_tier,
+        'has_used_trial': has_used_trial,
+    }
+    return render(request, 'screener/community_post_detail.html', context)
+
 def dashboard_view(request):
     """
     Renders the main dashboard page.
@@ -264,6 +361,13 @@ def dashboard_view(request):
         if request.user.is_superuser:
             admin_pending_payments = list(PaymentVerificationRequest.objects.filter(status='pending').order_by('-created_at'))
 
+    # Fetch latest mindset poll post
+    from screener.models import CommunityPost
+    latest_poll_post = CommunityPost.objects.exclude(question_1='').order_by('-created_at').first()
+    has_voted_latest = False
+    if latest_poll_post:
+        has_voted_latest = request.session.get(f'has_voted_{latest_poll_post.id}', False)
+
     # Force reload environment variables to capture newly pasted variables
     load_env_file(force=True)
     has_zerodha_creds = bool(os.environ.get('ZERODHA_API_KEY') and os.environ.get('ZERODHA_ACCESS_TOKEN'))
@@ -285,6 +389,8 @@ def dashboard_view(request):
         'pending_payments': pending_payments,
         'admin_pending_payments': admin_pending_payments,
         'pro_expires_at': pro_expires_at_str,
+        'latest_poll_post': latest_poll_post,
+        'has_voted_latest': has_voted_latest,
     }
     return render(request, 'screener/index.html', context)
 
@@ -771,6 +877,11 @@ def signup_view(request):
     if request.user.is_authenticated or request.session.get('is_guest_user'):
         return redirect('screener:dashboard')
         
+    # Track referral post token
+    ref_post_id = request.GET.get('ref_post')
+    if ref_post_id:
+        request.session['ref_post'] = ref_post_id
+
     error_message = None
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
@@ -792,12 +903,25 @@ def signup_view(request):
                 if email_exists:
                     profile.has_used_trial = True
                     profile.trial_duration_days = 0
-                    profile.save()
+                
+                # Link referral post if tracked
+                ref_post_session = request.session.get('ref_post') or request.POST.get('ref_post')
+                if ref_post_session:
+                    try:
+                        from screener.models import CommunityPost
+                        post_ref = CommunityPost.objects.get(id=ref_post_session)
+                        profile.referred_by_post = post_ref
+                    except Exception:
+                        pass
+                
+                profile.save()
 
                 # Authenticate and login
                 authenticated_user = authenticate(request, username=username, password=password)
                 if authenticated_user is not None:
                     login(request, authenticated_user)
+                    # Clean up referral session token
+                    request.session.pop('ref_post', None)
                     return redirect('screener:dashboard')
             except IntegrityError:
                 error_message = "Username already exists."

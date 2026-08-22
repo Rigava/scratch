@@ -17,6 +17,7 @@ class UserProfile(models.Model):
     plan_tier = models.CharField(max_length=15, choices=PLAN_TIERS, default='standard')
     has_used_trial = models.BooleanField(default=False)
     pro_expires_at = models.DateTimeField(null=True, blank=True)
+    referred_by_post = models.ForeignKey('CommunityPost', null=True, blank=True, on_delete=models.SET_NULL, related_name='referred_profiles')
 
     def __str__(self):
         return f"{self.user.username}'s Profile"
@@ -121,6 +122,24 @@ class CommunityPost(models.Model):
     linkedin_post = models.TextField(blank=True, default='')
     telegram_digest = models.TextField(blank=True, default='')
     youtube_shorts_script_json = models.TextField(default='{}') # JSON stringified object
+    
+    # 3-Question Mindset Poll
+    question_1 = models.CharField(max_length=250, blank=True, default='')
+    question_2 = models.CharField(max_length=250, blank=True, default='')
+    question_3 = models.CharField(max_length=250, blank=True, default='')
+    
+    q1_bullish = models.IntegerField(default=0)
+    q1_bearish = models.IntegerField(default=0)
+    q1_wait = models.IntegerField(default=0)
+
+    q2_bullish = models.IntegerField(default=0)
+    q2_bearish = models.IntegerField(default=0)
+    q2_wait = models.IntegerField(default=0)
+
+    q3_bullish = models.IntegerField(default=0)
+    q3_bearish = models.IntegerField(default=0)
+    q3_wait = models.IntegerField(default=0)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

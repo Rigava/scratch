@@ -3,9 +3,9 @@ from .models import UserProfile, TradeJournal, CommunityPost
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('get_username', 'get_email', 'trial_started_at', 'total_allowed_days', 'days_remaining', 'is_active', 'is_premium')
+    list_display = ('get_username', 'get_email', 'referred_by_post', 'trial_started_at', 'total_allowed_days', 'days_remaining', 'is_active', 'is_premium')
     search_fields = ('user__username', 'user__email')
-    list_filter = ('is_premium',)
+    list_filter = ('is_premium', 'referred_by_post')
 
     def get_username(self, obj):
         return obj.user.username
@@ -29,7 +29,15 @@ class TradeJournalAdmin(admin.ModelAdmin):
 
 @admin.register(CommunityPost)
 class CommunityPostAdmin(admin.ModelAdmin):
-    list_display = ('title', 'stock_symbol', 'theme', 'created_at')
+    list_display = ('title', 'stock_symbol', 'theme', 'total_votes', 'referred_signups', 'created_at')
     search_fields = ('title', 'stock_symbol', 'theme')
     list_filter = ('theme', 'created_at')
+
+    def total_votes(self, obj):
+        return obj.q1_bullish + obj.q1_bearish + obj.q1_wait
+    total_votes.short_description = 'Poll Submissions'
+
+    def referred_signups(self, obj):
+        return obj.referred_profiles.count()
+    referred_signups.short_description = 'Referred Signups'
 

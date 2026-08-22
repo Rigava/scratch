@@ -6,6 +6,7 @@ app_name = 'screener'
 urlpatterns = [
     path('', views.home_view, name='home'),
     path('community/', views.community_view, name='community'),
+    path('community/post/<int:post_id>/', views.community_post_detail, name='community_post_detail'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
     path('login/', views.login_view, name='login'),
     path('signup/', views.signup_view, name='signup'),

@@ -213,6 +213,11 @@
             padding: 30px;
             transition: var(--transition-smooth);
             position: relative;
+            box-sizing: border-box;
+            min-height: 480px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         .post-card:hover {
@@ -282,6 +287,24 @@
             border: 1px solid rgba(239, 68, 68, 0.2);
         }
 
+        .theme-failed_breakout {
+            background: rgba(139, 92, 246, 0.1);
+            color: #a78bfa;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        .theme-failed_breakdown {
+            background: rgba(236, 72, 153, 0.1);
+            color: #f472b6;
+            border: 1px solid rgba(236, 72, 153, 0.2);
+        }
+
+        .theme-sudden_reversal {
+            background: rgba(245, 158, 11, 0.1);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
         .post-card-title {
             font-size: 22px;
             font-weight: 700;
@@ -339,6 +362,9 @@
             font-size: 13px;
             line-height: 1.6;
             color: var(--text-secondary);
+            max-height: 340px;
+            overflow-y: auto;
+            padding-right: 8px;
         }
 
         /* X Thread style */
@@ -499,20 +525,33 @@
                 </p>
             </div>
 
-            <!-- Theme Filter Row -->
-            <div class="filter-row">
-                <button class="filter-badge active" data-filter="all">All Case Studies</button>
-                <button class="filter-badge" data-filter="patience">Patience (Avoid Knives)</button>
-                <button class="filter-badge" data-filter="discipline">Discipline (Rules-Based)</button>
-                <button class="filter-badge" data-filter="fomo">FOMO (Breakouts)</button>
-                <button class="filter-badge" data-filter="loss_aversion">Loss Aversion (Cutting Losses)</button>
+            <!-- Theme Filter Row (Admin Only) -->
+            {% if request.user.is_superuser %}
+            <div class="filter-row" style="margin-bottom: 20px;">
+                <button class="filter-badge active" data-filter="all">All Themes</button>
+                <button class="filter-badge" data-filter="patience">Patience</button>
+                <button class="filter-badge" data-filter="discipline">Discipline</button>
+                <button class="filter-badge" data-filter="fomo">FOMO</button>
+                <button class="filter-badge" data-filter="loss_aversion">Loss Aversion</button>
+                <button class="filter-badge" data-filter="failed_breakout">Failed Breakout</button>
+                <button class="filter-badge" data-filter="failed_breakdown">Failed Breakdown</button>
+                <button class="filter-badge" data-filter="sudden_reversal">Sudden Reversal</button>
+            </div>
+            {% endif %}
+
+            <!-- Stock Filter Row (For All Users) -->
+            <div class="stock-filter-container" style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 30px; font-family: var(--font-stack);">
+                <label for="sel-stock-filter" style="font-size: 13px; font-weight: 600; color: var(--text-secondary);"><i class="fa-solid fa-filter"></i> Filter by Stock:</label>
+                <select id="sel-stock-filter" style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 6px 12px; font-size: 13px; outline: none; cursor: pointer;">
+                    <option value="all">All Stocks</option>
+                </select>
             </div>
 
             <!-- Use Case Posts Feed -->
             <div class="feed-grid">
                 {% if posts %}
                     {% for post in posts %}
-                        <div class="post-card" data-theme="{{ post.theme }}">
+                        <div class="post-card" data-theme="{{ post.theme }}" data-stock="{{ post.stock_symbol }}">
                             <!-- Meta Row -->
                             <div class="post-meta">
                                 <div class="stock-anchor-info">
@@ -533,80 +572,87 @@
                             </div>
 
                             {% if request.user.is_superuser %}
-                             <!-- Platform Tabs (Admin Only) -->
-                             <div class="card-tabs">
-                                 <button class="card-tab-btn active" onclick="switchCardTab(this, 'x-thread-{{ post.id }}')">X Thread</button>
-                                 <button class="card-tab-btn" onclick="switchCardTab(this, 'linkedin-{{ post.id }}')">LinkedIn Post</button>
-                                 <button class="card-tab-btn" onclick="switchCardTab(this, 'telegram-{{ post.id }}')">Telegram Alert</button>
-                                 <button class="card-tab-btn" onclick="switchCardTab(this, 'youtube-{{ post.id }}')">YouTube Shorts Script</button>
-                             </div>
+                            <!-- Platform Tabs (Admin Only) -->
+                            <div class="card-tabs">
+                                <button class="card-tab-btn active" onclick="switchCardTab(this, 'x-thread-{{ post.id }}')">X Thread</button>
+                                <button class="card-tab-btn" onclick="switchCardTab(this, 'linkedin-{{ post.id }}')">LinkedIn Post</button>
+                                <button class="card-tab-btn" onclick="switchCardTab(this, 'telegram-{{ post.id }}')">Telegram Alert</button>
+                                <button class="card-tab-btn" onclick="switchCardTab(this, 'youtube-{{ post.id }}')">YouTube Shorts Script</button>
+                            </div>
 
-                             <!-- Content Panes (Admin Only) -->
-                             <div class="draft-container">
-                                 <!-- X Thread Tab -->
-                                 <div id="x-thread-{{ post.id }}" class="tab-pane active">
-                                     {% if post.twitter_thread %}
-                                         {% for tweet in post.twitter_thread %}
-                                             <div class="tweet-bubble">
-                                                 <div class="tweet-header">
-                                                     <i class="fa-brands fa-twitter"></i> Thread {{ forloop.counter }}/{{ post.twitter_thread|length }}
-                                                 </div>
-                                                 <p style="margin: 0; white-space: pre-wrap;">{{ tweet }}</p>
-                                             </div>
-                                         {% endfor %}
-                                     {% else %}
-                                         <p style="color: var(--text-muted);">No thread content available.</p>
-                                     {% endif %}
-                                 </div>
+                            <!-- Content Panes (Admin Only) -->
+                            <div class="draft-container">
+                                <!-- X Thread Tab -->
+                                <div id="x-thread-{{ post.id }}" class="tab-pane active">
+                                    {% if post.twitter_thread %}
+                                        {% for tweet in post.twitter_thread %}
+                                            <div class="tweet-bubble">
+                                                <div class="tweet-header">
+                                                    <i class="fa-brands fa-twitter"></i> Thread {{ forloop.counter }}/{{ post.twitter_thread|length }}
+                                                </div>
+                                                <p style="margin: 0; white-space: pre-wrap;">{{ tweet }}</p>
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <p style="color: var(--text-muted);">No thread content available.</p>
+                                    {% endif %}
+                                </div>
 
-                                 <!-- LinkedIn Post Tab -->
-                                 <div id="linkedin-{{ post.id }}" class="tab-pane">
-                                     <div class="tweet-bubble" style="background: rgba(10, 102, 194, 0.02); border-color: rgba(10, 102, 194, 0.1);">
-                                         <div class="tweet-header" style="color: #0a66c2;">
-                                             <i class="fa-brands fa-linkedin"></i> LinkedIn Storytelling
-                                         </div>
-                                         <p style="margin: 0; white-space: pre-wrap;">{{ post.linkedin_post }}</p>
-                                     </div>
-                                 </div>
+                                <!-- LinkedIn Post Tab -->
+                                <div id="linkedin-{{ post.id }}" class="tab-pane">
+                                    <div class="tweet-bubble" style="background: rgba(10, 102, 194, 0.02); border-color: rgba(10, 102, 194, 0.1);">
+                                        <div class="tweet-header" style="color: #0a66c2;">
+                                            <i class="fa-brands fa-linkedin"></i> LinkedIn Storytelling
+                                        </div>
+                                        <p style="margin: 0; white-space: pre-wrap;">{{ post.linkedin_post }}</p>
+                                    </div>
+                                </div>
 
-                                 <!-- Telegram Tab -->
-                                 <div id="telegram-{{ post.id }}" class="tab-pane">
-                                     <div class="tweet-bubble" style="background: rgba(0, 136, 204, 0.02); border-color: rgba(0, 136, 204, 0.1);">
-                                         <div class="tweet-header" style="color: #0088cc;">
-                                             <i class="fa-solid fa-paper-plane"></i> Telegram Channel Digest
-                                         </div>
-                                         <p style="margin: 0; white-space: pre-wrap;">{{ post.telegram_digest }}</p>
-                                     </div>
-                                 </div>
+                                <!-- Telegram Tab -->
+                                <div id="telegram-{{ post.id }}" class="tab-pane">
+                                    <div class="tweet-bubble" style="background: rgba(0, 136, 204, 0.02); border-color: rgba(0, 136, 204, 0.1);">
+                                        <div class="tweet-header" style="color: #0088cc;">
+                                            <i class="fa-solid fa-paper-plane"></i> Telegram Channel Digest
+                                        </div>
+                                        <p style="margin: 0; white-space: pre-wrap;">{{ post.telegram_digest }}</p>
+                                    </div>
+                                </div>
 
-                                 <!-- YouTube Shorts Tab -->
-                                 <div id="youtube-{{ post.id }}" class="tab-pane">
-                                     <div class="shorts-grid">
-                                         <div class="shorts-visual-box">
-                                             <div class="shorts-visual-title"><i class="fa-solid fa-eye"></i> On-Screen Video Visuals</div>
-                                             <p style="margin: 0; font-style: italic;">{{ post.youtube_script.visuals_description }}</p>
-                                         </div>
-                                         <div class="shorts-audio-box">
-                                             <div class="shorts-audio-title"><i class="fa-solid fa-volume-high"></i> Narrative Voiceover</div>
-                                             <p style="margin: 0; white-space: pre-wrap;">{{ post.youtube_script.voiceover_script }}</p>
-                                         </div>
-                                         <div class="shorts-overlay-callout">
-                                             <strong><i class="fa-solid fa-font"></i> Caption / Text Overlays:</strong> {{ post.youtube_script.on_screen_text }}
-                                         </div>
-                                     </div>
-                                 </div>
-                             </div>
-                             {% else %}
-                             <!-- Expose only LinkedIn story post as a public Mindset Article / Blog -->
-                             <div class="draft-container">
-                                 <div class="tweet-bubble" style="background: rgba(255, 255, 255, 0.01); border-color: rgba(255, 255, 255, 0.04); padding: 20px;">
-                                     <div style="font-size: 11px; color: var(--accent-indigo); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-                                         <i class="fa-solid fa-book-open"></i> Mindset Article
-                                     </div>
-                                     <p style="margin: 0; white-space: pre-wrap; font-size: 14px; line-height: 1.7; color: var(--text-secondary);">{{ post.linkedin_post }}</p>
-                                 </div>
-                             </div>
-                             {% endif %}
+                                <!-- YouTube Shorts Tab -->
+                                <div id="youtube-{{ post.id }}" class="tab-pane">
+                                    <div class="shorts-grid">
+                                        <div class="shorts-visual-box">
+                                            <div class="shorts-visual-title"><i class="fa-solid fa-eye"></i> On-Screen Video Visuals</div>
+                                            <p style="margin: 0; font-style: italic;">{{ post.youtube_script.visuals_description }}</p>
+                                        </div>
+                                        <div class="shorts-audio-box">
+                                            <div class="shorts-audio-title"><i class="fa-solid fa-volume-high"></i> Narrative Voiceover</div>
+                                            <p style="margin: 0; white-space: pre-wrap;">{{ post.youtube_script.voiceover_script }}</p>
+                                        </div>
+                                        <div class="shorts-overlay-callout">
+                                            <strong><i class="fa-solid fa-font"></i> Caption / Text Overlays:</strong> {{ post.youtube_script.on_screen_text }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <!-- Expose only LinkedIn story post as a public Mindset Article / Blog -->
+                            <div class="draft-container">
+                                <div class="tweet-bubble" style="background: rgba(255, 255, 255, 0.01); border-color: rgba(255, 255, 255, 0.04); padding: 20px;">
+                                    <div style="font-size: 11px; color: var(--accent-indigo); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                                        <i class="fa-solid fa-book-open"></i> Mindset Article
+                                    </div>
+                                    <p style="margin: 0; white-space: pre-wrap; font-size: 14px; line-height: 1.7; color: var(--text-secondary);">{{ post.linkedin_post }}</p>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Detailed Mindset Poll Link Call-to-action (Bottom of card) -->
+                            <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 12px; color: var(--text-muted);"><i class="fa-solid fa-square-poll-vertical"></i> Mindset Survey Poll</span>
+                                <a href="{% url 'screener:community_post_detail' post.id %}" class="nav-btn signup-btn" style="padding: 6px 12px; font-size: 11px; text-decoration: none;">
+                                    Vote & View Sentiment
+                                </a>
                             </div>
                         </div>
                     {% endfor %}
@@ -620,6 +666,15 @@
                     </div>
                 {% endif %}
             </div>
+
+            <!-- Pagination Controls -->
+            {% if posts %}
+            <div class="pagination-controls" style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 30px; font-family: var(--font-stack);">
+                <button id="btn-page-prev" class="filter-badge" style="display: flex; align-items: center; gap: 6px; padding: 8px 16px;"><i class="fa-solid fa-arrow-left"></i> Previous</button>
+                <span id="txt-page-info" style="font-size: 13px; font-weight: 600; color: var(--text-secondary);">Page 1 of 1</span>
+                <button id="btn-page-next" class="filter-badge" style="display: flex; align-items: center; gap: 6px; padding: 8px 16px;">Next <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+            {% endif %}
         </main>
     </div>
 
@@ -627,45 +682,148 @@
     <script>
         // Platform Tab Switching inside Card
         function switchCardTab(button, paneId) {
-            // Find parent card container
             const card = button.closest('.post-card');
-            
-            // Deactivate all tab buttons in this card
             const tabButtons = card.querySelectorAll('.card-tab-btn');
             tabButtons.forEach(btn => btn.classList.remove('active'));
-            
-            // Deactivate all content panes in this card
             const tabPanes = card.querySelectorAll('.tab-pane');
             tabPanes.forEach(pane => pane.classList.remove('active'));
-            
-            // Activate target button and pane
             button.classList.add('active');
             card.querySelector('#' + paneId).classList.add('active');
         }
 
-        // Filter Rows Selection
         document.addEventListener('DOMContentLoaded', () => {
-            const filterButtons = document.querySelectorAll('.filter-badge');
             const cards = document.querySelectorAll('.post-card');
+            const selStockFilter = document.getElementById('sel-stock-filter');
+            const filterButtons = document.querySelectorAll('.filter-badge');
+            const btnPrev = document.getElementById('btn-page-prev');
+            const btnNext = document.getElementById('btn-page-next');
+            const txtPageInfo = document.getElementById('txt-page-info');
+            const emptyState = document.querySelector('.empty-state');
 
-            filterButtons.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    // Toggle active button highlight
-                    filterButtons.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
+            let currentThemeFilter = 'all';
+            let currentStockFilter = 'all';
+            let currentPage = 1;
+            let visibleCards = [];
 
-                    // Filter cards
-                    const filterValue = btn.getAttribute('data-filter');
-                    cards.forEach(card => {
-                        const cardTheme = card.getAttribute('data-theme');
-                        if (filterValue === 'all' || cardTheme === filterValue) {
-                            card.style.display = 'block';
-                        } else {
-                            card.style.display = 'none';
-                        }
+            // 1. Populate Stock filter options dynamically based on cards
+            const uniqueStocks = new Set();
+            cards.forEach(card => {
+                const stock = card.getAttribute('data-stock');
+                if (stock) {
+                    uniqueStocks.add(stock.trim().toUpperCase());
+                }
+            });
+
+            // Add sorted unique stocks to dropdown
+            Array.from(uniqueStocks).sort().forEach(stock => {
+                const opt = document.createElement('option');
+                opt.value = stock.toLowerCase();
+                opt.textContent = stock;
+                if (selStockFilter) selStockFilter.appendChild(opt);
+            });
+
+            // 2. Main Filtering and Rendering function with Pagination
+            function applyFiltersAndRender() {
+                visibleCards = [];
+
+                cards.forEach(card => {
+                    const cardTheme = card.getAttribute('data-theme');
+                    const cardStock = (card.getAttribute('data-stock') || '').toLowerCase();
+
+                    const matchesTheme = (currentThemeFilter === 'all' || cardTheme === currentThemeFilter);
+                    const matchesStock = (currentStockFilter === 'all' || cardStock === currentStockFilter.toLowerCase());
+
+                    if (matchesTheme && matchesStock) {
+                        visibleCards.push(card);
+                    }
+                    // Hide initially
+                    card.style.display = 'none';
+                });
+
+                // Update UI state based on filtered cards
+                const totalFiltered = visibleCards.length;
+                if (totalFiltered === 0) {
+                    if (emptyState) emptyState.style.display = 'block';
+                    if (txtPageInfo) txtPageInfo.textContent = 'No matching case studies';
+                    if (btnPrev) btnPrev.style.opacity = 0.5;
+                    if (btnNext) btnNext.style.opacity = 0.5;
+                    return;
+                }
+
+                if (emptyState) emptyState.style.display = 'none';
+
+                // Bounds correction for currentPage
+                if (currentPage < 1) currentPage = 1;
+                if (currentPage > totalFiltered) currentPage = totalFiltered;
+
+                // Show only the current paginated card (1 card per page)
+                const cardToShow = visibleCards[currentPage - 1];
+                if (cardToShow) {
+                    cardToShow.style.display = 'block';
+                }
+
+                // Update pagination controls text and buttons
+                if (txtPageInfo) {
+                    txtPageInfo.textContent = `Case Study ${currentPage} of ${totalFiltered}`;
+                }
+
+                // Enable/disable page change controls
+                if (btnPrev) {
+                    btnPrev.disabled = (currentPage === 1);
+                    btnPrev.style.opacity = (currentPage === 1) ? 0.3 : 1;
+                    btnPrev.style.cursor = (currentPage === 1) ? 'default' : 'pointer';
+                }
+                if (btnNext) {
+                    btnNext.disabled = (currentPage === totalFiltered);
+                    btnNext.style.opacity = (currentPage === totalFiltered) ? 0.3 : 1;
+                    btnNext.style.cursor = (currentPage === totalFiltered) ? 'default' : 'pointer';
+                }
+            }
+
+            // 3. Bind Event Listeners
+            // Theme badge filtering (Admins only, checks if elements exist)
+            if (filterButtons.length > 0) {
+                filterButtons.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        filterButtons.forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        currentThemeFilter = btn.getAttribute('data-filter');
+                        currentPage = 1; // Reset to page 1
+                        applyFiltersAndRender();
                     });
                 });
-            });
+            }
+
+            // Stock dropdown filtering
+            if (selStockFilter) {
+                selStockFilter.addEventListener('change', (e) => {
+                    currentStockFilter = e.target.value;
+                    currentPage = 1; // Reset to page 1
+                    applyFiltersAndRender();
+                });
+            }
+
+            // Page navigation controls
+            if (btnPrev) {
+                btnPrev.addEventListener('click', () => {
+                    if (currentPage > 1) {
+                        currentPage--;
+                        applyFiltersAndRender();
+                    }
+                });
+            }
+
+            if (btnNext) {
+                btnNext.addEventListener('click', () => {
+                    if (currentPage < visibleCards.length) {
+                        currentPage++;
+                        applyFiltersAndRender();
+                    }
+                });
+            }
+
+            // Initial render
+            applyFiltersAndRender();
         });
     </script>
 </body>
