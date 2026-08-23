@@ -62,6 +62,41 @@
             #btn-toggle-filters {
                 display: inline-flex !important;
             }
+
+            /* Container boundaries to completely prevent horizontal overflow, scrolling, and body zoom */
+            body {
+                overflow-x: hidden !important;
+                width: 100vw !important;
+                max-width: 100vw !important;
+            }
+            .app-container {
+                padding: 12px !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+                overflow: hidden !important;
+            }
+            .dashboard-layout {
+                grid-template-columns: 1fr !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow: hidden !important;
+                box-sizing: border-box !important;
+                gap: 16px !important;
+            }
+            .screener-results {
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow: hidden !important;
+                box-sizing: border-box !important;
+                gap: 16px !important;
+            }
+            .table-container {
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch;
+            }
         }
 
         /* Responsive adjustments for narrow/mobile devices - Icon-only buttons */
@@ -124,18 +159,24 @@
         }
 
         /* Uniform KPI stat cards container on mobile - 3 KPIs max per row */
-        @media (max-width: 768px) {
+        @media (max-width: 1024px) {
             .stats-bar {
                 display: grid !important;
                 grid-template-columns: repeat(3, 1fr) !important;
                 gap: 10px !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
             }
             .stat-card {
-                padding: 10px !important;
+                min-width: 0 !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 8px 4px !important;
                 flex-direction: column !important;
                 align-items: center !important;
                 text-align: center !important;
-                gap: 6px !important;
+                gap: 4px !important;
+                box-sizing: border-box !important;
             }
             .stat-icon {
                 width: 32px !important;
@@ -160,8 +201,26 @@
             }
         }
 
-        /* On mobile (width <= 768px), when NOT in fullscreen, hide extra columns and only show Ticker, Price, Perf */
-        @media (max-width: 768px) {
+        /* Extra compact KPIs on very small screens */
+        @media (max-width: 480px) {
+            .stat-card {
+                padding: 6px 2px !important;
+            }
+            .stat-icon {
+                width: 28px !important;
+                height: 28px !important;
+                font-size: 12px !important;
+            }
+            .stat-val {
+                font-size: 13px !important;
+            }
+            .stat-lbl {
+                font-size: 8px !important;
+            }
+        }
+
+        /* On mobile (width <= 1024px), when NOT in fullscreen, hide extra columns and only show Ticker, Price, Perf */
+        @media (max-width: 1024px) {
             body:not(.fullscreen-grid-active) #main-screener-grid .screener-table th:nth-child(2),
             body:not(.fullscreen-grid-active) #main-screener-grid .screener-table td:nth-child(2),
             body:not(.fullscreen-grid-active) #main-screener-grid .screener-table th:nth-child(5),
@@ -635,7 +694,7 @@
                     </div>
 
                     <div class="table-container">
-                        <table id="screener-table">
+                        <table id="screener-table" class="screener-table">
                             <thead>
                                 <tr>
                                     <th class="sortable" data-sort="ticker">Ticker <i class="fa-solid fa-sort"></i></th>
