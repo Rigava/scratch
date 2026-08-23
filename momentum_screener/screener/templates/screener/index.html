@@ -18,31 +18,64 @@
         /* Responsive navigation fix to prevent brand & details overlap */
         @media (max-width: 1024px) {
             .app-header {
-                flex-direction: column;
-                gap: 15px;
-                align-items: center;
-                text-align: center;
-                padding: 15px;
+                flex-direction: column !important;
+                gap: 15px !important;
+                align-items: center !important;
+                text-align: center !important;
+                padding: 15px !important;
             }
             .logo-area {
-                flex-direction: column;
-                gap: 6px;
+                flex-direction: column !important;
+                gap: 6px !important;
+            }
+            .logo-text h1 {
+                font-size: 22px !important;
+            }
+            .logo-text span {
+                display: none !important; /* Hide long subtitle to save vertical space */
             }
             .header-actions {
-                flex-direction: column;
-                gap: 12px;
-                width: 100%;
-                align-items: center;
+                flex-direction: column !important;
+                gap: 12px !important;
+                width: 100% !important;
+                align-items: center !important;
             }
             .user-profile-badge {
-                flex-wrap: wrap;
-                justify-content: center;
-                width: 100%;
+                flex-wrap: wrap !important;
+                justify-content: center !important;
+                width: 100% !important;
                 margin-right: 0 !important;
-                gap: 6px;
+                gap: 6px !important;
+                box-sizing: border-box !important;
             }
             .data-source-selector {
                 align-items: center !important;
+                width: 100% !important;
+                justify-content: center !important;
+            }
+            .header-actions-row {
+                display: grid !important;
+                grid-template-columns: repeat(4, 1fr) !important;
+                gap: 8px !important;
+                width: 100% !important;
+            }
+            #btn-toggle-filters {
+                display: inline-flex !important;
+            }
+        }
+
+        /* Responsive adjustments for narrow/mobile devices - Icon-only buttons */
+        @media (max-width: 580px) {
+            .header-actions-row .guide-btn span {
+                display: none !important;
+            }
+            .header-actions-row .guide-btn {
+                padding: 10px 0 !important;
+                justify-content: center !important;
+            }
+            .header-actions-row .guide-btn i {
+                margin: 0 !important;
+                font-size: 14px !important;
             }
         }
 
@@ -83,10 +116,6 @@
             
             .filters-backdrop.show {
                 display: block;
-            }
-            
-            #btn-toggle-filters {
-                display: flex !important;
             }
             
             .sidebar-mobile-header {
@@ -139,9 +168,12 @@
                     <span style="color: rgba(255, 255, 255, 0.15);">|</span>
                     <a href="{% url 'screener:logout' %}" style="color: var(--text-secondary); text-decoration: none; font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='var(--text-secondary)'"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
                 </div>
-                <a href="{% url 'screener:community' %}" class="guide-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-bullhorn"></i> Use Cases</a>
-                <button id="btn-open-guide" class="guide-btn"><i class="fa-solid fa-circle-info"></i> How it Works</button>
-                <button id="btn-toggle-credentials" class="guide-btn"><i class="fa-solid fa-gears"></i> API Setup</button>
+                <div class="header-actions-row" style="display: flex; gap: 8px;">
+                    <a href="{% url 'screener:community' %}" class="guide-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-bullhorn"></i> <span>Use Cases</span></a>
+                    <button id="btn-open-guide" class="guide-btn" style="display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-circle-info"></i> <span>How it Works</span></button>
+                    <button id="btn-toggle-credentials" class="guide-btn" style="display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-gears"></i> <span>API Setup</span></button>
+                    <button id="btn-toggle-filters" class="guide-btn" style="display: none; align-items: center; gap: 6px;"><i class="fa-solid fa-sliders"></i> <span>Filters</span></button>
+                </div>
                 <div class="data-source-selector" style="position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span class="source-label"><i class="fa-solid fa-database"></i> Source:</span>
@@ -382,10 +414,6 @@
 
             <!-- Center Panel: Screener Grid & Stats -->
             <section class="screener-results">
-                <!-- Mobile Filters Toggle Button -->
-                <button id="btn-toggle-filters" class="primary-btn" style="display: none; width: 100%; margin-bottom: 20px; background: linear-gradient(135deg, var(--accent-indigo), #4f46e5); border: none; align-items: center; justify-content: center; gap: 8px; cursor: pointer; border-radius: var(--border-radius-md); padding: 12px 20px; font-weight: 600; font-size: 13px; color: #fff;">
-                    <i class="fa-solid fa-sliders"></i> Filter Parameters
-                </button>
                 <!-- Navigation Tabs -->
                 <div class="view-tabs" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 10px; font-family: var(--font-stack);">
                     <button id="btn-tab-screener" class="tab-btn active" style="background: rgba(255,255,255,0.05); border: none; color: var(--text-primary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
