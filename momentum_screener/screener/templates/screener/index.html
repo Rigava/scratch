@@ -152,15 +152,19 @@
             margin: 0 !important;
             border-radius: 0 !important;
             background: var(--bg-primary) !important;
-            overflow-y: auto !important;
             padding: 24px !important;
             box-sizing: border-box !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 16px !important;
         }
 
-        /* Ensure scrollbars inside fullscreen mode function correctly */
+        /* Let the table container take up all the remaining vertical space */
         .screener-grid-card.fullscreen-screener .table-container {
-            max-height: calc(100vh - 120px) !important;
+            flex: 1 1 auto !important;
             overflow-y: auto !important;
+            max-height: none !important;
+            height: 100% !important;
         }
     </style>
 </head>
