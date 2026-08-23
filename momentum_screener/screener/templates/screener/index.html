@@ -163,7 +163,7 @@
             gap: 0 !important;
         }
 
-        body.fullscreen-grid-active .screener-grid-card {
+        body.fullscreen-grid-active #main-screener-grid {
             position: fixed !important;
             top: 0 !important;
             left: 0 !important;
@@ -180,7 +180,7 @@
             gap: 16px !important;
         }
 
-        body.fullscreen-grid-active .screener-grid-card .table-container {
+        body.fullscreen-grid-active #main-screener-grid .table-container {
             flex: 1 1 auto !important;
             overflow-y: auto !important;
             max-height: none !important;
@@ -553,7 +553,7 @@
                 </div>
 
                 <!-- Screener Grid Card -->
-                <div class="screener-grid-card glass-card">
+                <div id="main-screener-grid" class="screener-grid-card glass-card">
                     <div class="grid-controls">
                         <div class="search-box">
                             <i class="fa-solid fa-magnifying-glass"></i>
@@ -1264,7 +1264,7 @@
 
             // Fullscreen Screener Grid Toggling
             const btnFullscreen = document.getElementById('btn-fullscreen-grid');
-            const screenerGridCard = document.querySelector('.screener-grid-card');
+            const screenerGridCard = document.getElementById('main-screener-grid');
 
             if (btnFullscreen && screenerGridCard) {
                 btnFullscreen.addEventListener('click', () => {
