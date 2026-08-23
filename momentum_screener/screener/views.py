@@ -361,12 +361,14 @@ def dashboard_view(request):
         if request.user.is_superuser:
             admin_pending_payments = list(PaymentVerificationRequest.objects.filter(status='pending').order_by('-created_at'))
 
-    # Fetch latest mindset poll post
+    # Fetch latest mindset poll post and recent use cases
     from screener.models import CommunityPost
     latest_poll_post = CommunityPost.objects.exclude(question_1='').order_by('-created_at').first()
     has_voted_latest = False
     if latest_poll_post:
         has_voted_latest = request.session.get(f'has_voted_{latest_poll_post.id}', False)
+    
+    recent_use_cases = CommunityPost.objects.order_by('-created_at')[:3]
 
     # Force reload environment variables to capture newly pasted variables
     load_env_file(force=True)
@@ -391,6 +393,7 @@ def dashboard_view(request):
         'pro_expires_at': pro_expires_at_str,
         'latest_poll_post': latest_poll_post,
         'has_voted_latest': has_voted_latest,
+        'recent_use_cases': recent_use_cases,
     }
     return render(request, 'screener/index.html', context)
 

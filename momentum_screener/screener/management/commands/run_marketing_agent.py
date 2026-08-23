@@ -289,7 +289,7 @@ class Command(BaseCommand):
                     post_id = post.id
                     
                     # Generate dynamic voting/mindset poll URL
-                    voting_link = f"http://127.0.0.1:8000/community/post/{post.id}/"
+                    voting_link = f"https://www.tradekriya.com/community/post/{post.id}/"
                     
                     # Replace [VOTING_LINK] in text fields
                     campaign['linkedin_post'] = campaign['linkedin_post'].replace('[VOTING_LINK]', voting_link)

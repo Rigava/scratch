@@ -237,7 +237,8 @@
         body.fullscreen-grid-active .view-tabs,
         body.fullscreen-grid-active .user-alerts-block,
         body.fullscreen-grid-active .sidebar-config,
-        body.fullscreen-grid-active #filters-backdrop {
+        body.fullscreen-grid-active #filters-backdrop,
+        body.fullscreen-grid-active .use-cases-section {
             display: none !important;
         }
 
@@ -715,6 +716,46 @@
                         </table>
                     </div>
                 </div>
+
+                <!-- Recent Use Cases & Insights Section -->
+                {% if recent_use_cases %}
+                <div class="use-cases-section glass-card" style="margin-top: 24px; font-family: var(--font-stack);">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; margin-bottom: 16px;">
+                        <h2 style="font-size: 15px; font-weight: 700; color: var(--accent-orange); display: flex; align-items: center; gap: 8px; margin: 0;"><i class="fa-solid fa-bullhorn"></i> Recent Use Cases & Insights</h2>
+                        <a href="{% url 'screener:community' %}" class="text-btn" style="font-size: 12px; font-weight: 600; text-decoration: none;">View Feed</a>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        {% for post in recent_use_cases %}
+                        <div class="use-case-item glass-card" style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--border-radius-md); display: flex; flex-direction: column; gap: 10px;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
+                                <h3 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin: 0;">{{ post.title }}</h3>
+                                <div style="display: flex; gap: 6px;">
+                                    <span class="badge-milestone normal" style="font-size: 10px; padding: 2px 8px; text-transform: uppercase;">{{ post.stock_symbol }}</span>
+                                    <span class="badge-milestone ema50" style="font-size: 10px; padding: 2px 8px; text-transform: uppercase; white-space: normal;">
+                                        {% if post.theme == 'failed_breakout' %}
+                                            Bull Trap
+                                        {% elif post.theme == 'failed_breakdown' %}
+                                            Bear Trap
+                                        {% elif post.theme == 'sudden_reversal' %}
+                                            Sudden Reversal
+                                        {% else %}
+                                            {{ post.theme }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.45; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                {{ post.post_copy }}
+                            </p>
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+                                <span>Published: {{ post.created_at|date:"d M Y" }}</span>
+                                <a href="{% url 'screener:community_post_detail' post.id %}" style="color: var(--accent-indigo); font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 4px;">Participate in Poll <i class="fa-solid fa-arrow-right"></i></a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
 
                 <!-- Backtest View Card -->
                 <div id="backtest-view-card" class="screener-grid-card glass-card hidden" style="margin-top: 0;">
