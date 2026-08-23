@@ -122,6 +122,46 @@
                 display: flex !important;
             }
         }
+
+        /* Uniform KPI stat cards container on mobile */
+        @media (max-width: 768px) {
+            .stats-bar {
+                display: flex !important;
+                overflow-x: auto !important;
+                white-space: nowrap !important;
+                gap: 12px !important;
+                padding-bottom: 8px !important;
+                -webkit-overflow-scrolling: touch;
+                scroll-snap-type: x mandatory;
+            }
+            .stat-card {
+                flex: 0 0 160px !important;
+                scroll-snap-align: start;
+                padding: 12px 16px !important;
+            }
+        }
+
+        /* Fullscreen Screener Grid Mode */
+        .screener-grid-card.fullscreen-screener {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 99999 !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            background: var(--bg-primary) !important;
+            overflow-y: auto !important;
+            padding: 24px !important;
+            box-sizing: border-box !important;
+        }
+
+        /* Ensure scrollbars inside fullscreen mode function correctly */
+        .screener-grid-card.fullscreen-screener .table-container {
+            max-height: calc(100vh - 120px) !important;
+            overflow-y: auto !important;
+        }
     </style>
 </head>
 <body>
@@ -501,6 +541,11 @@
                             <button id="btn-scan-nifty50" class="primary-btn" style="background: linear-gradient(135deg, var(--accent-indigo) 0%, #c76543 100%); font-size: 12px; padding: 8px 16px;"><i class="fa-solid fa-circle-nodes"></i> Scan Nifty 50</button>
                             <button id="btn-scan-fo" class="primary-btn" style="background: linear-gradient(135deg, #f4a261 0%, #e76f51 100%); font-size: 12px; padding: 8px 16px;"><i class="fa-solid fa-chart-pie"></i> Scan F&O List</button>
                         </div>
+                        
+                        <!-- Fullscreen Grid Toggle Button -->
+                        <button id="btn-fullscreen-grid" class="guide-btn" title="Toggle Fullscreen Grid" style="display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border-radius: var(--border-radius-sm); margin-left: auto; flex-shrink: 0;">
+                            <i class="fa-solid fa-expand"></i>
+                        </button>
                         
                         <!-- Add Ticker for Zerodha Mode -->
                         <div id="zerodha-add-ticker-section" class="add-ticker-box hidden">
@@ -1191,6 +1236,24 @@
             function closeFilters() {
                 if (sidebarConfig) sidebarConfig.classList.remove('show-filters');
                 if (filtersBackdrop) filtersBackdrop.classList.remove('show');
+            }
+
+            // Fullscreen Screener Grid Toggling
+            const btnFullscreen = document.getElementById('btn-fullscreen-grid');
+            const screenerGridCard = document.querySelector('.screener-grid-card');
+
+            if (btnFullscreen && screenerGridCard) {
+                btnFullscreen.addEventListener('click', () => {
+                    screenerGridCard.classList.toggle('fullscreen-screener');
+                    const icon = btnFullscreen.querySelector('i');
+                    if (screenerGridCard.classList.contains('fullscreen-screener')) {
+                        icon.className = 'fa-solid fa-compress';
+                        btnFullscreen.title = 'Exit Fullscreen';
+                    } else {
+                        icon.className = 'fa-solid fa-expand';
+                        btnFullscreen.title = 'Toggle Fullscreen Grid';
+                    }
+                });
             }
 
             if (btnToggleFilters) {
