@@ -620,10 +620,10 @@ const App = (function() {
                 <td>${perfVisualHtml}</td>
                 <td>${momentumShiftHtml}</td>
                 <td>${milestoneHtml}</td>
-                <td class="${stock.current.drawdown > state.filters.drawdown.threshold && state.filters.drawdown.enabled ? 'text-red' : ''}">${stock.current.drawdown}%</td>
-                <td class="${stock.current.rsi < state.filters.rsi.threshold && state.filters.rsi.enabled ? 'text-red' : ''}">${stock.current.rsi ?? '-'}</td>
-                <td>${stock.current.adx ?? '-'}</td>
-                <td><span class="badge ${badgeClass}">${icon} ${stock.status}</span></td>
+                <td class="detail-col ${stock.current.drawdown > state.filters.drawdown.threshold && state.filters.drawdown.enabled ? 'text-red' : ''}">${stock.current.drawdown}%</td>
+                <td class="detail-col ${stock.current.rsi < state.filters.rsi.threshold && state.filters.rsi.enabled ? 'text-red' : ''}">${stock.current.rsi ?? '-'}</td>
+                <td class="detail-col">${stock.current.adx ?? '-'}</td>
+                <td class="detail-col"><span class="badge ${badgeClass}">${icon} ${stock.status}</span></td>
             `;
 
             tr.addEventListener('click', () => {
