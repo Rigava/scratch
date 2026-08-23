@@ -141,8 +141,29 @@
             }
         }
 
-        /* Fullscreen Screener Grid Mode */
-        .screener-grid-card.fullscreen-screener {
+        /* Fullscreen Screener Grid Mode overrides */
+        body.fullscreen-grid-active .app-header,
+        body.fullscreen-grid-active .stats-bar,
+        body.fullscreen-grid-active .view-tabs,
+        body.fullscreen-grid-active .user-alerts-block,
+        body.fullscreen-grid-active .sidebar-config,
+        body.fullscreen-grid-active #filters-backdrop {
+            display: none !important;
+        }
+
+        body.fullscreen-grid-active .dashboard-layout {
+            display: block !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        body.fullscreen-grid-active .screener-results {
+            padding: 0 !important;
+            margin: 0 !important;
+            gap: 0 !important;
+        }
+
+        body.fullscreen-grid-active .screener-grid-card {
             position: fixed !important;
             top: 0 !important;
             left: 0 !important;
@@ -159,8 +180,7 @@
             gap: 16px !important;
         }
 
-        /* Let the table container take up all the remaining vertical space */
-        .screener-grid-card.fullscreen-screener .table-container {
+        body.fullscreen-grid-active .screener-grid-card .table-container {
             flex: 1 1 auto !important;
             overflow-y: auto !important;
             max-height: none !important;
@@ -1248,9 +1268,9 @@
 
             if (btnFullscreen && screenerGridCard) {
                 btnFullscreen.addEventListener('click', () => {
-                    screenerGridCard.classList.toggle('fullscreen-screener');
+                    document.body.classList.toggle('fullscreen-grid-active');
                     const icon = btnFullscreen.querySelector('i');
-                    if (screenerGridCard.classList.contains('fullscreen-screener')) {
+                    if (document.body.classList.contains('fullscreen-grid-active')) {
                         icon.className = 'fa-solid fa-compress';
                         btnFullscreen.title = 'Exit Fullscreen';
                     } else {
