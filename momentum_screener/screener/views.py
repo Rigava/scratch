@@ -61,6 +61,14 @@ SYMBOL_TO_TOKEN = {
     'M&M': '519937',
     'TATASTEEL': '895745',
     'WIPRO': '969473',
+    'NIFTY 50': '256265',
+    'NIFTY50': '256265',
+    'NIFTY': '256265',
+    'NIFTY BANK': '260105',
+    'NIFTYBANK': '260105',
+    'BANKNIFTY': '260105',
+    'NIFTY IT': '259849',
+    'NIFTYIT': '259849',
 }
 
 import csv

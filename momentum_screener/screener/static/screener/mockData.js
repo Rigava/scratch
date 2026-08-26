@@ -134,7 +134,8 @@ const MockDataEngine = (function() {
         "LTIM", "M&M", "MARUTI", "NESTLEIND", "NTPC", 
         "ONGC", "POWERGRID", "RELIANCE", "SBILIFE", "SBIN", 
         "SUNPHARMA", "TATACONSUM", "TATAMOTORS", "TATASTEEL", "TCS", 
-        "TECHM", "TITAN", "ULTRACEMCO", "WIPRO", "TRENT"
+        "TECHM", "TITAN", "ULTRACEMCO", "WIPRO", "TRENT",
+        "NIFTY 50", "NIFTY BANK", "NIFTY IT"
     ];
 
     const FO_LIST = [
@@ -182,7 +183,10 @@ const MockDataEngine = (function() {
             const type = pathTypes[charSum % pathTypes.length];
             
             let name = `${sym} Ltd.`;
-            if (sym === 'RELIANCE') name = 'Reliance Industries Ltd.';
+            if (sym === 'NIFTY 50') name = 'Nifty 50 Index';
+            else if (sym === 'NIFTY BANK') name = 'Nifty Bank Index';
+            else if (sym === 'NIFTY IT') name = 'Nifty IT Index';
+            else if (sym === 'RELIANCE') name = 'Reliance Industries Ltd.';
             else if (sym === 'TCS') name = 'Tata Consultancy Services Ltd.';
             else if (sym === 'INFY') name = 'Infosys Ltd.';
             else if (sym === 'HDFCBANK') name = 'HDFC Bank Ltd.';
