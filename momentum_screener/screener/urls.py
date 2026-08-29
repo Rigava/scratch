@@ -35,4 +35,7 @@ urlpatterns = [
     path('api/journal/close/', views.api_journal_close, name='api_journal_close'),
     path('api/journal/delete/', views.api_journal_delete, name='api_journal_delete'),
     path('api/journal/clear/', views.api_journal_clear, name='api_journal_clear'),
+    path('api/advanced-strategy/', views.advanced_strategy_view, name='api_advanced_strategy'),
+    path('api/generate-pm-brief/', views.generate_pm_brief_view, name='api_generate_pm_brief'),
+    path('api/publish-pm-brief/', views.publish_pm_brief_view, name='api_publish_pm_brief'),
 ]

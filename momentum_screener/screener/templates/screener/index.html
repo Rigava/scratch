@@ -231,7 +231,59 @@
             }
         }
 
-        /* Fullscreen Screener Grid Mode overrides */
+        /* Mobile Advanced Strategy Table Column Hiding */
+        @media (max-width: 1024px) {
+            body:not(.fullscreen-grid-active) #abs-ranking-table th:nth-child(3),
+            body:not(.fullscreen-grid-active) #abs-ranking-table td:nth-child(3),
+            body:not(.fullscreen-grid-active) #abs-ranking-table th:nth-child(4),
+            body:not(.fullscreen-grid-active) #abs-ranking-table td:nth-child(4),
+            body:not(.fullscreen-grid-active) #abs-ranking-table th:nth-child(6),
+            body:not(.fullscreen-grid-active) #abs-ranking-table td:nth-child(6) {
+                display: none !important;
+            }
+
+            body:not(.fullscreen-grid-active) #bearish-exh-table th:nth-child(1),
+            body:not(.fullscreen-grid-active) #bearish-exh-table td:nth-child(1),
+            body:not(.fullscreen-grid-active) #bearish-exh-table th:nth-child(5),
+            body:not(.fullscreen-grid-active) #bearish-exh-table td:nth-child(5) {
+                display: none !important;
+            }
+
+            body:not(.fullscreen-grid-active) #bullish-exh-table th:nth-child(1),
+            body:not(.fullscreen-grid-active) #bullish-exh-table td:nth-child(1),
+            body:not(.fullscreen-grid-active) #bullish-exh-table th:nth-child(5),
+            body:not(.fullscreen-grid-active) #bullish-exh-table td:nth-child(5) {
+                display: none !important;
+            }
+
+            body:not(.fullscreen-grid-active) #vcp-ranking-table th:nth-child(4),
+            body:not(.fullscreen-grid-active) #vcp-ranking-table td:nth-child(4),
+            body:not(.fullscreen-grid-active) #vcp-ranking-table th:nth-child(5),
+            body:not(.fullscreen-grid-active) #vcp-ranking-table td:nth-child(5) {
+                display: none !important;
+            }
+        }
+
+        /* Fullscreen Advanced Strategy View Card overrides */
+        body.fullscreen-grid-active #advanced-strategy-view-card {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 99999 !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            background: var(--bg-primary) !important;
+            padding: 24px !important;
+            box-sizing: border-box !important;
+            overflow-y: auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 16px !important;
+        }
+
+                /* Fullscreen Screener Grid Mode overrides */
         body.fullscreen-grid-active .app-header,
         body.fullscreen-grid-active .stats-bar,
         body.fullscreen-grid-active .view-tabs,
@@ -604,6 +656,9 @@
                     <button id="btn-tab-journal" class="tab-btn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
                         <i class="fa-solid fa-book"></i> Trading Journal
                     </button>
+                    <button id="btn-tab-advanced" class="tab-btn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-gem" style="color: #a855f7;"></i> Advanced Strategy
+                    </button>
                 </div>
 
                 <!-- User Notification Banner Block -->
@@ -931,6 +986,192 @@
                         </div>
                     </div>
                 </div>
+        <!-- Advanced Strategy View Card -->
+    <div id="advanced-strategy-view-card" class="screener-grid-card glass-card hidden" style="margin-top: 0;">
+        <!-- Header with title and quick explanation -->
+        <div style="margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; font-family: var(--font-stack);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <h2 style="margin: 0; color: var(--text-primary); font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px;">
+                    <i class="fa-solid fa-gem" style="color: #a855f7;"></i> Advanced Institutional Strategy Dashboard
+                </h2>
+                <div style="display: flex; align-items: center; gap: 10px; margin-left: auto;">
+                    <span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); font-size: 11px; padding: 4px 8px; border-radius: 12px; font-weight: 600;">
+                        <i class="fa-solid fa-crown" style="color: #fbbf24;"></i> Pro Feature
+                    </span>
+                    <button id="btn-fullscreen-advanced" class="guide-btn" title="Toggle Fullscreen Grid" style="display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border-radius: var(--border-radius-sm); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: var(--text-primary); cursor: pointer;">
+                        <i class="fa-solid fa-expand"></i>
+                    </button>
+                </div>
+            </div>
+            <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin: 8px 0 0 0;">
+                Deep quantitative models analyzing market microstructure, institutional execution, positioning distress, and supply absorption. Evaluated on Nifty 50 F&O data.
+            </p>
+        </div>
+
+        <!-- Layout: Three Column Panels -->
+        <div style="display: flex; flex-direction: column; gap: 25px; font-family: var(--font-stack);">
+            
+            <!-- 1. Institutional Liquidity Absorption -->
+            <div class="strategy-section" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03); border-radius: var(--border-radius-md); padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <h3 style="margin: 0; color: var(--text-primary); font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-circle-down" style="color: #10b981;"></i> Institutional Liquidity Absorption
+                            <span class="tooltip-container" style="position: relative; display: inline-block; cursor: pointer; color: var(--text-secondary); margin-left: 4px;" onclick="toggleAdvancedTooltip('tooltip-abs')">
+                                <i class="fa-regular fa-circle-question"></i>
+                            </span>
+                        </h3>
+                        <span id="abs-evaluation-date-label" style="font-size: 11px; color: var(--text-secondary); display: block; margin-top: 4px;">Evaluating...</span>
+                    </div>
+                </div>
+                
+                <!-- Educational Block / Tooltip Content -->
+                <div id="tooltip-abs" class="educational-block hidden" style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.15); padding: 12px 16px; border-radius: var(--border-radius-sm); font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 15px;">
+                    <strong style="color: #10b981; display: flex; align-items: center; gap: 6px; margin-bottom: 6px;"><i class="fa-solid fa-graduation-cap"></i> Market Maker Perspective: Selling Pressure Absorption</strong>
+                    <strong>What this means:</strong> Retail traders panic-sell during market drawdowns. Institutions step in to absorb this selling, which leaves clear footprint signatures in the data.<br>
+                    <strong>Deterministic Logic:</strong> This model triggers on market down days (Nifty 50 return &lt; -0.3%) and identifies stocks that closed green ($Return \ge 0$) on high volume ratio (volume relative to its 20-day average) and positive Close Location Value (CLV - closing near high of day).<br>
+                    <strong>How to interpret Score:</strong> A higher absorption score indicates that buying was highly aggressive and efficient relative to market weakness. A high score suggests institutions are aggressively accumulating near lows, setting the stock up for a swift recovery when the market stabilizes.
+                </div>
+
+                <div class="table-container" style="overflow-x: auto;">
+                    <table id="abs-ranking-table" class="screener-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 12px;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); font-weight: 600;">
+                                <th style="padding: 10px;">Symbol</th>
+                                <th style="padding: 10px;">Price</th>
+                                <th style="padding: 10px; text-align: right;">Stock Return</th>
+                                <th style="padding: 10px; text-align: right;">Residual Return</th>
+                                <th style="padding: 10px; text-align: right;">Vol Ratio</th>
+                                <th style="padding: 10px; text-align: right;">CLV</th>
+                                <th style="padding: 10px; text-align: right; color: var(--text-primary); font-weight: 700;">Absorption Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="abs-ranking-table-body">
+                            <tr><td colspan="7" style="padding: 15px; text-align: center; color: var(--text-secondary);">Loading rankings...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 2. Behavioral Exhaustion Climaxes -->
+            <div class="strategy-section" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03); border-radius: var(--border-radius-md); padding: 20px;">
+                <div style="margin-bottom: 15px;">
+                    <h3 style="margin: 0; color: var(--text-primary); font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-arrows-split-up-and-left" style="color: #ef4444;"></i> Behavioral Exhaustion Climaxes
+                        <span class="tooltip-container" style="position: relative; display: inline-block; cursor: pointer; color: var(--text-secondary); margin-left: 4px;" onclick="toggleAdvancedTooltip('tooltip-exh')">
+                            <i class="fa-regular fa-circle-question"></i>
+                        </span>
+                    </h3>
+                    <span style="font-size: 11px; color: var(--text-secondary); display: block; margin-top: 4px;">Evaluating setups over the last 5 trading days</span>
+                </div>
+                
+                <!-- Educational Block / Tooltip Content -->
+                <div id="tooltip-exh" class="educational-block hidden" style="background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.15); padding: 12px 16px; border-radius: var(--border-radius-sm); font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 15px;">
+                    <strong style="color: #ef4444; display: flex; align-items: center; gap: 6px; margin-bottom: 6px;"><i class="fa-solid fa-graduation-cap"></i> Behavioral Analyst Perspective: Buying/Selling Capitulations</strong>
+                    <strong>What this means:</strong> Captures extreme emotional extremes where panic selling meets capitulation bottoms, or speculative FOMO meets blow-off tops. These events represent a major transfer of liquidity from retail to institutions.<br>
+                    <strong>Deterministic Logic:</strong> Scans for days with extreme volume expansion ($Z_{Volume} &gt; 1.2$) and range expansion ($Z_{Spread} &gt; 0.8$).<br>
+                    <ul>
+                        <li><strong>Bearish Capitulation:</strong> Stock is below EMA10, but closes near the high of its range ($CLV &gt; 0.2$), showing aggressive buying absorbed the panic dump.</li>
+                        <li><strong>Bullish Capitulation:</strong> Stock is above EMA10, but closes near the low of its range ($CLV &lt; -0.2$), indicating institutional distribution absorbing the buying chase.</li>
+                    </ul>
+                    <strong>How to interpret Score:</strong> Higher score signifies an intense volume climax on a wide day. Look for Bearish Capitulations as explosive bottom reversals, and Bullish Capitulations as exhaustion tops.
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+                    <!-- Bearish Capitulation Table -->
+                    <div style="background: rgba(255,255,255,0.005); border: 1px solid rgba(255,255,255,0.02); padding: 15px; border-radius: var(--border-radius-sm);">
+                        <h4 style="margin: 0 0 12px 0; color: #10b981; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-arrow-trend-up"></i> Bearish Capitulation (Selling Climax Bottoms)
+                        </h4>
+                        <div class="table-container" style="overflow-x: auto;">
+                            <table id="bearish-exh-table" class="screener-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 12px;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); font-weight: 600;">
+                                        <th style="padding: 8px;">Date</th>
+                                        <th style="padding: 8px;">Symbol</th>
+                                        <th style="padding: 8px; text-align: right;">Price</th>
+                                        <th style="padding: 8px; text-align: right;">Vol Z</th>
+                                        <th style="padding: 8px; text-align: right;">Spread Z</th>
+                                        <th style="padding: 8px; text-align: right; color: var(--text-primary); font-weight: 700;">Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bearish-exh-table-body">
+                                    <tr><td colspan="6" style="padding: 10px; text-align: center; color: var(--text-secondary);">No triggers found in last 5 days.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Bullish Capitulation Table -->
+                    <div style="background: rgba(255,255,255,0.005); border: 1px solid rgba(255,255,255,0.02); padding: 15px; border-radius: var(--border-radius-sm);">
+                        <h4 style="margin: 0 0 12px 0; color: #f87171; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-arrow-trend-down"></i> Bullish Capitulation (Blow-off Tops / Exhaustion)
+                        </h4>
+                        <div class="table-container" style="overflow-x: auto;">
+                            <table id="bullish-exh-table" class="screener-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 12px;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); font-weight: 600;">
+                                        <th style="padding: 8px;">Date</th>
+                                        <th style="padding: 8px;">Symbol</th>
+                                        <th style="padding: 8px; text-align: right;">Price</th>
+                                        <th style="padding: 8px; text-align: right;">Vol Z</th>
+                                        <th style="padding: 8px; text-align: right;">Spread Z</th>
+                                        <th style="padding: 8px; text-align: right; color: var(--text-primary); font-weight: 700;">Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bullish-exh-table-body">
+                                    <tr><td colspan="6" style="padding: 10px; text-align: center; color: var(--text-secondary);">No triggers found in last 5 days.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Volatility Contraction Pattern (VCP) -->
+            <div class="strategy-section" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03); border-radius: var(--border-radius-md); padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <h3 style="margin: 0; color: var(--text-primary); font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-compress" style="color: #6366f1;"></i> Volatility Contraction Pattern (VCP)
+                            <span class="tooltip-container" style="position: relative; display: inline-block; cursor: pointer; color: var(--text-secondary); margin-left: 4px;" onclick="toggleAdvancedTooltip('tooltip-vcp')">
+                                <i class="fa-regular fa-circle-question"></i>
+                            </span>
+                        </h3>
+                        <span id="vcp-evaluation-date-label" style="font-size: 11px; color: var(--text-secondary); display: block; margin-top: 4px;">Evaluating...</span>
+                    </div>
+                </div>
+                
+                <!-- Educational Block / Tooltip Content -->
+                <div id="tooltip-vcp" class="educational-block hidden" style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.15); padding: 12px 16px; border-radius: var(--border-radius-sm); font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 15px;">
+                    <strong style="color: #6366f1; display: flex; align-items: center; gap: 6px; margin-bottom: 6px;"><i class="fa-solid fa-graduation-cap"></i> Hedge Fund PM Perspective: Volatility & Volume Contraction</strong>
+                    <strong>What this means:</strong> Before a major breakout occurs, supply must be fully digested. This is seen when the price range gets extremely narrow and trading volume drops to a trickle, showing that there are no sellers left in the market.<br>
+                    <strong>Deterministic Logic:</strong> Triggers when the stock is trading within 5% of its recent 20-day high. It measures Volatility Compression (whether 5-day return standard deviation is smaller than 20-day standard deviation) and Volume Contraction (whether 5-day average volume is below 20-day average volume).<br>
+                    <strong>How to interpret Score:</strong> The VCP Score multiplies the volatility compression and volume contraction ratios. A higher VCP Score means both volatility and volume have shrunk significantly near the highs, indicating a coiled spring setup ready to break out.
+                </div>
+
+                <div class="table-container" style="overflow-x: auto;">
+                    <table id="vcp-ranking-table" class="screener-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 12px;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); font-weight: 600;">
+                                <th style="padding: 10px;">Symbol</th>
+                                <th style="padding: 10px;">Price</th>
+                                <th style="padding: 10px; text-align: right;">Dist from High (%)</th>
+                                <th style="padding: 10px; text-align: right;">Vol Comp (%)</th>
+                                <th style="padding: 10px; text-align: right;">Volume Contraction (%)</th>
+                                <th style="padding: 10px; text-align: right; color: var(--text-primary); font-weight: 700;">VCP Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vcp-ranking-table-body">
+                            <tr><td colspan="6" style="padding: 15px; text-align: center; color: var(--text-secondary);">Loading rankings...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    </section>
             </section>
             <!-- Filters Backdrop for mobile drawer -->
             <div id="filters-backdrop" class="filters-backdrop"></div>
@@ -1059,6 +1300,51 @@
                                         <!-- Rendered dynamically -->
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PM Research Brief Section -->
+                    <div class="pm-brief-section" style="margin-top: 24px;">
+                        <div class="ai-card" style="background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); border-radius: var(--border-radius-lg); padding: 20px; font-family: var(--font-stack);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                                <h4 style="font-size: 13px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; margin: 0; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fa-solid fa-gem" style="color: #a855f7;"></i> PM Research Brief
+                                </h4>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <label style="font-size: 11px; color: var(--text-secondary);">Lookback:</label>
+                                    <select id="sel-pm-brief-window" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); padding: 4px 8px; border-radius: 4px; font-size: 11px; outline: none; font-family: var(--font-stack);">
+                                        <option value="15">15 Days</option>
+                                        <option value="30">30 Days</option>
+                                        <option value="45">45 Days</option>
+                                    </select>
+                                    <button id="btn-generate-pm-brief" class="primary-btn" style="font-size: 12px; padding: 6px 14px; background: linear-gradient(135deg, #a855f7, #7c3aed); border: none;"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate Brief</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Permanent Caution Banner -->
+                            <div style="background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.15); padding: 8px 12px; border-radius: 4px; font-size: 11px; color: #f87171; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-circle-exclamation"></i>
+                                <span><strong>Caution:</strong> All research briefs are for educational purposes only. Trade at your own risk.</span>
+                            </div>
+
+                            <!-- Loading Spinner -->
+                            <div id="pm-brief-loading" class="ai-loading-container hidden" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 0; gap: 12px;">
+                                <div class="spinner" style="width: 28px; height: 28px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #a855f7; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                                <span style="font-size: 13px; color: var(--text-secondary);">Running quant analysis and generating brief with Gemini...</span>
+                            </div>
+
+                            <!-- Generated Content Container -->
+                            <div id="pm-brief-content-wrapper" class="hidden" style="display: flex; flex-direction: column; gap: 14px;">
+                                <h3 id="pm-brief-title" style="font-size: 15px; font-weight: 600; color: var(--text-primary); margin: 0 0 4px 0;">Hedge Fund Research Brief</h3>
+                                <div id="pm-brief-body" style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin: 0; white-space: pre-wrap;">
+                                    <!-- Brief details render here -->
+                                </div>
+                                
+                                <!-- Admin Only: Publish to Community Feed Button -->
+                                {% if request.user.is_superuser or request.user.is_staff %}
+                                <button id="btn-publish-pm-brief" class="primary-btn hidden" style="font-size: 12px; padding: 8px 16px; background: linear-gradient(135deg, #10b981, #059669); border: none; align-self: flex-start;"><i class="fa-solid fa-share-nodes"></i> Publish to Community Feed</button>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -1204,7 +1490,7 @@
                 </div>
             </div>
         </div>
-    </section>
+        
 
     <!-- Trade Log Modal (Shows details of individual backtest trades) -->
     <section id="tradelog-modal" class="modal hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px); z-index: 2000; display: flex; align-items: center; justify-content: center; font-family: var(--font-stack);">
@@ -1272,6 +1558,27 @@
             </div>
         </div>
     </section>
+
+    <!-- Pro License Access Required Overlay -->
+    <div id="pro-only-overlay" class="modal hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-modal); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 10000; display: flex; align-items: center; justify-content: center; font-family: var(--font-stack);">
+        <div class="glass-card" style="width: 90%; max-width: 480px; padding: 35px; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); background: var(--bg-secondary); display: flex; flex-direction: column; gap: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); text-align: center;">
+            <div style="font-size: 50px; color: #a855f7;"><i class="fa-solid fa-lock"></i></div>
+            <h2 style="font-size: 20px; font-weight: 700; color: var(--text-primary); margin: 0;">Pro Feature Locked</h2>
+            <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin: 0;">
+                The **Advanced Institutional Strategy Dashboard** is reserved exclusively for **Pro Analyst** subscribers.
+            </p>
+            <div style="background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.1); padding: 12px; border-radius: 6px; font-size: 12px; color: var(--text-secondary); text-align: left; line-height: 1.5;">
+                <strong style="color: var(--text-primary); display: block; margin-bottom: 4px;"><i class="fa-solid fa-crown" style="color: #fbbf24;"></i> Why Go Pro?</strong>
+                - Access Second-Order Institutional Liquidity Absorption scores.<br>
+                - Track Behavioral Capitulation bottoms and blow-off tops.<br>
+                - Scan Volatility Contraction Pattern (VCP) breakout setups.
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button id="btn-pro-overlay-upgrade" class="primary-btn btn-trigger-upgrade" style="flex: 1; font-size: 12px; padding: 10px; background: linear-gradient(135deg, #a855f7, #7c3aed); border: none; color: #fff; cursor: pointer; font-weight: 600; border-radius: var(--border-radius-sm);">Upgrade to Pro</button>
+                <button id="btn-pro-overlay-dismiss" style="flex: 1; font-size: 12px; padding: 10px; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: var(--text-secondary); cursor: pointer; font-weight: 600; border-radius: var(--border-radius-sm);" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">Dismiss</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Trial Expired Overlay (locks backtesting and journal) -->
     <div id="trial-expired-overlay" class="modal hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-modal); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 10000; display: flex; align-items: center; justify-content: center; font-family: var(--font-stack);">
@@ -1388,7 +1695,7 @@
         const HAS_USED_TRIAL = {% if has_used_trial %}true{% else %}false{% endif %};
         
         // Credentials pre-configuration mappings for Superuser / environment bypasses
-        const IS_SUPERUSER = {% if request.user.is_superuser %}true{% else %}false{% endif %};
+        const IS_SUPERUSER = {% if request.user.is_superuser or request.user.is_staff %}true{% else %}false{% endif %};
         const SERVER_HAS_ZERODHA = IS_SUPERUSER || {% if has_zerodha_creds %}true{% else %}false{% endif %};
         const SERVER_HAS_GEMINI = IS_SUPERUSER || {% if has_gemini_cred %}true{% else %}false{% endif %};
         const DEVELOPER_UPI_ID = "{{ developer_upi_id|escapejs }}";
@@ -1397,7 +1704,7 @@
     <!-- Project JS dependencies -->
     <script src="{% static 'screener/qrcode.min.js' %}"></script>
     <script src="{% static 'screener/mockData.js' %}?v=3.5"></script>
-    <script src="{% static 'screener/app.js' %}?v=3.8"></script>
+    <script src="{% static 'screener/app.js' %}?v=4.3"></script>
 
     <!-- Sidebar mobile drawer toggling -->
     <script>

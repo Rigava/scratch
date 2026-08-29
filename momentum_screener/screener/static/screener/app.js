@@ -924,6 +924,14 @@ const App = (function() {
         if (aiLoading) aiLoading.classList.add('hidden');
         if (aiContent) aiContent.classList.add('hidden');
 
+        // Reset PM Brief panel
+        const pmLoading = document.getElementById('pm-brief-loading');
+        const pmContent = document.getElementById('pm-brief-content-wrapper');
+        const btnPublishPm = document.getElementById('btn-publish-pm-brief');
+        if (pmLoading) pmLoading.classList.add('hidden');
+        if (pmContent) pmContent.classList.add('hidden');
+        if (btnPublishPm) btnPublishPm.classList.add('hidden');
+
         // Apply Premium & Superuser UI Restrictions
         const btnGen = document.getElementById('btn-generate-campaign');
         if (btnGen) {
@@ -931,6 +939,24 @@ const App = (function() {
                 btnGen.style.display = 'none';
             } else {
                 btnGen.style.display = 'block';
+            }
+        }
+
+        const btnGeneratePm = document.getElementById('btn-generate-pm-brief');
+        if (btnGeneratePm) {
+            const isProUser = (PLAN_TIER === 'pro' || USER_STATUS === 'premium' || USER_STATUS === 'pro' || IS_SUPERUSER === true);
+            if (!isProUser) {
+                btnGeneratePm.innerHTML = '<i class="fa-solid fa-lock"></i> Pro Analyst Only';
+                btnGeneratePm.style.background = 'rgba(255, 255, 255, 0.05)';
+                btnGeneratePm.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+                btnGeneratePm.style.color = 'var(--text-secondary)';
+                btnGeneratePm.style.cursor = 'not-allowed';
+            } else {
+                btnGeneratePm.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Generate Brief';
+                btnGeneratePm.style.background = 'linear-gradient(135deg, #a855f7, #7c3aed)';
+                btnGeneratePm.style.border = 'none';
+                btnGeneratePm.style.color = '#fff';
+                btnGeneratePm.style.cursor = 'pointer';
             }
         }
 
@@ -1356,6 +1382,134 @@ const App = (function() {
             if (btnAnalyze) {
                 btnAnalyze.disabled = false;
                 btnAnalyze.innerText = 'Analyze Conviction';
+            }
+        }
+    }
+
+    async function runPMBriefAnalysis() {
+        const isProUser = (PLAN_TIER === 'pro' || USER_STATUS === 'premium' || USER_STATUS === 'pro' || IS_SUPERUSER === true);
+        if (!isProUser) {
+            alert('PM Research Brief is restricted to Pro Analyst plan users only.');
+            return;
+        }
+
+        const geminiKey = sessionStorage.getItem('gemini_api_key') || 'SERVER_PRECONFIGURED';
+        const stock = state.stocks[state.activeTicker];
+        if (!stock) return;
+
+        const btnGeneratePm = document.getElementById('btn-generate-pm-brief');
+        if (btnGeneratePm) {
+            btnGeneratePm.disabled = true;
+            btnGeneratePm.innerText = 'Analyzing...';
+        }
+
+        const loading = document.getElementById('pm-brief-loading');
+        const wrapper = document.getElementById('pm-brief-content-wrapper');
+        const bodyEl = document.getElementById('pm-brief-body');
+        const titleEl = document.getElementById('pm-brief-title');
+        const btnPublishPm = document.getElementById('btn-publish-pm-brief');
+
+        loading.classList.remove('hidden');
+        wrapper.classList.add('hidden');
+        if (btnPublishPm) btnPublishPm.classList.add('hidden');
+
+        try {
+            const windowSelector = document.getElementById('sel-pm-brief-window');
+            const lookbackVal = windowSelector ? windowSelector.value : '15';
+
+            const response = await fetch('/api/generate-pm-brief/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Gemini-API-Key': geminiKey
+                },
+                body: JSON.stringify({
+                    ticker: stock.ticker,
+                    lookback_window: parseInt(lookbackVal)
+                })
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.message || `HTTP Error ${response.status}`);
+            }
+
+            const resData = await response.json();
+            if (resData.status !== 'success') {
+                throw new Error(resData.message);
+            }
+
+            const data = resData.data;
+
+            // Render PM Brief
+            titleEl.innerText = data.title || `Hedge Fund Research Brief: ${stock.ticker}`;
+            bodyEl.innerText = data.brief || '';
+
+            loading.classList.add('hidden');
+            wrapper.classList.remove('hidden');
+
+            // Show publish button only for Superusers/Admins
+            if (btnPublishPm) {
+                if (IS_SUPERUSER) {
+                    btnPublishPm.classList.remove('hidden');
+                } else {
+                    btnPublishPm.classList.add('hidden');
+                }
+            }
+
+        } catch (e) {
+            alert(`Failed to generate brief: ${e.message}`);
+            loading.classList.add('hidden');
+        } finally {
+            if (btnGeneratePm) {
+                btnGeneratePm.disabled = false;
+                btnGeneratePm.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Generate Brief';
+            }
+        }
+    }
+
+    async function publishPMBrief() {
+        if (!IS_SUPERUSER) {
+            alert('Only administrators can publish research briefs.');
+            return;
+        }
+
+        const btnPublishPm = document.getElementById('btn-publish-pm-brief');
+        if (btnPublishPm) {
+            btnPublishPm.disabled = true;
+            btnPublishPm.innerText = 'Publishing...';
+        }
+
+        try {
+            const response = await fetch('/api/publish-pm-brief/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.message || `HTTP Error ${response.status}`);
+            }
+
+            const resData = await response.json();
+            if (resData.status !== 'success') {
+                throw new Error(resData.message);
+            }
+
+            alert('Research brief published successfully to community feed!');
+            if (btnPublishPm) btnPublishPm.classList.add('hidden');
+            
+            // Reload page to show published post in the use-cases feed
+            window.location.reload();
+
+        } catch (e) {
+            alert(`Publishing failed: ${e.message}`);
+        } finally {
+            if (btnPublishPm) {
+                btnPublishPm.disabled = false;
+                btnPublishPm.innerHTML = '<i class="fa-solid fa-share-nodes"></i> Publish to Community Feed';
             }
         }
     }
@@ -1862,6 +2016,16 @@ const App = (function() {
         const btnConv = document.getElementById('btn-analyze-conviction');
         if (btnConv) {
             btnConv.addEventListener('click', runAIConvictionAnalysis);
+        }
+
+        // Bind PM brief generate and publish buttons
+        const btnGeneratePm = document.getElementById('btn-generate-pm-brief');
+        if (btnGeneratePm) {
+            btnGeneratePm.addEventListener('click', runPMBriefAnalysis);
+        }
+        const btnPublishPm = document.getElementById('btn-publish-pm-brief');
+        if (btnPublishPm) {
+            btnPublishPm.addEventListener('click', publishPMBrief);
         }
 
         // Add Ticker Click
@@ -2444,21 +2608,29 @@ const App = (function() {
         const tabScreener = document.getElementById('btn-tab-screener');
         const tabBacktest = document.getElementById('btn-tab-backtest');
         const tabJournal = document.getElementById('btn-tab-journal');
+        const tabAdvanced = document.getElementById('btn-tab-advanced');
+        
         const screenerStats = document.getElementById('screener-stats-bar');
-        const screenerGrid = document.querySelector('.screener-results .screener-grid-card:not(#backtest-view-card):not(#journal-view-card)');
+        const screenerGrid = document.getElementById('main-screener-grid');
         const backtestViewCard = document.getElementById('backtest-view-card');
         const journalViewCard = document.getElementById('journal-view-card');
+        const advancedViewCard = document.getElementById('advanced-strategy-view-card');
+        const useCasesSection = document.querySelector('.use-cases-section');
         
         function deactivateAllTabs() {
-            [tabScreener, tabBacktest, tabJournal].forEach(tab => {
-                tab.classList.remove('active');
-                tab.style.background = 'transparent';
-                tab.style.color = 'var(--text-secondary)';
+            [tabScreener, tabBacktest, tabJournal, tabAdvanced].forEach(tab => {
+                if (tab) {
+                    tab.classList.remove('active');
+                    tab.style.background = 'transparent';
+                    tab.style.color = 'var(--text-secondary)';
+                }
             });
             screenerStats.classList.add('hidden');
             screenerGrid.classList.add('hidden');
             backtestViewCard.classList.add('hidden');
             journalViewCard.classList.add('hidden');
+            if (advancedViewCard) advancedViewCard.classList.add('hidden');
+            if (useCasesSection) useCasesSection.classList.add('hidden');
         }
 
         tabScreener.addEventListener('click', () => {
@@ -2469,6 +2641,7 @@ const App = (function() {
             
             screenerStats.classList.remove('hidden');
             screenerGrid.classList.remove('hidden');
+            if (useCasesSection) useCasesSection.classList.remove('hidden');
         });
         
         tabBacktest.addEventListener('click', () => {
@@ -2498,6 +2671,162 @@ const App = (function() {
             journalViewCard.classList.remove('hidden');
             renderJournalDashboard();
         });
+
+        if (tabAdvanced) {
+            tabAdvanced.addEventListener('click', () => {
+                console.log("Advanced Strategy Tab Clicked!");
+                // Check Pro Analyst permission
+                const isProUser = (PLAN_TIER === 'pro' || USER_STATUS === 'premium' || USER_STATUS === 'pro' || IS_SUPERUSER === true);
+                console.log("isProUser authorization check:", { PLAN_TIER, USER_STATUS, IS_SUPERUSER, isProUser });
+                
+                if (!isProUser) {
+                    console.log("User is unauthorized. Displaying locking overlay.");
+                    document.getElementById('pro-only-overlay').classList.remove('hidden');
+                    return;
+                }
+                
+                console.log("User is authorized. Transitioning layout.");
+                deactivateAllTabs();
+                tabAdvanced.classList.add('active');
+                tabAdvanced.style.background = 'rgba(255,255,255,0.05)';
+                tabAdvanced.style.color = 'var(--text-primary)';
+                
+                if (advancedViewCard) {
+                    advancedViewCard.classList.remove('hidden');
+                }
+                renderAdvancedStrategyDashboard();
+            });
+        }
+
+        const btnFullscreenAdvanced = document.getElementById('btn-fullscreen-advanced');
+        if (btnFullscreenAdvanced) {
+            btnFullscreenAdvanced.addEventListener('click', () => {
+                document.body.classList.toggle('fullscreen-grid-active');
+            });
+        }
+
+        const proOverlayDismiss = document.getElementById('btn-pro-overlay-dismiss');
+        if (proOverlayDismiss) {
+            proOverlayDismiss.addEventListener('click', () => {
+                document.getElementById('pro-only-overlay').classList.add('hidden');
+                tabScreener.click(); // Switch back to screener grid
+            });
+        }
+
+        // Global function for tooltip toggles
+        window.toggleAdvancedTooltip = function(id) {
+            const block = document.getElementById(id);
+            if (block) {
+                block.classList.toggle('hidden');
+            }
+        };
+
+        async function renderAdvancedStrategyDashboard() {
+            const absBody = document.getElementById('abs-ranking-table-body');
+            const bearBody = document.getElementById('bearish-exh-table-body');
+            const bullBody = document.getElementById('bullish-exh-table-body');
+            const vcpBody = document.getElementById('vcp-ranking-table-body');
+
+            // Set loading indicators
+            [absBody, bearBody, bullBody, vcpBody].forEach(body => {
+                if (body) {
+                    body.innerHTML = `<tr><td colspan="10" style="padding: 20px; text-align: center; color: var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin"></i> Running quant calculations...</td></tr>`;
+                }
+            });
+
+            try {
+                const response = await fetch('/api/advanced-strategy/');
+                if (!response.ok) {
+                    throw new Error(await response.text() || 'Failed to fetch advanced strategy rankings');
+                }
+                const data = await response.json();
+                
+                // Update dates
+                document.getElementById('abs-evaluation-date-label').innerText = `Evaluating on: ${data.evaluation_date} (Benchmark down-day: ${data.absorption_date}, Nifty Return: ${data.market_ret_abs}%)`;
+                document.getElementById('vcp-evaluation-date-label').innerText = `Evaluating on: ${data.evaluation_date}`;
+
+                // Render Institutional Absorption
+                if (absBody) {
+                    if (data.absorption && data.absorption.length > 0) {
+                        absBody.innerHTML = data.absorption.map((item, idx) => `
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.03); hover: background: rgba(255,255,255,0.01);">
+                                <td style="padding: 10px; font-weight: 600; color: var(--text-primary);">${item.symbol}</td>
+                                <td style="padding: 10px; color: var(--text-secondary);">₹${item.price.toFixed(2)}</td>
+                                <td style="padding: 10px; text-align: right; color: #10b981; font-weight: 600;">+${item.return}%</td>
+                                <td style="padding: 10px; text-align: right; color: var(--text-secondary);">${item.residual > 0 ? '+' : ''}${item.residual}%</td>
+                                <td style="padding: 10px; text-align: right; color: var(--text-secondary);">${item.vol_ratio}x</td>
+                                <td style="padding: 10px; text-align: right; color: var(--text-secondary);">${item.clv}</td>
+                                <td style="padding: 10px; text-align: right; color: #a855f7; font-weight: 700; font-size: 13px;">${item.score.toFixed(4)}</td>
+                            </tr>
+                        `).join('');
+                    } else {
+                        absBody.innerHTML = `<tr><td colspan="7" style="padding: 20px; text-align: center; color: var(--text-secondary);">No absorption setups detected.</td></tr>`;
+                    }
+                }
+
+                // Render Bearish Capitulation
+                if (bearBody) {
+                    if (data.bearish_exhaustion && data.bearish_exhaustion.length > 0) {
+                        bearBody.innerHTML = data.bearish_exhaustion.map(item => `
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                                <td style="padding: 8px; color: var(--text-secondary); font-size: 11px;">${item.date}</td>
+                                <td style="padding: 8px; font-weight: 600; color: var(--text-primary);">${item.symbol}</td>
+                                <td style="padding: 8px; text-align: right; color: var(--text-secondary);">₹${item.price.toFixed(2)}</td>
+                                <td style="padding: 8px; text-align: right; color: var(--text-secondary);">${item.vol_z}</td>
+                                <td style="padding: 8px; text-align: right; color: var(--text-secondary);">${item.spread_z}</td>
+                                <td style="padding: 8px; text-align: right; color: #10b981; font-weight: 700;">${item.score.toFixed(2)}</td>
+                            </tr>
+                        `).join('');
+                    } else {
+                        bearBody.innerHTML = `<tr><td colspan="6" style="padding: 15px; text-align: center; color: var(--text-secondary);">No Bearish Capitulations found in the last 5 days.</td></tr>`;
+                    }
+                }
+
+                // Render Bullish Capitulation
+                if (bullBody) {
+                    if (data.bullish_exhaustion && data.bullish_exhaustion.length > 0) {
+                        bullBody.innerHTML = data.bullish_exhaustion.map(item => `
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                                <td style="padding: 8px; color: var(--text-secondary); font-size: 11px;">${item.date}</td>
+                                <td style="padding: 8px; font-weight: 600; color: var(--text-primary);">${item.symbol}</td>
+                                <td style="padding: 8px; text-align: right; color: var(--text-secondary);">₹${item.price.toFixed(2)}</td>
+                                <td style="padding: 8px; text-align: right; color: var(--text-secondary);">${item.vol_z}</td>
+                                <td style="padding: 8px; text-align: right; color: var(--text-secondary);">${item.spread_z}</td>
+                                <td style="padding: 8px; text-align: right; color: #f87171; font-weight: 700;">${item.score.toFixed(2)}</td>
+                            </tr>
+                        `).join('');
+                    } else {
+                        bullBody.innerHTML = `<tr><td colspan="6" style="padding: 15px; text-align: center; color: var(--text-secondary);">No Bullish Capitulations found in the last 5 days.</td></tr>`;
+                    }
+                }
+
+                // Render VCP
+                if (vcpBody) {
+                    if (data.vcp && data.vcp.length > 0) {
+                        vcpBody.innerHTML = data.vcp.map(item => `
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                                <td style="padding: 10px; font-weight: 600; color: var(--text-primary);">${item.symbol}</td>
+                                <td style="padding: 10px; color: var(--text-secondary);">₹${item.price.toFixed(2)}</td>
+                                <td style="padding: 10px; text-align: right; color: var(--text-secondary);">${item.dist_from_high}%</td>
+                                <td style="padding: 10px; text-align: right; color: var(--text-secondary);">${item.vol_comp}%</td>
+                                <td style="padding: 10px; text-align: right; color: var(--text-secondary);">${item.volu_cont}%</td>
+                                <td style="padding: 10px; text-align: right; color: #6366f1; font-weight: 700; font-size: 13px;">${item.score.toFixed(4)}</td>
+                            </tr>
+                        `).join('');
+                    } else {
+                        vcpBody.innerHTML = `<tr><td colspan="6" style="padding: 20px; text-align: center; color: var(--text-secondary);">No Volatility Contractions found near highs.</td></tr>`;
+                    }
+                }
+
+            } catch (err) {
+                console.error(err);
+                [absBody, bearBody, bullBody, vcpBody].forEach(body => {
+                    if (body) {
+                        body.innerHTML = `<tr><td colspan="10" style="padding: 20px; text-align: center; color: #f87171;"><i class="fa-solid fa-circle-exclamation"></i> Error: ${err.message}</td></tr>`;
+                    }
+                });
+            }
+        }
         
         // Signal category selector change
         document.getElementById('sel-signal-category').addEventListener('change', () => {

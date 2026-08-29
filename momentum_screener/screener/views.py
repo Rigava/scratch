@@ -341,7 +341,7 @@ def dashboard_view(request):
         plan_tier = profile.plan_tier
         has_used_trial = profile.has_used_trial
         
-        if request.user.is_superuser:
+        if request.user.is_superuser or request.user.is_staff:
             user_status = 'premium'
             days_left = 9999
         else:
@@ -1382,7 +1382,7 @@ def analyze_stock_ai_view(request):
     """
     # Restrict to Pro plan or trial users
     is_allowed = False
-    if request.user.is_superuser:
+    if request.user.is_superuser or request.user.is_staff:
         is_allowed = True
     else:
         try:
@@ -2105,4 +2105,492 @@ def admin_run_marketing_agent_view(request):
             'message': f"Unexpected error executing marketing agent: {str(e)}",
             'logs': out.getvalue()
         }, status=500)
+
+
+@csrf_exempt
+@login_required
+def advanced_strategy_view(request):
+    """
+    Renders second-order stock rankings for Pro tier users only.
+    Calculates rankings for Absorption, Exhaustion, and VCP setups.
+    """
+    try:
+        profile, _ = UserProfile.objects.get_or_create(user=request.user)
+        is_pro = request.user.is_superuser or request.user.is_staff or profile.is_premium or profile.plan_tier == 'pro'
+        if not is_pro:
+            return JsonResponse({
+                'status': 'error', 
+                'message': 'Pro Analyst license required to access advanced strategy features.'
+            }, status=403)
+            
+        import pandas as pd
+        import numpy as np
+        from pathlib import Path
+        
+        base_dir = Path(__file__).resolve().parent
+        db_path = base_dir / 'data' / 'fo_historical_dump.json'
+        
+        if not db_path.exists():
+            return JsonResponse({'status': 'error', 'message': 'Historical dump file not found.'}, status=404)
+            
+        with open(db_path, 'r', encoding='utf-8') as f:
+            dump_data = json.load(f)
+            
+        if not dump_data:
+            return JsonResponse({'status': 'error', 'message': 'Historical dump is empty.'}, status=400)
+            
+        # Parse DataFrames
+        dfs = {}
+        for symbol, candles in dump_data.items():
+            if not candles:
+                continue
+            df = pd.DataFrame(candles, columns=['date', 'open', 'high', 'low', 'close', 'volume'])
+            df['date'] = pd.to_datetime(df['date']).dt.tz_localize(None)
+            df.set_index('date', inplace=True)
+            for col in ['open', 'high', 'low', 'close', 'volume']:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+            df.sort_index(inplace=True)
+            dfs[symbol] = df
+            
+        nifty_df = dfs.get('NIFTY 50')
+        if nifty_df is None:
+            return JsonResponse({'status': 'error', 'message': 'Nifty 50 data missing in dump.'}, status=400)
+            
+        nifty_df['market_return'] = nifty_df['close'].pct_change()
+        
+        # Calculate Rolling Indicators and Beta for Stocks
+        for symbol, df in dfs.items():
+            if symbol == 'NIFTY 50' or 'NIFTY' in symbol:
+                continue
+            
+            df['return'] = df['close'].pct_change()
+            df = df.join(nifty_df['market_return'], how='left')
+            
+            covariance = df['return'].rolling(60).cov(df['market_return'])
+            market_variance = df['market_return'].rolling(60).var()
+            df['beta'] = covariance / market_variance
+            df['beta'] = df['beta'].fillna(1.0)
+            
+            df['residual_return'] = df['return'] - df['beta'] * df['market_return']
+            
+            hl_range = df['high'] - df['low']
+            df['clv'] = ((df['close'] - df['low']) - (df['high'] - df['close'])) / hl_range
+            df['clv'] = df['clv'].fillna(0.0)
+            
+            vol_mean = df['volume'].rolling(20).mean()
+            vol_std = df['volume'].rolling(20).std().replace(0, 1e-6)
+            df['vol_ratio'] = df['volume'] / vol_mean.replace(0, 1e-6)
+            df['vol_z'] = (df['volume'] - vol_mean) / vol_std
+            
+            df['spread'] = df['high'] - df['low']
+            spread_mean = df['spread'].rolling(20).mean()
+            spread_std = df['spread'].rolling(20).std().replace(0, 1e-6)
+            df['spread_z'] = (df['spread'] - spread_mean) / spread_std
+            
+            df['ema10'] = df['close'].ewm(span=10, adjust=False).mean()
+            dfs[symbol] = df
+            
+        eval_date = nifty_df.index[-1]
+        
+        # Find the most recent market down day for Institutional Absorption
+        past_dates = nifty_df.loc[:eval_date].index
+        down_days = nifty_df.loc[past_dates][nifty_df.loc[past_dates, 'market_return'] < -0.003].index
+        if len(down_days) > 0:
+            abs_eval_date = down_days[-1]
+        else:
+            abs_eval_date = nifty_df.loc[past_dates, 'market_return'].idxmin()
+            
+        market_ret_abs = nifty_df.loc[abs_eval_date, 'market_return']
+        
+        # Behavioral Exhaustion over last 5 trading days
+        idx_pos = nifty_df.index.get_loc(eval_date)
+        start_idx = max(0, idx_pos - 4)
+        exh_lookback_dates = nifty_df.index[start_idx:idx_pos + 1]
+        
+        absorption_results = []
+        bearish_exh_results = []
+        bullish_exh_results = []
+        vcp_results = []
+        
+        for symbol, df in dfs.items():
+            if symbol == 'NIFTY 50' or 'NIFTY' in symbol:
+                continue
+                
+            # 1. Institutional Absorption
+            if abs_eval_date in df.index:
+                row = df.loc[abs_eval_date]
+                if row['return'] >= 0:
+                    abs_score = row['residual_return'] * row['vol_ratio'] * (1 + row['clv'])
+                    absorption_results.append({
+                        'symbol': symbol,
+                        'price': float(row['close']),
+                        'return': float(round(row['return'] * 100, 2)),
+                        'residual': float(round(row['residual_return'] * 100, 2)),
+                        'vol_ratio': float(round(row['vol_ratio'], 2)),
+                        'clv': float(round(row['clv'], 2)),
+                        'score': float(round(abs_score, 4))
+                    })
+                    
+            # 2. Behavioral Exhaustion
+            for d in exh_lookback_dates:
+                if d in df.index:
+                    row = df.loc[d]
+                    if row['vol_z'] > 1.2 and row['spread_z'] > 0.8:
+                        if row['close'] < row['ema10'] and row['clv'] > 0.2:
+                            bear_score = row['vol_z'] * row['spread_z'] * row['clv']
+                            bearish_exh_results.append({
+                                'date': d.strftime('%Y-%m-%d'),
+                                'symbol': symbol,
+                                'price': float(row['close']),
+                                'vol_z': float(round(row['vol_z'], 2)),
+                                'spread_z': float(round(row['spread_z'], 2)),
+                                'clv': float(round(row['clv'], 2)),
+                                'score': float(round(bear_score, 2))
+                            })
+                        elif row['close'] > row['ema10'] and row['clv'] < -0.2:
+                            bull_score = row['vol_z'] * row['spread_z'] * (-row['clv'])
+                            bullish_exh_results.append({
+                                'date': d.strftime('%Y-%m-%d'),
+                                'symbol': symbol,
+                                'price': float(row['close']),
+                                'vol_z': float(round(row['vol_z'], 2)),
+                                'spread_z': float(round(row['spread_z'], 2)),
+                                'clv': float(round(row['clv'], 2)),
+                                'score': float(round(bull_score, 2))
+                            })
+                            
+            # 3. Volatility Contraction Pattern (VCP)
+            if eval_date in df.index:
+                row = df.loc[eval_date]
+                sub_df = df.loc[:eval_date].tail(20)
+                if len(sub_df) == 20:
+                    high_20 = sub_df['close'].max()
+                    dist_from_high = (high_20 - row['close']) / high_20
+                    
+                    vol_5d = sub_df['return'].tail(5).std()
+                    vol_20d = sub_df['return'].std()
+                    
+                    avg_vol_5d = sub_df['volume'].tail(5).mean()
+                    avg_vol_20d = sub_df['volume'].mean()
+                    
+                    if vol_20d > 0 and avg_vol_20d > 0:
+                        vol_comp = (vol_20d - vol_5d) / vol_20d
+                        volu_cont = 1.0 - (avg_vol_5d / avg_vol_20d)
+                        
+                        if vol_comp > 0 and volu_cont > 0 and dist_from_high < 0.05:
+                            vcp_score = vol_comp * volu_cont * (1.0 - dist_from_high)
+                            vcp_results.append({
+                                'symbol': symbol,
+                                'price': float(row['close']),
+                                'dist_from_high': float(round(dist_from_high * 100, 2)),
+                                'vol_comp': float(round(vol_comp * 100, 2)),
+                                'volu_cont': float(round(volu_cont * 100, 2)),
+                                'score': float(round(vcp_score, 4))
+                            })
+                            
+        # Sort and limit
+        absorption_results = sorted(absorption_results, key=lambda x: x['score'], reverse=True)[:10]
+        bearish_exh_results = sorted(bearish_exh_results, key=lambda x: x['score'], reverse=True)[:10]
+        bullish_exh_results = sorted(bullish_exh_results, key=lambda x: x['score'], reverse=True)[:10]
+        vcp_results = sorted(vcp_results, key=lambda x: x['score'], reverse=True)[:10]
+        
+        return JsonResponse({
+            'status': 'success',
+            'evaluation_date': eval_date.strftime('%Y-%m-%d'),
+            'absorption_date': abs_eval_date.strftime('%Y-%m-%d'),
+            'market_ret_abs': float(round(market_ret_abs * 100, 2)),
+            'absorption': absorption_results,
+            'bearish_exhaustion': bearish_exh_results,
+            'bullish_exhaustion': bullish_exh_results,
+            'vcp': vcp_results
+        })
+        
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@csrf_exempt
+@login_required
+def generate_pm_brief_view(request):
+    """
+    Computes stock microstructure stats and generates a Hedge Fund PM brief using Gemini.
+    """
+    # Restrict to Pro plan or trial/premium users
+    is_allowed = False
+    if request.user.is_superuser or request.user.is_staff:
+        is_allowed = True
+    else:
+        try:
+            profile = UserProfile.objects.get(user=request.user)
+            is_allowed = profile.plan_tier == 'pro' or (profile.plan_tier == 'standard' and profile.is_trial_active() and profile.days_remaining() > 0) or profile.is_premium
+        except UserProfile.DoesNotExist:
+            pass
+
+    if not is_allowed:
+        return JsonResponse({'status': 'error', 'message': 'Forbidden: Pro Analyst subscription required'}, status=403)
+
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Only POST method is allowed'}, status=405)
+
+    api_key = request.headers.get('X-Gemini-API-Key') or request.GET.get('gemini_api_key')
+    if not api_key or api_key == 'SERVER_PRECONFIGURED':
+        api_key = os.environ.get('GEMINI_API_KEY')
+
+    if not api_key:
+        return JsonResponse({'status': 'error', 'message': 'Missing Gemini API Key'}, status=400)
+
+    try:
+        payload = json.loads(request.body)
+    except ValueError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON body'}, status=400)
+
+    ticker = payload.get('ticker', '').strip()
+    lookback_window = int(payload.get('lookback_window', 15))
+    
+    if lookback_window not in [15, 30, 45]:
+        lookback_window = 15
+
+    if not ticker:
+        return JsonResponse({'status': 'error', 'message': 'Ticker is required'}, status=400)
+
+    import pandas as pd
+    import numpy as np
+    from pathlib import Path
+    
+    try:
+        base_dir = Path(__file__).resolve().parent
+        db_path = base_dir / 'data' / 'fo_historical_dump.json'
+        
+        if not db_path.exists():
+            return JsonResponse({'status': 'error', 'message': 'Historical dump file not found.'}, status=404)
+            
+        with open(db_path, 'r', encoding='utf-8') as f:
+            dump_data = json.load(f)
+            
+        if ticker not in dump_data:
+            return JsonResponse({'status': 'error', 'message': f'Ticker {ticker} not found in historical database.'}, status=404)
+            
+        # Parse stock candles
+        candles = dump_data[ticker]
+        if not candles:
+            return JsonResponse({'status': 'error', 'message': f'No historical data for {ticker}.'}, status=400)
+            
+        df = pd.DataFrame(candles, columns=['date', 'open', 'high', 'low', 'close', 'volume'])
+        df['date'] = pd.to_datetime(df['date']).dt.tz_localize(None)
+        df.set_index('date', inplace=True)
+        for col in ['open', 'high', 'low', 'close', 'volume']:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+        df.sort_index(inplace=True)
+        
+        # Load Nifty
+        nifty_candles = dump_data.get('NIFTY 50')
+        if not nifty_candles:
+            return JsonResponse({'status': 'error', 'message': 'Nifty 50 data missing.'}, status=400)
+            
+        nifty_df = pd.DataFrame(nifty_candles, columns=['date', 'open', 'high', 'low', 'close', 'volume'])
+        nifty_df['date'] = pd.to_datetime(nifty_df['date']).dt.tz_localize(None)
+        nifty_df.set_index('date', inplace=True)
+        for col in ['open', 'high', 'low', 'close', 'volume']:
+            nifty_df[col] = pd.to_numeric(nifty_df[col], errors='coerce')
+        nifty_df.sort_index(inplace=True)
+        
+        nifty_df['market_return'] = nifty_df['close'].pct_change()
+        df['return'] = df['close'].pct_change()
+        df = df.join(nifty_df['market_return'], how='left')
+        
+        # Calculations
+        covariance = df['return'].rolling(60).cov(df['market_return'])
+        market_variance = df['market_return'].rolling(60).var()
+        df['beta'] = covariance / market_variance
+        df['beta'] = df['beta'].fillna(1.0)
+        df['residual_return'] = df['return'] - df['beta'] * df['market_return']
+        
+        hl_range = df['high'] - df['low']
+        df['clv'] = ((df['close'] - df['low']) - (df['high'] - df['close'])) / hl_range.replace(0, 1e-6)
+        df['clv'] = df['clv'].fillna(0.0)
+        
+        vol_mean = df['volume'].rolling(20).mean()
+        vol_std = df['volume'].rolling(20).std().replace(0, 1e-6)
+        df['vol_ratio'] = df['volume'] / vol_mean.replace(0, 1e-6)
+        df['vol_z'] = (df['volume'] - vol_mean) / vol_std
+        
+        df['spread'] = df['high'] - df['low']
+        spread_mean = df['spread'].rolling(20).mean()
+        spread_std = df['spread'].rolling(20).std().replace(0, 1e-6)
+        df['spread_z'] = (df['spread'] - spread_mean) / spread_std
+        
+        df['ema10'] = df['close'].ewm(span=10, adjust=False).mean()
+        
+        df['high20'] = df['high'].rolling(20).max()
+        df['ret_std20'] = df['return'].rolling(20).std()
+        df['ret_std5'] = df['return'].rolling(5).std()
+        df['vol_ma5'] = df['volume'].rolling(5).mean()
+        df['vol_ma20'] = df['volume'].rolling(20).mean()
+        
+        # Latest Row values
+        latest_row = df.iloc[-1]
+        price = float(latest_row['close'])
+        clv = float(latest_row['clv'])
+        vol_z = float(latest_row['vol_z'])
+        spread_z = float(latest_row['spread_z'])
+        
+        # Volatility / Volume Contractions
+        vol_comp = float(latest_row['ret_std5'] / (latest_row['ret_std20'] + 1e-8))
+        volu_cont = float(latest_row['vol_ma5'] / (latest_row['vol_ma20'] + 1e-8))
+        nifty_return = float(nifty_df.iloc[-1]['market_return'])
+        
+        # Check active setups over the lookback window
+        lookback_df = df.iloc[-lookback_window:]
+        triggered_setups = []
+        
+        # Join lookback with nifty down days
+        lookback_joined = lookback_df.join(nifty_df['market_return'], how='left', rsuffix='_nifty')
+        
+        for idx, row in lookback_joined.iterrows():
+            d_str = idx.strftime('%Y-%m-%d')
+            # Absorption: Nifty return < -0.3% and stock green, volume ratio >= 1.2, clv >= 0.2
+            if row['market_return_nifty'] < -0.003 and row['return'] >= 0.0 and row['vol_ratio'] >= 1.2 and row['clv'] >= 0.2:
+                triggered_setups.append(f"Institutional Absorption on {d_str} (Score: {row['vol_ratio']*row['clv']:.4f})")
+            
+            # Bearish Capitulation: Close < EMA10, vol_z >= 1.2, spread_z >= 0.8, clv >= 0.2
+            if row['close'] < row['ema10'] and row['vol_z'] >= 1.2 and row['spread_z'] >= 0.8 and row['clv'] >= 0.2:
+                triggered_setups.append(f"Bearish Capitulation bottom on {d_str} (Vol Z: {row['vol_z']:.2f}, CLV: {row['clv']:.2f})")
+                
+            # Bullish Capitulation: Close > EMA10, vol_z >= 1.2, spread_z >= 0.8, clv <= -0.2
+            if row['close'] > row['ema10'] and row['vol_z'] >= 1.2 and row['spread_z'] >= 0.8 and row['clv'] <= -0.2:
+                triggered_setups.append(f"Bullish Capitulation top on {d_str} (Vol Z: {row['vol_z']:.2f}, CLV: {row['clv']:.2f})")
+                
+            # VCP Setup: Close within 5% of High20, vol_comp <= 0.6, volume contraction <= 0.6
+            v_comp = row['ret_std5'] / (row['ret_std20'] + 1e-8)
+            v_cont = row['vol_ma5'] / (row['vol_ma20'] + 1e-8)
+            dist_high = (row['high20'] - row['close']) / row['close']
+            if dist_high < 0.05 and v_comp <= 0.6 and v_cont <= 0.6:
+                triggered_setups.append(f"VCP Setup coiling on {d_str} (Vol Comp: {v_comp*100:.1f}%, Volume Contraction: {v_cont*100:.1f}%)")
+
+        triggered_setups_str = "; ".join(triggered_setups[-5:]) if triggered_setups else "No setups detected in this lookback window."
+        
+        prompt_text = f"""
+        You are an Elite Institutional Hedge Fund Portfolio Manager and Market Microstructure Specialist.
+        Evaluate the following stock candidate based on its second and third-order quantitative metrics.
+
+        Stock: {ticker} (Close: ₹{price:.2f})
+
+        Quantitative Metrics (Last {lookback_window}-day window):
+        - Volatility Compression Ratio (5d std / 20d std): {vol_comp * 100:.2f}%
+        - Volume Contraction Ratio (5d avg / 20d avg): {volu_cont * 100:.2f}%
+        - Daily Volume Z-Score: {vol_z:.2f}
+        - Daily Spread Z-Score: {spread_z:.2f}
+        - Close Location Value (CLV): {clv:.2f}
+        - Broader Benchmark (Nifty 50) return: {nifty_return * 100:.2f}%
+        - Recent Active Setups (Institutional Absorption, Behavioral Capitulation, or VCP) in the last {lookback_window} days: {triggered_setups_str}
+
+        Task: Generate a professional research brief (maximum 200 words) using a cold, analytical, institutional hedge fund tone. Structure your analysis as follows:
+        1. Microstructure Footprint: Identify positioning distress, market maker absorption, or seller exhaustion based on Z-scores, CLV, and volume contraction.
+        2. PM Execution Stance: State clear trade direction (Accumulate, Wait, or Distribute).
+        3. Risk Parameters: Specify key structural invalidation levels.
+
+        Mandatory Rule: At the very end of your response, append this exact caution disclaimer:
+        "*Caution: This brief is generated by quantitative models for educational purposes only and does not constitute financial or investment advice.*"
+        """
+
+        schema = {
+            "type": "object",
+            "properties": {
+                "title": { "type": "string" },
+                "brief": { "type": "string" }
+            },
+            "required": ["title", "brief"]
+        }
+
+        endpoints = [
+            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={api_key}",
+            f"https://generativelanguage.googleapis.com/v1/models/gemini-3.5-flash:generateContent?key={api_key}",
+        ]
+        
+        headers = {'Content-Type': 'application/json'}
+        body = {
+            "contents": [{"parts": [{"text": prompt_text}]}],
+            "generationConfig": {
+                "responseMimeType": "application/json",
+                "responseSchema": schema
+            }
+        }
+
+        response = None
+        last_error = ""
+        status_code = 502
+
+        for url in endpoints:
+            try:
+                response = requests.post(url, headers=headers, json=body, timeout=25)
+                if response.status_code == 200:
+                    break
+                else:
+                    last_error = f"Status {response.status_code} - {response.text}"
+                    status_code = response.status_code
+            except Exception as e:
+                last_error = str(e)
+
+        if not response or response.status_code != 200:
+            return JsonResponse({'status': 'error', 'message': f"Gemini API failure: {last_error}"}, status=status_code)
+
+        res_json = response.json()
+        text_content = res_json['candidates'][0]['content']['parts'][0]['text']
+        data = json.loads(text_content)
+        
+        # Cache brief in user session
+        request.session['cached_pm_brief'] = {
+            'ticker': ticker,
+            'title': data.get('title', f"Hedge Fund Research Brief: {ticker}"),
+            'brief': data.get('brief', '')
+        }
+        
+        return JsonResponse({'status': 'success', 'data': data})
+        
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@csrf_exempt
+@login_required
+def publish_pm_brief_view(request):
+    """
+    Saves the cached PM research brief as a public CommunityPost.
+    Available to admins only.
+    """
+    # Enforce administrator role check
+    if not (request.user.is_superuser or request.user.is_staff):
+        return JsonResponse({'status': 'error', 'message': 'Forbidden: Administrator privilege required to publish briefs.'}, status=403)
+
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Only POST method is allowed'}, status=405)
+
+    cached_brief = request.session.get('cached_pm_brief')
+    if not cached_brief:
+        return JsonResponse({'status': 'error', 'message': 'No cached research brief found. Please generate a brief first.'}, status=400)
+
+    try:
+        from screener.models import CommunityPost
+        
+        # Create community post
+        post = CommunityPost.objects.create(
+            title=cached_brief['title'],
+            stock_symbol=cached_brief['ticker'],
+            theme='pm_brief',
+            theme_display=cached_brief['brief']
+        )
+        
+        # Clear session cache
+        if 'cached_pm_brief' in request.session:
+            del request.session['cached_pm_brief']
+            
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Research brief published successfully!',
+            'post_id': post.id
+        })
+        
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
 
