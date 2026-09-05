@@ -55,7 +55,7 @@
             }
             .header-actions-row {
                 display: grid !important;
-                grid-template-columns: repeat(4, 1fr) !important;
+                grid-template-columns: repeat(auto-fit, minmax(75px, 1fr)) !important;
                 gap: 8px !important;
                 width: 100% !important;
             }
@@ -386,15 +386,19 @@
                 <div class="header-actions-row" style="display: flex; gap: 8px;">
                     <a href="{% url 'screener:community' %}" class="guide-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-bullhorn"></i> <span>Use Cases</span></a>
                     <button id="btn-open-guide" class="guide-btn" style="display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-circle-info"></i> <span>How it Works</span></button>
+                    {% if request.user.is_superuser or request.user.is_staff %}
                     <button id="btn-toggle-credentials" class="guide-btn" style="display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-gears"></i> <span>API Setup</span></button>
+                    {% endif %}
                     <button id="btn-toggle-filters" class="guide-btn" style="display: none; align-items: center; gap: 6px;"><i class="fa-solid fa-sliders"></i> <span>Filters</span></button>
                 </div>
                 <div class="data-source-selector" style="position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span class="source-label"><i class="fa-solid fa-database"></i> Source:</span>
                         <div class="toggle-container">
-                            <button id="btn-source-sim" class="toggle-btn active">Historical Snapshot</button>
+                            <button id="btn-source-sim" class="toggle-btn active" {% if not request.user.is_superuser and not request.user.is_staff %}style="cursor: default;" title="Historical Snapshot Database"{% endif %}>Historical Snapshot</button>
+                            {% if request.user.is_superuser or request.user.is_staff %}
                             <button id="btn-source-zerodha" class="toggle-btn">Zerodha API</button>
+                            {% endif %}
                         </div>
                     </div>
                     <span id="sim-last-refreshed" style="font-size: 9px; color: var(--text-muted); display: block; margin-top: 1px; font-weight: 500; text-transform: uppercase;"></span>
@@ -403,6 +407,7 @@
         </header>
 
         <!-- Credentials Drawer (Shown for API Configuration) -->
+        {% if request.user.is_superuser or request.user.is_staff %}
         <section id="credentials-drawer" class="credentials-drawer hidden">
             <div class="drawer-content">
                 <h3><i class="fa-key fa-solid"></i> API Configurations</h3>
@@ -425,9 +430,10 @@
                 <p class="auth-tip"><i class="fa-solid fa-circle-info"></i> Your API credentials are stored securely in session storage and are never saved on the server.</p>
             </div>
         </section>
+        {% endif %}
 
         <!-- Main Dashboard Content -->
-        {% if has_used_trial %}
+        {% if has_used_trial and plan_tier == 'standard' and not request.user.is_superuser and not request.user.is_staff and not request.user.profile.is_premium %}
         <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); padding: 12px 20px; border-radius: var(--border-radius-md); margin: 15px 20px 0 20px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
             <div style="display: flex; align-items: center; gap: 10px; color: #fecaca; font-size: 12px; font-weight: 500;">
                 <i class="fa-solid fa-triangle-exclamation" style="color: #ef4444; font-size: 16px;"></i>
@@ -742,6 +748,7 @@
                         </button>
                         
                         <!-- Add Ticker for Zerodha Mode -->
+                        {% if request.user.is_superuser or request.user.is_staff %}
                         <div id="zerodha-add-ticker-section" class="add-ticker-box hidden">
                             <select id="sel-add-symbol">
                                 <option value="" disabled selected>Select Nifty Stock</option>
@@ -752,6 +759,7 @@
                             <input type="text" id="txt-add-custom-token" placeholder="Custom Token ID" class="small-input">
                             <button id="btn-add-ticker" class="icon-btn"><i class="fa-solid fa-plus"></i></button>
                         </div>
+                        {% endif %}
                     </div>
 
                     <!-- Progress Bar for Scanning -->
@@ -1696,15 +1704,15 @@
         
         // Credentials pre-configuration mappings for Superuser / environment bypasses
         const IS_SUPERUSER = {% if request.user.is_superuser or request.user.is_staff %}true{% else %}false{% endif %};
-        const SERVER_HAS_ZERODHA = IS_SUPERUSER || {% if has_zerodha_creds %}true{% else %}false{% endif %};
-        const SERVER_HAS_GEMINI = IS_SUPERUSER || {% if has_gemini_cred %}true{% else %}false{% endif %};
+        const SERVER_HAS_ZERODHA = IS_SUPERUSER && {% if has_zerodha_creds %}true{% else %}false{% endif %};
+        const SERVER_HAS_GEMINI = IS_SUPERUSER && {% if has_gemini_cred %}true{% else %}false{% endif %};
         const DEVELOPER_UPI_ID = "{{ developer_upi_id|escapejs }}";
     </script>
 
     <!-- Project JS dependencies -->
     <script src="{% static 'screener/qrcode.min.js' %}"></script>
     <script src="{% static 'screener/mockData.js' %}?v=3.5"></script>
-    <script src="{% static 'screener/app.js' %}?v=4.3"></script>
+    <script src="{% static 'screener/app.js' %}?v=4.4"></script>
 
     <!-- Sidebar mobile drawer toggling -->
     <script>

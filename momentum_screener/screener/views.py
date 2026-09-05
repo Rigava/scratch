@@ -169,7 +169,7 @@ def community_view(request):
                 user_status = 'classic'
             days_left = profile.days_remaining()
             plan_tier = profile.plan_tier
-            has_used_trial = profile.has_used_trial
+            has_used_trial = profile.has_used_trial if (plan_tier == 'standard' and not profile.is_premium and not request.user.is_superuser and not request.user.is_staff) else False
 
     context = {
         'posts': posts,
@@ -259,7 +259,7 @@ def community_post_detail(request, post_id):
                 user_status = 'classic'
             days_left = profile.days_remaining()
             plan_tier = profile.plan_tier
-            has_used_trial = profile.has_used_trial
+            has_used_trial = profile.has_used_trial if (plan_tier == 'standard' and not profile.is_premium and not request.user.is_superuser and not request.user.is_staff) else False
 
     context = {
         'post': post,
@@ -339,7 +339,8 @@ def dashboard_view(request):
                         )
         
         plan_tier = profile.plan_tier
-        has_used_trial = profile.has_used_trial
+        # Free trial warning should only be displayed for users on the standard free plan
+        has_used_trial = profile.has_used_trial if (plan_tier == 'standard' and not profile.is_premium and not request.user.is_superuser and not request.user.is_staff) else False
         
         if request.user.is_superuser or request.user.is_staff:
             user_status = 'premium'
@@ -409,6 +410,7 @@ def dashboard_view(request):
 def historical_proxy_view(request):
     """
     Proxies historical requests to Zerodha api.kite.trade.
+    Restricted strictly to administrators and superusers.
     Requires headers:
       - X-Kite-API-Key or passed as api_key in query
       - X-Kite-Access-Token or passed as access_token in query
@@ -418,6 +420,12 @@ def historical_proxy_view(request):
       - from: YYYY-MM-DD
       - to: YYYY-MM-DD
     """
+    if not (request.user.is_authenticated and (request.user.is_superuser or request.user.is_staff)):
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Forbidden: Live Zerodha API mode is restricted to Administrators and Superusers only.'
+        }, status=403)
+
     symbol_or_token = request.GET.get('symbol', '').strip().upper()
     interval = request.GET.get('interval', 'day').strip()
     from_date = request.GET.get('from', '').strip()
@@ -1111,7 +1119,7 @@ def admin_sync_data_dump(request):
     """
     Superuser-only view to fetch and sync Zerodha daily candles for Nifty F&O stocks.
     """
-    if not request.user.is_superuser:
+    if not (request.user.is_superuser or request.user.is_staff):
         return JsonResponse({'status': 'error', 'message': 'Forbidden: Admin access required'}, status=403)
 
     import datetime
