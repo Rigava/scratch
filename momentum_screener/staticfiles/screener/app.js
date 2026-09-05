@@ -41,6 +41,7 @@ const App = (function() {
         stocks: {},               // Holds all loaded stock records
         activeTicker: null,       // Currently selected stock
         zerodhaAuthErrorAlerted: false, // Flag to prevent alert floods on API auth errors
+        universeFilter: 'all',    // 'all', 'nifty50', or 'fo'
         filters: {
             status: 'all',
             sma: { enabled: true },
@@ -489,7 +490,18 @@ const App = (function() {
                                 (filterPerf === '7d-winners' && stock.current.pctChange7d > 0) || 
                                 (filterPerf === '7d-losers' && stock.current.pctChange7d < 0);
 
-            if (matchesSearch && matchesStatus && matchesPerf) {
+            // Stock Universe Filter (All, Nifty 50, Nifty F&O)
+            const universe = state.universeFilter || 'all';
+            const isN50 = MockDataEngine.NIFTY50_LIST.includes(stock.ticker);
+            const isFoStock = MockDataEngine.FO_LIST.includes(stock.ticker);
+            let matchesUniverse = true;
+            if (universe === 'nifty50') {
+                matchesUniverse = isN50;
+            } else if (universe === 'fo') {
+                matchesUniverse = isFoStock;
+            }
+
+            if (matchesSearch && matchesStatus && matchesPerf && matchesUniverse) {
                 total++;
                 if (stock.status === 'Knife') {
                     knives++;
@@ -610,10 +622,22 @@ const App = (function() {
             else if (stock.current.milestone === 'Near SMA200') milestoneClass = 'sma200';
             const milestoneHtml = `<span class="badge-milestone ${milestoneClass}">${stock.current.milestone}</span>`;
 
+            const isN50 = MockDataEngine.NIFTY50_LIST.includes(stock.ticker);
+            const isFoStock = MockDataEngine.FO_LIST.includes(stock.ticker);
+            let universeBadge = '';
+            if (isN50) {
+                universeBadge = `<span style="font-size: 9px; padding: 2px 6px; border-radius: 4px; background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); font-weight: 600; margin-left: 6px; white-space: nowrap;">NIFTY 50</span>`;
+            } else if (isFoStock) {
+                universeBadge = `<span style="font-size: 9px; padding: 2px 6px; border-radius: 4px; background: rgba(244, 162, 97, 0.15); color: #f4a261; border: 1px solid rgba(244, 162, 97, 0.3); font-weight: 600; margin-left: 6px; white-space: nowrap;">F&O</span>`;
+            }
+
             tr.innerHTML = `
                 <td><strong>${stock.ticker}</strong></td>
                 <td>
-                    <strong>${stock.ticker}</strong>
+                    <div style="display: flex; align-items: center;">
+                        <strong>${stock.ticker}</strong>
+                        ${universeBadge}
+                    </div>
                     <span class="symbol-name">${stock.name}</span>
                 </td>
                 <td>₹${stock.current.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
@@ -991,12 +1015,11 @@ const App = (function() {
     // --- Data Loaders (Simulation vs. Zerodha Proxy) ---
 
     async function loadSimulationData() {
-        showScanProgress(true, "Checking server for offline historical dump...", "0%", 0);
         try {
             const response = await fetch('/api/simulation/dump/?_t=' + Date.now());
             if (response.ok) {
                 const result = await response.json();
-                if (result.status === 'success' && result.data) {
+                if (result.status === 'success' && result.data && Object.keys(result.data).length > 0) {
                     state.stocks = {};
                     for (const [symbol, candles] of Object.entries(result.data)) {
                         const parsedCandles = candles.map(c => ({
@@ -1030,8 +1053,11 @@ const App = (function() {
             console.warn("Server offline dump fetch failed, falling back to mock procedural generator.", e);
         }
 
-        // Fallback to procedurally generated mock data
+        // Fallback to procedurally generated full Nifty 50 + F&O universe
         state.stocks = MockDataEngine.getSimulatedData();
+        for (const stock of Object.values(state.stocks)) {
+            processStockIndicators(stock);
+        }
         const simRefreshedEl = document.getElementById('sim-last-refreshed');
         if (simRefreshedEl) {
             simRefreshedEl.textContent = `Last Refreshed: ${new Date().toISOString().split('T')[0]}`;
@@ -1539,9 +1565,9 @@ const App = (function() {
     async function executeMarketScan(listType) {
         let symbols = [];
         if (listType === 'nifty50') {
-            symbols = MockDataEngine.NIFTY50_LIST;
+            symbols = MockDataEngine.NIFTY50_LIST.filter(s => s !== 'NIFTY 50' && s !== 'NIFTY BANK' && s !== 'NIFTY IT');
         } else if (listType === 'fo') {
-            symbols = [...new Set([...MockDataEngine.NIFTY50_LIST, ...MockDataEngine.FO_LIST])];
+            symbols = [...new Set([...MockDataEngine.NIFTY50_LIST, ...MockDataEngine.FO_LIST])].filter(s => s !== 'NIFTY 50' && s !== 'NIFTY BANK' && s !== 'NIFTY IT');
         }
 
         if (state.dataSource === 'simulation') {
@@ -1698,11 +1724,53 @@ const App = (function() {
             });
         }
 
-        // Market batch scan binds
-        const btnScanNifty50 = document.getElementById('btn-scan-nifty50');
-        if (btnScanNifty50) btnScanNifty50.addEventListener('click', () => executeMarketScan('nifty50'));
-        const btnScanFo = document.getElementById('btn-scan-fo');
-        if (btnScanFo) btnScanFo.addEventListener('click', () => executeMarketScan('fo'));
+        // Stock Universe filter bindings (All Stocks, Nifty 50, Nifty F&O)
+        const universeButtons = document.querySelectorAll('.universe-btn');
+        const selFilterUniverse = document.getElementById('sel-filter-universe');
+
+        function setUniverseFilter(universe) {
+            state.universeFilter = universe;
+            
+            universeButtons.forEach(btn => {
+                if (btn.getAttribute('data-universe') === universe) {
+                    btn.classList.add('active');
+                    btn.style.background = 'rgba(255, 255, 255, 0.12)';
+                    btn.style.color = 'var(--text-primary)';
+                    btn.style.fontWeight = '600';
+                } else {
+                    btn.classList.remove('active');
+                    btn.style.background = 'transparent';
+                    btn.style.color = 'var(--text-secondary)';
+                    btn.style.fontWeight = '500';
+                }
+            });
+
+            if (selFilterUniverse && selFilterUniverse.value !== universe) {
+                selFilterUniverse.value = universe;
+            }
+
+            renderScreenerGrid();
+        }
+
+        universeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                setUniverseFilter(btn.getAttribute('data-universe'));
+            });
+        });
+
+        if (selFilterUniverse) {
+            selFilterUniverse.addEventListener('change', (e) => {
+                setUniverseFilter(e.target.value);
+            });
+        }
+
+        // Zerodha Admin Nifty 50 Scan Button
+        const btnScanNiftyZerodha = document.getElementById('btn-scan-nifty-zerodha');
+        if (btnScanNiftyZerodha) {
+            btnScanNiftyZerodha.addEventListener('click', () => {
+                executeMarketScan('nifty50');
+            });
+        }
 
         // Source toggle buttons
         if (btnSourceSim) {
@@ -2183,6 +2251,8 @@ const App = (function() {
             selectDdYears.value = "1";
             if (selectStatus) selectStatus.value = "all";
             if (selectPerf) selectPerf.value = "all";
+            if (selFilterUniverse) selFilterUniverse.value = "all";
+            setUniverseFilter("all");
 
             document.getElementById('val-filter-rsi').innerText = '30';
             document.getElementById('val-filter-adx').innerText = '25';

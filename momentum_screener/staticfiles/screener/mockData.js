@@ -155,18 +155,8 @@ const MockDataEngine = (function() {
     ];
 
     function getSimulatedData() {
-        const dates = generateTradingDates(1250);
-        const result = {};
-
-        for (const [ticker, config] of Object.entries(MOCK_TICKERS)) {
-            result[ticker] = {
-                ticker: ticker,
-                name: config.name,
-                candles: generatePath(dates, config.basePrice, config.type)
-            };
-        }
-
-        return result;
+        // Generate and return full universe combining Nifty 50 and F&O list
+        return getSimulatedFO();
     }
 
     function generateSimulatedList(symbols) {

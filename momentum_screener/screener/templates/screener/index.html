@@ -347,6 +347,43 @@
         body.fullscreen-grid-active #main-screener-grid .detail-col {
             display: table-cell !important;
         }
+
+        /* Universe Filter Buttons */
+        .universe-filter-group {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-input);
+            border-radius: var(--border-radius-sm);
+            padding: 3px;
+            gap: 4px;
+        }
+        .universe-btn {
+            font-size: 12px;
+            font-weight: 500;
+            font-family: var(--font-stack);
+            color: var(--text-secondary);
+            background: transparent;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .universe-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .universe-btn.active {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.12);
+            font-weight: 600;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
     </style>
 </head>
 <body>
@@ -468,6 +505,18 @@
                 </div>
                 
                 <div class="config-sections">
+                    <!-- Rule: Stock Universe Filter -->
+                    <div class="config-group" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 15px; margin-bottom: 15px;">
+                        <div class="config-label-row">
+                            <strong style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary);"><i class="fa-solid fa-layer-group"></i> Stock Universe</strong>
+                        </div>
+                        <select id="sel-filter-universe" style="width: 100%; margin-top: 8px; background: var(--bg-input); border: 1px solid var(--border-input); border-radius: var(--border-radius-sm); padding: 8px 12px; color: var(--text-primary); font-family: var(--font-stack); font-size: 13px; outline: none; cursor: pointer; transition: all 0.2s;">
+                            <option value="all" selected>All Stocks (Nifty 50 & F&O)</option>
+                            <option value="nifty50">Nifty 50 Index</option>
+                            <option value="fo">Nifty F&O List</option>
+                        </select>
+                    </div>
+
                     <!-- Rule 0: Status Filter (Safe vs Knife) -->
                     <div class="config-group" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 15px; margin-bottom: 15px;">
                         <div class="config-label-row">
@@ -746,20 +795,26 @@
                             <input type="text" id="grid-search" placeholder="Search ticker or name...">
                         </div>
                         
-                        <!-- Batch Scan Buttons -->
-                        <div class="scan-buttons-group" style="display: flex; gap: 10px; flex-wrap: wrap;">
-                            <button id="btn-scan-nifty50" class="primary-btn" style="background: linear-gradient(135deg, var(--accent-indigo) 0%, #c76543 100%); font-size: 12px; padding: 8px 16px;"><i class="fa-solid fa-circle-nodes"></i> Scan Nifty 50</button>
-                            <button id="btn-scan-fo" class="primary-btn" style="background: linear-gradient(135deg, #f4a261 0%, #e76f51 100%); font-size: 12px; padding: 8px 16px;"><i class="fa-solid fa-chart-pie"></i> Scan F&O List</button>
+                        <!-- Universe Filter Buttons -->
+                        <div class="universe-filter-group" id="universe-filter-group">
+                            <button type="button" class="universe-btn active" id="btn-universe-all" data-universe="all">
+                                All Stocks
+                            </button>
+                            <button type="button" class="universe-btn" id="btn-universe-nifty50" data-universe="nifty50">
+                                <i class="fa-solid fa-circle-nodes" style="color: var(--accent-indigo);"></i> Nifty 50
+                            </button>
+                            <button type="button" class="universe-btn" id="btn-universe-fo" data-universe="fo">
+                                <i class="fa-solid fa-chart-pie" style="color: #f4a261;"></i> Nifty F&O
+                            </button>
                         </div>
                         
-                        <!-- Fullscreen Grid Toggle Button -->
-                        <button id="btn-fullscreen-grid" class="guide-btn" title="Toggle Fullscreen Grid" style="display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border-radius: var(--border-radius-sm); margin-left: auto; flex-shrink: 0;">
-                            <i class="fa-solid fa-expand"></i>
-                        </button>
-                        
-                        <!-- Add Ticker for Zerodha Mode -->
+                        <!-- Zerodha Admin Scanning & Add Ticker Section (Only visible in Zerodha mode) -->
                         {% if request.user.is_superuser or request.user.is_staff %}
-                        <div id="zerodha-add-ticker-section" class="add-ticker-box hidden">
+                        <div id="zerodha-add-ticker-section" class="add-ticker-box hidden" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <button id="btn-scan-nifty-zerodha" class="primary-btn" title="Scan all Nifty 50 constituents using live Zerodha Kite API" style="background: linear-gradient(135deg, var(--accent-indigo) 0%, #c76543 100%); font-size: 12px; padding: 7px 14px; border: none; border-radius: var(--border-radius-sm); color: #fff; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-stack); white-space: nowrap;">
+                                <i class="fa-solid fa-circle-nodes"></i> Scan Nifty 50 (Zerodha)
+                            </button>
+                            <span style="color: rgba(255, 255, 255, 0.15); font-size: 14px; margin: 0 2px;">|</span>
                             <select id="sel-add-symbol">
                                 <option value="" disabled selected>Select Nifty Stock</option>
                                 {% for symbol in supported_symbols %}
@@ -767,9 +822,14 @@
                                 {% endfor %}
                             </select>
                             <input type="text" id="txt-add-custom-token" placeholder="Custom Token ID" class="small-input">
-                            <button id="btn-add-ticker" class="icon-btn"><i class="fa-solid fa-plus"></i></button>
+                            <button id="btn-add-ticker" class="icon-btn" title="Add Single Ticker"><i class="fa-solid fa-plus"></i></button>
                         </div>
                         {% endif %}
+                        
+                        <!-- Fullscreen Grid Toggle Button -->
+                        <button id="btn-fullscreen-grid" class="guide-btn" title="Toggle Fullscreen Grid" style="display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border-radius: var(--border-radius-sm); margin-left: auto; flex-shrink: 0;">
+                            <i class="fa-solid fa-expand"></i>
+                        </button>
                     </div>
 
                     <!-- Progress Bar for Scanning -->
@@ -878,7 +938,7 @@
                                 </thead>
                                 <tbody id="signals-tbody">
                                     <tr>
-                                        <td colspan="5" style="text-align: center; color: var(--text-secondary); font-size: 13px; padding: 20px;">No recent crossovers found. Run Nifty 50 or F&O scan to fetch historical data.</td>
+                                        <td colspan="5" style="text-align: center; color: var(--text-secondary); font-size: 13px; padding: 20px;">No recent crossovers found in the selected stock universe.</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -917,7 +977,7 @@
                                 </thead>
                                 <tbody id="backtest-tbody">
                                     <tr>
-                                        <td colspan="7" style="text-align: center; color: var(--text-secondary); font-size: 13px; padding: 20px;">No backtest data available. Execute Nifty 50 or F&O scan to run backtests.</td>
+                                        <td colspan="7" style="text-align: center; color: var(--text-secondary); font-size: 13px; padding: 20px;">No backtest data available for the selected stock universe.</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -1721,8 +1781,8 @@
 
     <!-- Project JS dependencies -->
     <script src="{% static 'screener/qrcode.min.js' %}"></script>
-    <script src="{% static 'screener/mockData.js' %}?v=3.5"></script>
-    <script src="{% static 'screener/app.js' %}?v=4.5"></script>
+    <script src="{% static 'screener/mockData.js' %}?v=3.6"></script>
+    <script src="{% static 'screener/app.js' %}?v=4.7"></script>
 
     <!-- Sidebar mobile drawer toggling -->
     <script>
