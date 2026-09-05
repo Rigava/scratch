@@ -233,39 +233,39 @@
 
         /* Mobile Advanced Strategy Table Column Hiding */
         @media (max-width: 1024px) {
-            body:not(.fullscreen-grid-active) #abs-ranking-table th:nth-child(3),
-            body:not(.fullscreen-grid-active) #abs-ranking-table td:nth-child(3),
-            body:not(.fullscreen-grid-active) #abs-ranking-table th:nth-child(4),
-            body:not(.fullscreen-grid-active) #abs-ranking-table td:nth-child(4),
-            body:not(.fullscreen-grid-active) #abs-ranking-table th:nth-child(6),
-            body:not(.fullscreen-grid-active) #abs-ranking-table td:nth-child(6) {
+            body:not(.fullscreen-advanced-active) #abs-ranking-table th:nth-child(3),
+            body:not(.fullscreen-advanced-active) #abs-ranking-table td:nth-child(3),
+            body:not(.fullscreen-advanced-active) #abs-ranking-table th:nth-child(4),
+            body:not(.fullscreen-advanced-active) #abs-ranking-table td:nth-child(4),
+            body:not(.fullscreen-advanced-active) #abs-ranking-table th:nth-child(6),
+            body:not(.fullscreen-advanced-active) #abs-ranking-table td:nth-child(6) {
                 display: none !important;
             }
 
-            body:not(.fullscreen-grid-active) #bearish-exh-table th:nth-child(1),
-            body:not(.fullscreen-grid-active) #bearish-exh-table td:nth-child(1),
-            body:not(.fullscreen-grid-active) #bearish-exh-table th:nth-child(5),
-            body:not(.fullscreen-grid-active) #bearish-exh-table td:nth-child(5) {
+            body:not(.fullscreen-advanced-active) #bearish-exh-table th:nth-child(1),
+            body:not(.fullscreen-advanced-active) #bearish-exh-table td:nth-child(1),
+            body:not(.fullscreen-advanced-active) #bearish-exh-table th:nth-child(5),
+            body:not(.fullscreen-advanced-active) #bearish-exh-table td:nth-child(5) {
                 display: none !important;
             }
 
-            body:not(.fullscreen-grid-active) #bullish-exh-table th:nth-child(1),
-            body:not(.fullscreen-grid-active) #bullish-exh-table td:nth-child(1),
-            body:not(.fullscreen-grid-active) #bullish-exh-table th:nth-child(5),
-            body:not(.fullscreen-grid-active) #bullish-exh-table td:nth-child(5) {
+            body:not(.fullscreen-advanced-active) #bullish-exh-table th:nth-child(1),
+            body:not(.fullscreen-advanced-active) #bullish-exh-table td:nth-child(1),
+            body:not(.fullscreen-advanced-active) #bullish-exh-table th:nth-child(5),
+            body:not(.fullscreen-advanced-active) #bullish-exh-table td:nth-child(5) {
                 display: none !important;
             }
 
-            body:not(.fullscreen-grid-active) #vcp-ranking-table th:nth-child(4),
-            body:not(.fullscreen-grid-active) #vcp-ranking-table td:nth-child(4),
-            body:not(.fullscreen-grid-active) #vcp-ranking-table th:nth-child(5),
-            body:not(.fullscreen-grid-active) #vcp-ranking-table td:nth-child(5) {
+            body:not(.fullscreen-advanced-active) #vcp-ranking-table th:nth-child(4),
+            body:not(.fullscreen-advanced-active) #vcp-ranking-table td:nth-child(4),
+            body:not(.fullscreen-advanced-active) #vcp-ranking-table th:nth-child(5),
+            body:not(.fullscreen-advanced-active) #vcp-ranking-table td:nth-child(5) {
                 display: none !important;
             }
         }
 
         /* Fullscreen Advanced Strategy View Card overrides */
-        body.fullscreen-grid-active #advanced-strategy-view-card {
+        body.fullscreen-advanced-active #advanced-strategy-view-card:not(.hidden) {
             position: fixed !important;
             top: 0 !important;
             left: 0 !important;
@@ -283,30 +283,40 @@
             gap: 16px !important;
         }
 
-                /* Fullscreen Screener Grid Mode overrides */
+        /* Fullscreen Mode overrides (applies to both screener and advanced strategy) */
         body.fullscreen-grid-active .app-header,
         body.fullscreen-grid-active .stats-bar,
         body.fullscreen-grid-active .view-tabs,
         body.fullscreen-grid-active .user-alerts-block,
         body.fullscreen-grid-active .sidebar-config,
         body.fullscreen-grid-active #filters-backdrop,
-        body.fullscreen-grid-active .use-cases-section {
+        body.fullscreen-grid-active .use-cases-section,
+        body.fullscreen-advanced-active .app-header,
+        body.fullscreen-advanced-active .stats-bar,
+        body.fullscreen-advanced-active .view-tabs,
+        body.fullscreen-advanced-active .user-alerts-block,
+        body.fullscreen-advanced-active .sidebar-config,
+        body.fullscreen-advanced-active #filters-backdrop,
+        body.fullscreen-advanced-active .use-cases-section {
             display: none !important;
         }
 
-        body.fullscreen-grid-active .dashboard-layout {
+        body.fullscreen-grid-active .dashboard-layout,
+        body.fullscreen-advanced-active .dashboard-layout {
             display: block !important;
             padding: 0 !important;
             margin: 0 !important;
         }
 
-        body.fullscreen-grid-active .screener-results {
+        body.fullscreen-grid-active .screener-results,
+        body.fullscreen-advanced-active .screener-results {
             padding: 0 !important;
             margin: 0 !important;
             gap: 0 !important;
         }
 
-        body.fullscreen-grid-active #main-screener-grid {
+        /* Screener grid is only fullscreen when active and NOT hidden */
+        body.fullscreen-grid-active #main-screener-grid:not(.hidden) {
             position: fixed !important;
             top: 0 !important;
             left: 0 !important;
@@ -1712,14 +1722,14 @@
     <!-- Project JS dependencies -->
     <script src="{% static 'screener/qrcode.min.js' %}"></script>
     <script src="{% static 'screener/mockData.js' %}?v=3.5"></script>
-    <script src="{% static 'screener/app.js' %}?v=4.4"></script>
+    <script src="{% static 'screener/app.js' %}?v=4.5"></script>
 
     <!-- Sidebar mobile drawer toggling -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const btnToggleFilters = document.getElementById('btn-toggle-filters');
             const btnCloseFilters = document.getElementById('btn-close-filters');
-            const sidebarConfig = document.querySelector('.sidebar-config');
+            const sidebarConfig = document.getElementById('sidebar-config');
             const filtersBackdrop = document.getElementById('filters-backdrop');
 
             function openFilters() {
@@ -1749,6 +1759,29 @@
                     }
                 });
             }
+
+            // Escape key exits any active fullscreen
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    if (document.body.classList.contains('fullscreen-grid-active')) {
+                        document.body.classList.remove('fullscreen-grid-active');
+                        if (btnFullscreen) {
+                            const icon = btnFullscreen.querySelector('i');
+                            if (icon) icon.className = 'fa-solid fa-expand';
+                            btnFullscreen.title = 'Toggle Fullscreen Grid';
+                        }
+                    }
+                    if (document.body.classList.contains('fullscreen-advanced-active')) {
+                        document.body.classList.remove('fullscreen-advanced-active');
+                        const btnAdv = document.getElementById('btn-fullscreen-advanced');
+                        if (btnAdv) {
+                            const icon = btnAdv.querySelector('i');
+                            if (icon) icon.className = 'fa-solid fa-expand';
+                            btnAdv.title = 'Toggle Fullscreen Grid';
+                        }
+                    }
+                }
+            });
 
             if (btnToggleFilters) {
                 btnToggleFilters.addEventListener('click', openFilters);

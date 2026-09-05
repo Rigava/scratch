@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TradeKriya - Catching Knives is a Losing Game</title>
+    <title>TradeKriya - Quantitative Research & Momentum Screener for Swing Investors</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -827,11 +827,11 @@
     <section class="hero-section">
         <div class="hero-content">
             <div class="hero-badge">
-                <span></span> Watch the momentum shift
+                <span></span> Quantitative Research for Swing Investors
             </div>
             <h1 class="hero-title">Catching knives is a losing game. Meet <span style="font-family: 'Yatra One', cursive;">TradeKriya</span>.</h1>
             <p class="hero-description">
-                TradeKriya screens stock data in real time using math-anchored filters (Peak-to-Trough Drawdowns, RSI Crossovers, and 200 SMA Support). Avoid entry before the momentum shifts, and log your trading journey in a database-backed journal.
+                TradeKriya is a quantitative research platform designed for swing and positional investors. Analyze captured historical daily candles across Nifty 50 and F&O stocks with math-anchored filters (Peak-to-Trough Drawdowns, RSI Crossovers, and 200 SMA Support) to identify high-probability setups before taking positions.
             </p>
             <div class="hero-buttons">
                 {% if request.user.is_authenticated or request.session.is_guest_user %}
@@ -845,7 +845,7 @@
 
         <div class="hero-visual">
             <div class="visual-card">
-                <span class="absolute -top-3 -left-3 z-10 font-sketch text-[10px] uppercase tracking-widest text-paper bg-accent bg-gradient-to-r style-badge" style="background: var(--accent-indigo); color: white; border-radius: 20px; padding: 4px 10px; font-weight: 700; box-shadow: 0 4px 10px var(--accent-indigo-glow); position: absolute;">Live Scan</span>
+                <span class="absolute -top-3 -left-3 z-10 font-sketch text-[10px] uppercase tracking-widest text-paper bg-accent bg-gradient-to-r style-badge" style="background: var(--accent-indigo); color: white; border-radius: 20px; padding: 4px 10px; font-weight: 700; box-shadow: 0 4px 10px var(--accent-indigo-glow); position: absolute;">Quantitative Scan</span>
                 
                 <div class="visual-header">
                     <div class="dots">
@@ -921,7 +921,7 @@
                 </div>
                 <h2 class="hero-title" style="font-size: 40px;">Never buy on the way down. Spot the shift.</h2>
                 <p class="hero-description">
-                    A stock that is down 30% might look cheap, but buying without confirmation is a gamble. TradeKriya screens for peak-to-trough drawdowns and 200 SMA crossovers so you only trade when the trend shifts in your favor.
+                    A stock that is down 30% might look cheap, but buying without quantitative confirmation is a gamble. TradeKriya screens for peak-to-trough drawdowns and 200 SMA crossovers so swing investors only enter when momentum and trend structure shift in their favor.
                 </p>
                 <div style="margin-top: 15px;">
                     {% if request.user.is_authenticated or request.session.is_guest_user %}
@@ -945,9 +945,9 @@
             <div class="track-card">
                 <div class="track-icon"><i class="fa-solid fa-filter"></i></div>
                 <h3>Momentum Screener</h3>
-                <p>Scan Nifty 50 and F&O instruments dynamically. Filter out falling knives based on customized drawdown tolerances and indicators.</p>
+                <p>Screen Nifty 50 and F&O instruments using captured daily historical records. Filter out falling knives based on customized drawdown limits and long-term trend filters.</p>
                 <div class="track-tags">
-                    <span class="track-tag">Quantitative</span>
+                    <span class="track-tag">Swing Research</span>
                     <span class="track-tag">SMA Filters</span>
                     <span class="track-tag">Knife Tags</span>
                 </div>
@@ -956,7 +956,7 @@
             <div class="track-card">
                 <div class="track-icon"><i class="fa-solid fa-chart-line"></i></div>
                 <h3>RSI Backtesting</h3>
-                <p>Run historical simulations of RSI crossover setups. Review historical trade success rates, win ratios, and average returns.</p>
+                <p>Run historical multi-year simulations of swing setups. Review historical trade success rates, win ratios, and average returns before allocating capital.</p>
                 <div class="track-tags">
                     <span class="track-tag">Backtester</span>
                     <span class="track-tag">Hist. Candles</span>
@@ -976,13 +976,13 @@
             </div>
 
             <div class="track-card">
-                <div class="track-icon"><i class="fa-solid fa-link"></i></div>
-                <h3>Zerodha Kite API</h3>
-                <p>Connect your Zerodha Kite Developer keys to fetch live stock data and chart trends directly from official NSE feeds.</p>
+                <div class="track-icon"><i class="fa-solid fa-database"></i></div>
+                <h3>Captured Historical Data</h3>
+                <p>Built on authentic daily candle history captured across Nifty 50 and F&O stocks — providing swing investors with reliable positional charts without intraday noise.</p>
                 <div class="track-tags">
-                    <span class="track-tag">API Link</span>
-                    <span class="track-tag">Live Feeds</span>
-                    <span class="track-tag">NSE Candles</span>
+                    <span class="track-tag">Daily Candles</span>
+                    <span class="track-tag">Nifty 50 & F&O</span>
+                    <span class="track-tag">Swing Investors</span>
                 </div>
             </div>
 
@@ -1003,7 +1003,7 @@
     <section id="pricing" class="pricing-section">
         <div class="section-header">
             <h2>Simple, Transparent Pricing</h2>
-            <p>Choose the tier that fits your trading style and unlock powerful quantitative tools.</p>
+            <p>Choose the tier that fits your investment horizon and unlock powerful quantitative research tools.</p>
         </div>
 
         <div class="pricing-grid">
@@ -1016,10 +1016,10 @@
                         <span class="period">/ Free Forever</span>
                     </div>
                 </div>
-                <p class="pricing-description">Perfect for tracking daily market momentum and screening for clean safe setups.</p>
+                <p class="pricing-description">Perfect for swing investors tracking momentum shifts and screening clean positional setups.</p>
                 <div class="pricing-divider"></div>
                 <ul class="pricing-features">
-                    <li><i class="fa-solid fa-circle-check"></i> Real-time Nifty 50 & F&O stocks list</li>
+                    <li><i class="fa-solid fa-circle-check"></i> Historical data captured for Nifty 50 & F&O, perfect for swing investors</li>
                     <li><i class="fa-solid fa-circle-check"></i> Peak-to-Trough Drawdown calculations</li>
                     <li><i class="fa-solid fa-circle-check"></i> 200-Day SMA & RSI Crossover rules</li>
                     <li><i class="fa-solid fa-circle-check"></i> Basic search and sorting filters</li>
@@ -1041,7 +1041,7 @@
                         <span class="period">/ One-time fee</span>
                     </div>
                 </div>
-                <p class="pricing-description">Extend your capability with backtesting capabilities and persistent journal logs.</p>
+                <p class="pricing-description">Deepen your swing research with multi-year backtesting engines and persistent journal logs.</p>
                 <div class="pricing-divider"></div>
                 <ul class="pricing-features">
                     <li><i class="fa-solid fa-circle-check"></i> Everything in Basic Screener</li>
@@ -1064,7 +1064,7 @@
                         <span class="period">/ Month</span>
                     </div>
                 </div>
-                <p class="pricing-description">Maximize your conviction using deep AI analysis and advanced multi-indicator strategies.</p>
+                <p class="pricing-description">Maximize your research conviction with AI setup analysis, news sentiment, and multi-indicator strategies.</p>
                 <div class="pricing-divider"></div>
                 <ul class="pricing-features">
                     <li><i class="fa-solid fa-circle-check"></i> Everything in Classic Engine</li>

@@ -2658,6 +2658,18 @@ const App = (function() {
         const useCasesSection = document.querySelector('.use-cases-section');
         
         function deactivateAllTabs() {
+            document.body.classList.remove('fullscreen-grid-active');
+            document.body.classList.remove('fullscreen-advanced-active');
+            const iconGrid = document.querySelector('#btn-fullscreen-grid i');
+            if (iconGrid) iconGrid.className = 'fa-solid fa-expand';
+            const btnGrid = document.getElementById('btn-fullscreen-grid');
+            if (btnGrid) btnGrid.title = 'Toggle Fullscreen Grid';
+
+            const iconAdv = document.querySelector('#btn-fullscreen-advanced i');
+            if (iconAdv) iconAdv.className = 'fa-solid fa-expand';
+            const btnAdv = document.getElementById('btn-fullscreen-advanced');
+            if (btnAdv) btnAdv.title = 'Toggle Fullscreen Grid';
+
             [tabScreener, tabBacktest, tabJournal, tabAdvanced].forEach(tab => {
                 if (tab) {
                     tab.classList.remove('active');
@@ -2741,7 +2753,15 @@ const App = (function() {
         const btnFullscreenAdvanced = document.getElementById('btn-fullscreen-advanced');
         if (btnFullscreenAdvanced) {
             btnFullscreenAdvanced.addEventListener('click', () => {
-                document.body.classList.toggle('fullscreen-grid-active');
+                document.body.classList.toggle('fullscreen-advanced-active');
+                const icon = btnFullscreenAdvanced.querySelector('i');
+                if (document.body.classList.contains('fullscreen-advanced-active')) {
+                    if (icon) icon.className = 'fa-solid fa-compress';
+                    btnFullscreenAdvanced.title = 'Exit Fullscreen';
+                } else {
+                    if (icon) icon.className = 'fa-solid fa-expand';
+                    btnFullscreenAdvanced.title = 'Toggle Fullscreen Grid';
+                }
             });
         }
 
