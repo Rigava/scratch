@@ -13,7 +13,7 @@
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     {% load static %}
-    <link rel="stylesheet" href="{% static 'screener/styles.css' %}?v=3.6">
+    <link rel="stylesheet" href="{% static 'screener/styles.css' %}?v=4.9">
     <style>
         /* Responsive navigation fix to prevent brand & details overlap */
         @media (max-width: 1024px) {
@@ -283,7 +283,7 @@
             gap: 16px !important;
         }
 
-        /* Fullscreen Mode overrides (applies to both screener and advanced strategy) */
+        /* Fullscreen Mode overrides (applies to screener, advanced strategy, and admin stats) */
         body.fullscreen-grid-active .app-header,
         body.fullscreen-grid-active .stats-bar,
         body.fullscreen-grid-active .view-tabs,
@@ -297,19 +297,28 @@
         body.fullscreen-advanced-active .user-alerts-block,
         body.fullscreen-advanced-active .sidebar-config,
         body.fullscreen-advanced-active #filters-backdrop,
-        body.fullscreen-advanced-active .use-cases-section {
+        body.fullscreen-advanced-active .use-cases-section,
+        body.fullscreen-stats-active .app-header,
+        body.fullscreen-stats-active .stats-bar,
+        body.fullscreen-stats-active .view-tabs,
+        body.fullscreen-stats-active .user-alerts-block,
+        body.fullscreen-stats-active .sidebar-config,
+        body.fullscreen-stats-active #filters-backdrop,
+        body.fullscreen-stats-active .use-cases-section {
             display: none !important;
         }
 
         body.fullscreen-grid-active .dashboard-layout,
-        body.fullscreen-advanced-active .dashboard-layout {
+        body.fullscreen-advanced-active .dashboard-layout,
+        body.fullscreen-stats-active .dashboard-layout {
             display: block !important;
             padding: 0 !important;
             margin: 0 !important;
         }
 
         body.fullscreen-grid-active .screener-results,
-        body.fullscreen-advanced-active .screener-results {
+        body.fullscreen-advanced-active .screener-results,
+        body.fullscreen-stats-active .screener-results {
             padding: 0 !important;
             margin: 0 !important;
             gap: 0 !important;
@@ -346,6 +355,15 @@
         }
         body.fullscreen-grid-active #main-screener-grid .detail-col {
             display: table-cell !important;
+        }
+
+        /* Detail Drawer & Modals must always be above fullscreen zoomed grid (z-index: 99999) */
+        .detail-drawer {
+            z-index: 100005 !important;
+        }
+        .modal,
+        .modal-overlay {
+            z-index: 100010 !important;
         }
 
         /* Universe Filter Buttons */
@@ -637,7 +655,8 @@
                     <!-- Rule 5: Admin Sync Controls -->
                     <div class="config-group" style="border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 15px; margin-top: 15px;">
                         <strong style="font-size: 11px; text-transform: uppercase; color: var(--accent-indigo); display: block; margin-bottom: 8px;"><i class="fa-solid fa-user-shield"></i> Admin Controls</strong>
-                        <button id="btn-admin-sync-dump" class="primary-btn" style="width: 100%; font-size: 11px; padding: 10px; margin: 0; background: linear-gradient(135deg, var(--accent-indigo), #5850ec); border: none; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; border-radius: var(--border-radius-sm); color: #fff; font-weight: 600; margin-bottom: 10px;"><i class="fa-solid fa-database"></i> Sync Data Dump</button>
+                        <button id="btn-admin-sync-dump" class="primary-btn" style="width: 100%; font-size: 11px; padding: 10px; margin: 0; background: linear-gradient(135deg, var(--accent-indigo), #5850ec); border: none; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; border-radius: var(--border-radius-sm); color: #fff; font-weight: 600; margin-bottom: 8px;"><i class="fa-solid fa-database"></i> Sync Data Dump</button>
+                        <button id="btn-sidebar-admin-stats" class="secondary-btn" style="width: 100%; font-size: 11px; padding: 9px 10px; margin: 0; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; cursor: pointer; border-radius: var(--border-radius-sm); font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 10px;"><i class="fa-solid fa-chart-pie"></i> Screener Stats & CSV</button>
                         <div id="admin-sync-status" style="margin-top: 8px; font-size: 11px; color: var(--text-secondary); text-align: center; font-weight: 500;"></div>
                     </div>
 
@@ -724,6 +743,11 @@
                     <button id="btn-tab-advanced" class="tab-btn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
                         <i class="fa-solid fa-gem" style="color: #a855f7;"></i> Advanced Strategy
                     </button>
+                    {% if request.user.is_superuser or request.user.is_staff %}
+                    <button id="btn-tab-admin-stats" class="tab-btn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-chart-pie" style="color: #10b981;"></i> Screener Statistics & Export <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #10b981; font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">Admin</span>
+                    </button>
+                    {% endif %}
                 </div>
 
                 <!-- User Notification Banner Block -->
@@ -1249,7 +1273,177 @@
 
         </div>
     </div>
-    </section>
+
+                    {% if request.user.is_superuser or request.user.is_staff %}
+                    <!-- Admin Screener Statistics & Comprehensive Data Export Card -->
+                    <div id="admin-stats-view-card" class="screener-grid-card glass-card hidden" style="margin-top: 0; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0; max-width: 100%; width: 100%; box-sizing: border-box;">
+                        <!-- Top Header & Actions -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 12px;">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <h2 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
+                                        <i class="fa-solid fa-chart-pie" style="color: #10b981;"></i> Screener Statistics & Comprehensive Export
+                                    </h2>
+                                    <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 9.5px; font-weight: 700; padding: 2px 7px; border-radius: 4px;">ADMIN SUITE</span>
+                                </div>
+                                <p style="font-size: 11.5px; color: var(--text-secondary); margin: 3px 0 0 0;">
+                                    Real-time aggregate technical distributions, market breadth, momentum indicators, and full raw parameter dataset export.
+                                </p>
+                            </div>
+                            <!-- Export and Action Buttons -->
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <button id="btn-export-stats-csv" class="primary-btn" title="Download entire screener dataset with all technical parameters as CSV" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); font-size: 11.5px; padding: 7px 14px; border-radius: var(--border-radius-sm); border: none; color: #fff; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);">
+                                    <i class="fa-solid fa-file-arrow-down"></i> Download Full Screener (CSV)
+                                </button>
+                                <button id="btn-export-stats-json" class="guide-btn" title="Export full data dump in structured JSON format" style="font-size: 11.5px; padding: 7px 12px; border-radius: var(--border-radius-sm); display: inline-flex; align-items: center; gap: 5px; cursor: pointer;">
+                                    <i class="fa-solid fa-code"></i> JSON
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Compact Statistical KPI Summary Bar (5 metrics in a single slim row) -->
+                        <div class="admin-kpi-container">
+                            <!-- KPI 1: Universe & Health -->
+                            <div class="admin-kpi-card glass-card">
+                                <div class="admin-kpi-icon blue"><i class="fa-solid fa-layer-group"></i></div>
+                                <div class="admin-kpi-content">
+                                    <span class="admin-kpi-val" id="stat-admin-total">0</span>
+                                    <span class="admin-kpi-lbl">Total Constituents</span>
+                                    <span class="admin-kpi-sub" id="stat-admin-health-sub" style="color: #10b981;">0% Safe</span>
+                                </div>
+                            </div>
+                            <!-- KPI 2: 200 SMA Breadth -->
+                            <div class="admin-kpi-card glass-card">
+                                <div class="admin-kpi-icon green"><i class="fa-solid fa-arrow-trend-up"></i></div>
+                                <div class="admin-kpi-content">
+                                    <span class="admin-kpi-val" id="stat-admin-above200">0%</span>
+                                    <span class="admin-kpi-lbl">&gt; 200 SMA Breadth</span>
+                                    <span class="admin-kpi-sub" id="stat-admin-cross-sub">0 Above</span>
+                                </div>
+                            </div>
+                            <!-- KPI 3: 50 SMA & Momentum -->
+                            <div class="admin-kpi-card glass-card">
+                                <div class="admin-kpi-icon orange"><i class="fa-solid fa-gauge-high"></i></div>
+                                <div class="admin-kpi-content">
+                                    <span class="admin-kpi-val" id="stat-admin-above50">0%</span>
+                                    <span class="admin-kpi-lbl">&gt; 50 SMA Momentum</span>
+                                    <span class="admin-kpi-sub" id="stat-admin-rsi-sub">Avg RSI: 0</span>
+                                </div>
+                            </div>
+                            <!-- KPI 4: ADX Trend Strength -->
+                            <div class="admin-kpi-card glass-card">
+                                <div class="admin-kpi-icon purple"><i class="fa-solid fa-bolt"></i></div>
+                                <div class="admin-kpi-content">
+                                    <span class="admin-kpi-val" id="stat-admin-strong-adx">0%</span>
+                                    <span class="admin-kpi-lbl">Trending (ADX&gt;25)</span>
+                                    <span class="admin-kpi-sub" id="stat-admin-adx-sub">Avg ADX: 0</span>
+                                </div>
+                            </div>
+                            <!-- KPI 5: Average Drawdown -->
+                            <div class="admin-kpi-card glass-card">
+                                <div class="admin-kpi-icon red"><i class="fa-solid fa-water-lower"></i></div>
+                                <div class="admin-kpi-content">
+                                    <span class="admin-kpi-val" id="stat-admin-avg-dd">0%</span>
+                                    <span class="admin-kpi-lbl">Avg 1Y Drawdown</span>
+                                    <span class="admin-kpi-sub" id="stat-admin-max-dd-sub" style="color: #f87171;">Max DD: 0%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Filter Controls & Table Navigation Bar -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 8px 12px; border-radius: var(--border-radius-sm);">
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <label for="sel-stats-universe" style="font-size: 10.5px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Universe:</label>
+                                    <select id="sel-stats-universe" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); border-radius: var(--border-radius-sm); padding: 5px 8px; font-size: 11.5px; outline: none; cursor: pointer; height: 28px;">
+                                        <option value="all" selected>All Constituents</option>
+                                        <option value="nifty50">Nifty 50 Only</option>
+                                        <option value="fo">Nifty F&O Only</option>
+                                    </select>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <label for="sel-stats-status" style="font-size: 10.5px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Status:</label>
+                                    <select id="sel-stats-status" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); border-radius: var(--border-radius-sm); padding: 5px 8px; font-size: 11.5px; outline: none; cursor: pointer; height: 28px;">
+                                        <option value="all" selected>All Statuses</option>
+                                        <option value="Safe">Safe Stocks Only</option>
+                                        <option value="Knife">Falling Knives Only</option>
+                                    </select>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <label for="sel-stats-momentum" style="font-size: 10.5px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Signal:</label>
+                                    <select id="sel-stats-momentum" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); border-radius: var(--border-radius-sm); padding: 5px 8px; font-size: 11.5px; outline: none; cursor: pointer; height: 28px;">
+                                        <option value="all" selected>All Signals</option>
+                                        <option value="shift">Momentum Shift Today</option>
+                                        <option value="oversold">RSI Oversold (&lt;30)</option>
+                                        <option value="overbought">RSI Overbought (&gt;70)</option>
+                                        <option value="near50">Near 50 SMA</option>
+                                        <option value="near200">Near 200 SMA</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <div class="search-box" style="position: relative; width: 180px;">
+                                    <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 11px;"></i>
+                                    <input type="text" id="txt-stats-search" placeholder="Search ticker/name..." style="width: 100%; background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); border-radius: var(--border-radius-sm); padding: 5px 8px 5px 26px; font-size: 11.5px; outline: none; height: 28px;">
+                                </div>
+                                <span id="lbl-stats-count" style="font-size: 11px; color: var(--text-muted); font-weight: 500; white-space: nowrap;">0 stocks</span>
+                                <!-- Table Horizontal Navigation Quick Buttons -->
+                                <div style="display: inline-flex; align-items: center; gap: 4px; border-left: 1px solid rgba(255,255,255,0.08); padding-left: 8px;">
+                                    <span style="font-size: 10.5px; color: var(--text-muted); margin-right: 2px;" title="Scroll horizontally across 21 parameters">
+                                        <i class="fa-solid fa-arrows-left-right" style="color: var(--accent-indigo); font-size: 10px;"></i>
+                                    </span>
+                                    <button type="button" id="btn-stats-scroll-left" class="guide-btn" title="Scroll Table Left" style="padding: 0; width: 26px; height: 26px; font-size: 11px; border-radius: var(--border-radius-sm); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;">
+                                        <i class="fa-solid fa-chevron-left"></i>
+                                    </button>
+                                    <button type="button" id="btn-stats-scroll-right" class="guide-btn" title="Scroll Table Right" style="padding: 0; width: 26px; height: 26px; font-size: 11px; border-radius: var(--border-radius-sm); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;">
+                                        <i class="fa-solid fa-chevron-right"></i>
+                                    </button>
+                                    <button type="button" id="btn-fullscreen-stats" class="guide-btn" title="Toggle Fullscreen Table" style="padding: 0; width: 26px; height: 26px; font-size: 11px; border-radius: var(--border-radius-sm); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; margin-left: 2px;">
+                                        <i class="fa-solid fa-expand"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Statistical Data Table Container with Horizontal Scroller -->
+                        <div id="admin-stats-table-container" class="table-container admin-stats-scroller">
+                            <table id="admin-stats-table" class="screener-table">
+                                <thead>
+                                    <tr>
+                                        <th class="stats-th stats-col-ticker sortable" data-sort="ticker">Ticker <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="name">Company Name <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="universe">Universe <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="price" style="text-align: right;">Price (₹) <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="status" style="text-align: center;">Status <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="pctChange" style="text-align: right;">1D Change <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="pctChange7d" style="text-align: right;">7D Return <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="rsi" style="text-align: right;">RSI (14) <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="adx" style="text-align: right;">ADX (14) <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="drawdown" style="text-align: right;">1Y Drawdown <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="sma50" style="text-align: right;">50 SMA (₹) <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="sma200" style="text-align: right;">200 SMA (₹) <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="dist50" style="text-align: right;">Dist. 50 SMA <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="dist200" style="text-align: right;">Dist. 200 SMA <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="milestone">Milestone <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="momentumShift" style="text-align: center;">Shift Today <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="ret30d" style="text-align: right;">30D Return <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="ret1y" style="text-align: right;">1Y Return <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="high52w" style="text-align: right;">52W High <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="low52w" style="text-align: right;">52W Low <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="volume" style="text-align: right;">20D Avg Vol <i class="fa-solid fa-sort"></i></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-stats-tbody">
+                                    <tr>
+                                        <td colspan="21" style="text-align: center; color: var(--text-secondary); font-size: 12px; padding: 25px;">
+                                            Loading statistical data...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
             </section>
             <!-- Filters Backdrop for mobile drawer -->
             <div id="filters-backdrop" class="filters-backdrop"></div>
@@ -1782,7 +1976,7 @@
     <!-- Project JS dependencies -->
     <script src="{% static 'screener/qrcode.min.js' %}"></script>
     <script src="{% static 'screener/mockData.js' %}?v=3.6"></script>
-    <script src="{% static 'screener/app.js' %}?v=4.7"></script>
+    <script src="{% static 'screener/app.js' %}?v=4.9"></script>
 
     <!-- Sidebar mobile drawer toggling -->
     <script>
@@ -1820,9 +2014,17 @@
                 });
             }
 
-            // Escape key exits any active fullscreen
+            // Escape key closes detail drawer if open, or exits any active fullscreen
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
+                    const detailDrawer = document.getElementById('detail-drawer');
+                    if (detailDrawer && detailDrawer.classList.contains('active')) {
+                        const btnCloseDetail = document.getElementById('btn-close-detail');
+                        if (btnCloseDetail) {
+                            btnCloseDetail.click();
+                            return;
+                        }
+                    }
                     if (document.body.classList.contains('fullscreen-grid-active')) {
                         document.body.classList.remove('fullscreen-grid-active');
                         if (btnFullscreen) {
@@ -1838,6 +2040,15 @@
                             const icon = btnAdv.querySelector('i');
                             if (icon) icon.className = 'fa-solid fa-expand';
                             btnAdv.title = 'Toggle Fullscreen Grid';
+                        }
+                    }
+                    if (document.body.classList.contains('fullscreen-stats-active')) {
+                        document.body.classList.remove('fullscreen-stats-active');
+                        const btnStatsFs = document.getElementById('btn-fullscreen-stats');
+                        if (btnStatsFs) {
+                            const icon = btnStatsFs.querySelector('i');
+                            if (icon) icon.className = 'fa-solid fa-expand';
+                            btnStatsFs.title = 'Toggle Fullscreen Table';
                         }
                     }
                 }

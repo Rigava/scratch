@@ -38,4 +38,5 @@ urlpatterns = [
     path('api/advanced-strategy/', views.advanced_strategy_view, name='api_advanced_strategy'),
     path('api/generate-pm-brief/', views.generate_pm_brief_view, name='api_generate_pm_brief'),
     path('api/publish-pm-brief/', views.publish_pm_brief_view, name='api_publish_pm_brief'),
+    path('api/admin/screener-export/', views.admin_screener_export_csv, name='admin_screener_export'),
 ]

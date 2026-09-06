@@ -257,8 +257,10 @@ body {
 /* Dashboard Layout */
 .dashboard-layout {
     display: grid;
-    grid-template-columns: 360px 1fr;
+    grid-template-columns: 360px minmax(0, 1fr);
     gap: 24px;
+    min-width: 0;
+    max-width: 100%;
 }
 
 @media (max-width: 1024px) {
@@ -447,6 +449,9 @@ body {
     display: flex;
     flex-direction: column;
     gap: 24px;
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
 }
 
 .stats-bar {
@@ -693,7 +698,7 @@ td span.symbol-name {
     right: 0;
     bottom: 0;
     left: 0;
-    z-index: 100;
+    z-index: 100005;
     visibility: hidden;
     transition: visibility 0.4s;
 }
@@ -901,7 +906,7 @@ td span.symbol-name {
     right: 0;
     bottom: 0;
     left: 0;
-    z-index: 200;
+    z-index: 100010;
     background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(6px);
     display: flex;
@@ -1399,5 +1404,256 @@ body.light-theme .badge-milestone.sma200 {
         padding: 20px !important;
     }
 }
+
+/* ==========================================================================
+   Admin Screener Statistics Compact KPIs & Horizontal Scroller Suite
+   ========================================================================== */
+
+.admin-kpi-container {
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    width: 100% !important;
+}
+
+@media (max-width: 1200px) {
+    .admin-kpi-container {
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
+    }
+}
+
+.admin-kpi-card {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 7px 10px !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: var(--border-radius-sm) !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.admin-kpi-icon {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    border-radius: 6px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 12px !important;
+}
+
+.admin-kpi-icon.blue {
+    background: rgba(99, 102, 241, 0.15) !important;
+    color: #818cf8 !important;
+    border: 1px solid rgba(99, 102, 241, 0.25) !important;
+}
+
+.admin-kpi-icon.green {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #34d399 !important;
+    border: 1px solid rgba(16, 185, 129, 0.25) !important;
+}
+
+.admin-kpi-icon.orange {
+    background: rgba(244, 162, 97, 0.15) !important;
+    color: #f4a261 !important;
+    border: 1px solid rgba(244, 162, 97, 0.25) !important;
+}
+
+.admin-kpi-icon.purple {
+    background: rgba(168, 85, 247, 0.15) !important;
+    color: #c084fc !important;
+    border: 1px solid rgba(168, 85, 247, 0.25) !important;
+}
+
+.admin-kpi-icon.red {
+    background: rgba(239, 68, 68, 0.15) !important;
+    color: #f87171 !important;
+    border: 1px solid rgba(239, 68, 68, 0.25) !important;
+}
+
+.admin-kpi-content {
+    display: flex !important;
+    flex-direction: column !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    line-height: 1.15 !important;
+}
+
+.admin-kpi-val {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    color: var(--text-primary) !important;
+    line-height: 1.1 !important;
+}
+
+.admin-kpi-lbl {
+    font-size: 9.5px !important;
+    font-weight: 600 !important;
+    color: var(--text-secondary) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.3px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.admin-kpi-sub {
+    font-size: 9px !important;
+    color: var(--text-muted) !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    margin-top: 1px !important;
+}
+
+/* Dedicated horizontal scroller container */
+.admin-stats-scroller {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    max-height: 580px !important;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: var(--border-radius-sm) !important;
+    background: var(--bg-card) !important;
+    position: relative !important;
+    box-sizing: border-box !important;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-indigo) rgba(255, 255, 255, 0.06);
+}
+
+.admin-stats-scroller::-webkit-scrollbar {
+    height: 10px !important;
+    width: 8px !important;
+}
+
+.admin-stats-scroller::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.25) !important;
+    border-radius: 4px !important;
+}
+
+.admin-stats-scroller::-webkit-scrollbar-thumb {
+    background: var(--accent-indigo) !important;
+    border-radius: 4px !important;
+    border: 1px solid rgba(0, 0, 0, 0.3) !important;
+}
+
+.admin-stats-scroller::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-indigo-hover) !important;
+}
+
+#admin-stats-table {
+    width: max-content !important;
+    min-width: 100% !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    font-size: 11.5px !important;
+}
+
+#admin-stats-table th,
+#admin-stats-table td {
+    padding: 8px 12px !important;
+    white-space: nowrap !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+#admin-stats-table thead tr th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 20 !important;
+    background: var(--bg-secondary) !important;
+    font-weight: 700 !important;
+    color: var(--text-primary) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+    cursor: pointer !important;
+}
+
+#admin-stats-table th.stats-col-ticker,
+#admin-stats-table td.stats-col-ticker {
+    position: sticky !important;
+    left: 0 !important;
+    background: var(--bg-secondary) !important;
+    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.35) !important;
+}
+
+#admin-stats-table th.stats-col-ticker {
+    z-index: 25 !important;
+}
+
+#admin-stats-table td.stats-col-ticker {
+    z-index: 10 !important;
+    font-weight: 700 !important;
+    color: var(--accent-indigo) !important;
+}
+
+#admin-stats-table tbody tr:hover td {
+    background: rgba(255, 255, 255, 0.04) !important;
+}
+
+#admin-stats-table tbody tr:hover td.stats-col-ticker {
+    background: var(--bg-secondary) !important;
+    filter: brightness(1.18) !important;
+}
+
+/* Admin Stats Fullscreen Mode */
+body.fullscreen-stats-active .app-header,
+body.fullscreen-stats-active .stats-bar,
+body.fullscreen-stats-active .view-tabs,
+body.fullscreen-stats-active .user-alerts-block,
+body.fullscreen-stats-active .sidebar-config,
+body.fullscreen-stats-active #filters-backdrop,
+body.fullscreen-stats-active .use-cases-section {
+    display: none !important;
+}
+
+body.fullscreen-stats-active .dashboard-layout {
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+body.fullscreen-stats-active .screener-results {
+    padding: 0 !important;
+    margin: 0 !important;
+    gap: 0 !important;
+}
+
+body.fullscreen-stats-active #admin-stats-view-card:not(.hidden) {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 99999 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    background: var(--bg-primary) !important;
+    padding: 20px !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+}
+
+body.fullscreen-stats-active #admin-stats-table-container {
+    flex: 1 1 auto !important;
+    max-height: none !important;
+    height: 100% !important;
+}
+
+#admin-stats-view-card {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+
 
 

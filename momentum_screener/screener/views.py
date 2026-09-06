@@ -2602,3 +2602,119 @@ def publish_pm_brief_view(request):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 
+import csv
+from django.http import HttpResponse, HttpResponseForbidden
+
+@require_GET
+def admin_screener_export_csv(request):
+    """
+    Dedicated admin endpoint to export the complete screener dataset with all relevant parameters as a downloadable CSV.
+    """
+    if not (request.user.is_authenticated and (request.user.is_superuser or request.user.is_staff)):
+        return HttpResponseForbidden("Forbidden: Administrator privileges required to export screener data.")
+
+    import datetime
+    data_dir = os.path.join(Path(__file__).resolve().parent, 'data')
+    db_path = os.path.join(data_dir, 'fo_historical_dump.json')
+    
+    universe_filter = request.GET.get('universe', 'all').lower()
+
+    dump_data = {}
+    if os.path.exists(db_path):
+        try:
+            with open(db_path, 'r', encoding='utf-8') as f:
+                dump_data = json.load(f)
+        except Exception:
+            dump_data = {}
+
+    today_str = datetime.date.today().strftime('%Y-%m-%d')
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="TradeKriya_Screener_Parameters_{universe_filter}_{today_str}.csv"'
+
+    # Write UTF-8 BOM for clean rendering in Excel and Google Sheets
+    response.write('\ufeff')
+    writer = csv.writer(response)
+
+    headers = [
+        "Ticker", "Universe", "Latest Date", "Current Price (INR)", "50 SMA (INR)", "200 SMA (INR)",
+        "Dist. 50 SMA (%)", "Dist. 200 SMA (%)", "Position vs 200 SMA", "Status",
+        "1-Yr Max Drawdown (%)", "1D Change (%)", "7D Change (%)", "52W High (INR)", "52W Low (INR)",
+        "20D Avg Volume", "Total Historical Candles"
+    ]
+    writer.writerow(headers)
+
+    for symbol, candles in dump_data.items():
+        if not candles or len(candles) < 5:
+            continue
+        
+        is_n50 = symbol in [
+            'RELIANCE', 'TCS', 'HDFCBANK', 'BHARTIARTL', 'ICICIBANK', 'INFY', 'SBIN', 'LICI',
+            'ITC', 'HINDUNILVR', 'LT', 'BAJFINANCE', 'HCLTECH', 'MARUTI', 'SUNPHARMA', 'ONGC',
+            'TATAMOTORS', 'KOTAKBANK', 'NTPC', 'AXISBANK', 'TITAN', 'ADANIENT', 'COALINDIA',
+            'ADANIPORTS', 'POWERGRID', 'ULTRACEMCO', 'M&M', 'TATASTEEL', 'BAJAJFINSV', 'WIPRO'
+        ]
+        universe_name = "NIFTY 50" if is_n50 else "NIFTY F&O"
+
+        if universe_filter == 'nifty50' and not is_n50:
+            continue
+        if universe_filter == 'fo' and is_n50:
+            continue
+
+        last_c = candles[-1]
+        date_str = last_c[0].split('T')[0]
+        cur_price = float(last_c[4])
+
+        prices = [float(c[4]) for c in candles]
+        vols = [float(c[5]) if len(c) > 5 else 0 for c in candles]
+
+        # SMAs
+        sma50 = (sum(prices[-50:]) / 50) if len(prices) >= 50 else (sum(prices) / len(prices))
+        sma200 = (sum(prices[-200:]) / 200) if len(prices) >= 200 else (sum(prices) / len(prices))
+
+        dist50 = f"{((cur_price - sma50) / sma50) * 100:.2f}%" if sma50 else "N/A"
+        dist200 = f"{((cur_price - sma200) / sma200) * 100:.2f}%" if sma200 else "N/A"
+        above200 = "Above 200 SMA" if cur_price >= sma200 else "Below 200 SMA"
+
+        # 1D & 7D change
+        prev_price = prices[-2] if len(prices) >= 2 else cur_price
+        p_1d = ((cur_price - prev_price) / prev_price) * 100 if prev_price else 0
+
+        p_7d_base = prices[-7] if len(prices) >= 7 else prices[0]
+        p_7d = ((cur_price - p_7d_base) / p_7d_base) * 100 if p_7d_base else 0
+
+        # Drawdown 1y
+        slice_1y = prices[-250:] if len(prices) >= 250 else prices
+        high_1y = max(slice_1y)
+        low_1y = min(slice_1y)
+        dd = ((high_1y - cur_price) / high_1y) * 100 if high_1y > 0 else 0
+
+        # Status
+        status = "Falling Knife" if (cur_price < sma200 or dd > 20) else "Safe"
+
+        # Avg Volume
+        slice_vols = vols[-20:] if len(vols) >= 20 else vols
+        avg_vol = int(sum(slice_vols) / len(slice_vols)) if slice_vols else 0
+
+        writer.writerow([
+            symbol,
+            universe_name,
+            date_str,
+            f"{cur_price:.2f}",
+            f"{sma50:.2f}" if sma50 else "N/A",
+            f"{sma200:.2f}" if sma200 else "N/A",
+            dist50,
+            dist200,
+            above200,
+            status,
+            f"{dd:.2f}%",
+            f"{p_1d:+.2f}%",
+            f"{p_7d:+.2f}%",
+            f"{high_1y:.2f}",
+            f"{low_1y:.2f}",
+            avg_vol,
+            len(candles)
+        ])
+
+    return response
+
+

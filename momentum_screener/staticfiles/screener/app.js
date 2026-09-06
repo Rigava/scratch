@@ -1004,6 +1004,16 @@ const App = (function() {
 
         // Open panel
         document.getElementById('detail-drawer').classList.add('active');
+
+        // Ensure charts resize cleanly to container dimensions once drawer animation executes
+        setTimeout(() => {
+            if (state.charts.price) {
+                state.charts.price.resize();
+            }
+            if (state.charts.indicators) {
+                state.charts.indicators.resize();
+            }
+        }, 350);
     }
 
     function closeDetailDrawer() {
@@ -2719,17 +2729,20 @@ const App = (function() {
         const tabBacktest = document.getElementById('btn-tab-backtest');
         const tabJournal = document.getElementById('btn-tab-journal');
         const tabAdvanced = document.getElementById('btn-tab-advanced');
+        const tabAdminStats = document.getElementById('btn-tab-admin-stats');
         
         const screenerStats = document.getElementById('screener-stats-bar');
         const screenerGrid = document.getElementById('main-screener-grid');
         const backtestViewCard = document.getElementById('backtest-view-card');
         const journalViewCard = document.getElementById('journal-view-card');
         const advancedViewCard = document.getElementById('advanced-strategy-view-card');
+        const adminStatsViewCard = document.getElementById('admin-stats-view-card');
         const useCasesSection = document.querySelector('.use-cases-section');
         
         function deactivateAllTabs() {
             document.body.classList.remove('fullscreen-grid-active');
             document.body.classList.remove('fullscreen-advanced-active');
+            document.body.classList.remove('fullscreen-stats-active');
             const iconGrid = document.querySelector('#btn-fullscreen-grid i');
             if (iconGrid) iconGrid.className = 'fa-solid fa-expand';
             const btnGrid = document.getElementById('btn-fullscreen-grid');
@@ -2740,7 +2753,12 @@ const App = (function() {
             const btnAdv = document.getElementById('btn-fullscreen-advanced');
             if (btnAdv) btnAdv.title = 'Toggle Fullscreen Grid';
 
-            [tabScreener, tabBacktest, tabJournal, tabAdvanced].forEach(tab => {
+            const iconStats = document.querySelector('#btn-fullscreen-stats i');
+            if (iconStats) iconStats.className = 'fa-solid fa-expand';
+            const btnStatsFs = document.getElementById('btn-fullscreen-stats');
+            if (btnStatsFs) btnStatsFs.title = 'Toggle Fullscreen Table';
+
+            [tabScreener, tabBacktest, tabJournal, tabAdvanced, tabAdminStats].forEach(tab => {
                 if (tab) {
                     tab.classList.remove('active');
                     tab.style.background = 'transparent';
@@ -2752,6 +2770,7 @@ const App = (function() {
             backtestViewCard.classList.add('hidden');
             journalViewCard.classList.add('hidden');
             if (advancedViewCard) advancedViewCard.classList.add('hidden');
+            if (adminStatsViewCard) adminStatsViewCard.classList.add('hidden');
             if (useCasesSection) useCasesSection.classList.add('hidden');
         }
 
@@ -2819,6 +2838,87 @@ const App = (function() {
                 renderAdvancedStrategyDashboard();
             });
         }
+
+        if (tabAdminStats) {
+            tabAdminStats.addEventListener('click', () => {
+                deactivateAllTabs();
+                tabAdminStats.classList.add('active');
+                tabAdminStats.style.background = 'rgba(255,255,255,0.05)';
+                tabAdminStats.style.color = 'var(--text-primary)';
+                
+                if (adminStatsViewCard) {
+                    adminStatsViewCard.classList.remove('hidden');
+                }
+                renderAdminStatsDashboard();
+            });
+        }
+
+        const btnSidebarAdminStats = document.getElementById('btn-sidebar-admin-stats');
+        if (btnSidebarAdminStats) {
+            btnSidebarAdminStats.addEventListener('click', () => {
+                if (tabAdminStats) {
+                    tabAdminStats.click();
+                }
+            });
+        }
+
+        // Screener Statistics Page Filter & Export Bindings
+        const selStatsUniverse = document.getElementById('sel-stats-universe');
+        const selStatsStatus = document.getElementById('sel-stats-status');
+        const selStatsMomentum = document.getElementById('sel-stats-momentum');
+        const txtStatsSearch = document.getElementById('txt-stats-search');
+        const btnExportCsv = document.getElementById('btn-export-stats-csv');
+        const btnExportJson = document.getElementById('btn-export-stats-json');
+
+        if (selStatsUniverse) selStatsUniverse.addEventListener('change', renderAdminStatsDashboard);
+        if (selStatsStatus) selStatsStatus.addEventListener('change', renderAdminStatsDashboard);
+        if (selStatsMomentum) selStatsMomentum.addEventListener('change', renderAdminStatsDashboard);
+        if (txtStatsSearch) txtStatsSearch.addEventListener('input', renderAdminStatsDashboard);
+        if (btnExportCsv) btnExportCsv.addEventListener('click', exportScreenerDataCSV);
+        if (btnExportJson) btnExportJson.addEventListener('click', exportScreenerDataJSON);
+
+        const btnStatsScrollLeft = document.getElementById('btn-stats-scroll-left');
+        const btnStatsScrollRight = document.getElementById('btn-stats-scroll-right');
+        const statsTableContainer = document.getElementById('admin-stats-table-container');
+
+        if (btnStatsScrollLeft && statsTableContainer) {
+            btnStatsScrollLeft.addEventListener('click', () => {
+                statsTableContainer.scrollBy({ left: -320, behavior: 'smooth' });
+            });
+        }
+        if (btnStatsScrollRight && statsTableContainer) {
+            btnStatsScrollRight.addEventListener('click', () => {
+                statsTableContainer.scrollBy({ left: 320, behavior: 'smooth' });
+            });
+        }
+
+        const btnFullscreenStats = document.getElementById('btn-fullscreen-stats');
+        if (btnFullscreenStats) {
+            btnFullscreenStats.addEventListener('click', () => {
+                document.body.classList.toggle('fullscreen-stats-active');
+                const icon = btnFullscreenStats.querySelector('i');
+                if (document.body.classList.contains('fullscreen-stats-active')) {
+                    if (icon) icon.className = 'fa-solid fa-compress';
+                    btnFullscreenStats.title = 'Exit Fullscreen';
+                } else {
+                    if (icon) icon.className = 'fa-solid fa-expand';
+                    btnFullscreenStats.title = 'Toggle Fullscreen Table';
+                }
+            });
+        }
+
+        document.querySelectorAll('#admin-stats-table th.stats-th.sortable').forEach(th => {
+            th.addEventListener('click', () => {
+                const field = th.getAttribute('data-sort');
+                if (adminStatsSortField === field) {
+                    adminStatsSortDirection = adminStatsSortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    adminStatsSortField = field;
+                    adminStatsSortDirection = (field === 'price' || field === 'drawdown' || field === 'rsi' || field === 'adx' || field === 'pctChange' || field === 'pctChange7d') ? 'desc' : 'asc';
+                }
+                renderAdminStatsDashboard();
+            });
+        });
 
         const btnFullscreenAdvanced = document.getElementById('btn-fullscreen-advanced');
         if (btnFullscreenAdvanced) {
@@ -3895,6 +3995,496 @@ const App = (function() {
                 });
             }
         }
+    }
+
+    // --- Admin Screener Statistics & Export Engine ---
+
+    let adminStatsSortField = 'ticker';
+    let adminStatsSortDirection = 'asc';
+
+    function renderAdminStatsDashboard() {
+        const stocks = Object.values(state.stocks);
+        if (!stocks || stocks.length === 0) return;
+
+        const selUniverse = document.getElementById('sel-stats-universe')?.value || 'all';
+        const selStatus = document.getElementById('sel-stats-status')?.value || 'all';
+        const selSignal = document.getElementById('sel-stats-momentum')?.value || 'all';
+        const searchQuery = (document.getElementById('txt-stats-search')?.value || '').trim().toUpperCase();
+
+        // 1. Filter Stocks
+        const filteredStocks = stocks.filter(stock => {
+            const isN50 = MockDataEngine.NIFTY50_LIST.includes(stock.ticker);
+            const isFo = MockDataEngine.FO_LIST.includes(stock.ticker);
+            
+            // Universe filter
+            if (selUniverse === 'nifty50' && !isN50) return false;
+            if (selUniverse === 'fo' && !isFo) return false;
+
+            // Status filter
+            if (selStatus !== 'all' && stock.status !== selStatus) return false;
+
+            // Signal filter
+            if (selSignal === 'shift' && !stock.current.hasMomentumShift) return false;
+            if (selSignal === 'oversold' && (stock.current.rsi === null || stock.current.rsi >= 30)) return false;
+            if (selSignal === 'overbought' && (stock.current.rsi === null || stock.current.rsi <= 70)) return false;
+            if (selSignal === 'near50' && stock.current.milestone !== 'Near EMA50') return false;
+            if (selSignal === 'near200' && stock.current.milestone !== 'Near SMA200') return false;
+
+            // Search query filter
+            if (searchQuery) {
+                const tickerMatch = stock.ticker.toUpperCase().includes(searchQuery);
+                const nameMatch = (stock.name || '').toUpperCase().includes(searchQuery);
+                if (!tickerMatch && !nameMatch) return false;
+            }
+
+            return true;
+        });
+
+        // 2. Compute Summary Statistics across the active filtered universe
+        const total = filteredStocks.length;
+        let safeCount = 0;
+        let above200Count = 0;
+        let above50Count = 0;
+        let momentumShiftCount = 0;
+        let strongAdxCount = 0;
+        let rsiSum = 0;
+        let rsiCount = 0;
+        let adxSum = 0;
+        let adxCount = 0;
+        let ddSum = 0;
+        let maxDd = 0;
+
+        filteredStocks.forEach(stock => {
+            const c = stock.current;
+            if (stock.status === 'Safe') safeCount++;
+            if (c.aboveSMA200) above200Count++;
+            
+            const lastIdx = stock.candles.length - 1;
+            const s50 = stock.indicators.sma50 ? stock.indicators.sma50[lastIdx] : null;
+            if (s50 && c.price >= s50) above50Count++;
+            
+            if (c.hasMomentumShift) momentumShiftCount++;
+            if (c.adx !== null && c.adx !== undefined) {
+                adxSum += c.adx;
+                adxCount++;
+                if (c.adx >= 25) strongAdxCount++;
+            }
+            if (c.rsi !== null && c.rsi !== undefined) {
+                rsiSum += c.rsi;
+                rsiCount++;
+            }
+            if (c.drawdown !== null && c.drawdown !== undefined) {
+                ddSum += c.drawdown;
+                if (c.drawdown > maxDd) maxDd = c.drawdown;
+            }
+        });
+
+        const safePct = total ? Math.round((safeCount / total) * 100) : 0;
+        const above200Pct = total ? Math.round((above200Count / total) * 100) : 0;
+        const above50Pct = total ? Math.round((above50Count / total) * 100) : 0;
+        const strongAdxPct = total ? Math.round((strongAdxCount / total) * 100) : 0;
+        const avgRsi = rsiCount ? (rsiSum / rsiCount).toFixed(1) : 'N/A';
+        const avgAdx = adxCount ? (adxSum / adxCount).toFixed(1) : 'N/A';
+        const avgDd = total ? (ddSum / total).toFixed(1) : '0.0';
+
+        // Update KPI Elements
+        const elTotal = document.getElementById('stat-admin-total');
+        if (elTotal) elTotal.textContent = total.toString();
+        const elHealth = document.getElementById('stat-admin-health-sub');
+        if (elHealth) elHealth.textContent = `${safePct}% Safe (${safeCount}/${total})`;
+
+        const elAbove200 = document.getElementById('stat-admin-above200');
+        if (elAbove200) elAbove200.textContent = `${above200Pct}%`;
+        const elCrossSub = document.getElementById('stat-admin-cross-sub');
+        if (elCrossSub) elCrossSub.textContent = `${above200Count} Above / ${total - above200Count} Below`;
+
+        const elAbove50 = document.getElementById('stat-admin-above50');
+        if (elAbove50) elAbove50.textContent = `${above50Pct}%`;
+        const elRsiSub = document.getElementById('stat-admin-rsi-sub');
+        if (elRsiSub) elRsiSub.textContent = `Avg RSI: ${avgRsi}`;
+
+        const elStrongAdx = document.getElementById('stat-admin-strong-adx');
+        if (elStrongAdx) elStrongAdx.textContent = `${strongAdxPct}%`;
+        const elAdxSub = document.getElementById('stat-admin-adx-sub');
+        if (elAdxSub) elAdxSub.textContent = `Avg: ${avgAdx} (${strongAdxCount} Trend)`;
+
+        const elAvgDd = document.getElementById('stat-admin-avg-dd');
+        if (elAvgDd) elAvgDd.textContent = `${avgDd}%`;
+        const elMaxDdSub = document.getElementById('stat-admin-max-dd-sub');
+        if (elMaxDdSub) elMaxDdSub.textContent = `Max DD: ${maxDd.toFixed(1)}%`;
+
+        const elCount = document.getElementById('lbl-stats-count');
+        if (elCount) elCount.textContent = `${total} of ${stocks.length} stocks`;
+
+        // 3. Sort Filtered Stocks
+        const sortedStocks = [...filteredStocks].sort((a, b) => {
+            let valA, valB;
+            const lastA = a.candles.length - 1;
+            const lastB = b.candles.length - 1;
+            const s50A = a.indicators.sma50 ? a.indicators.sma50[lastA] : 0;
+            const s50B = b.indicators.sma50 ? b.indicators.sma50[lastB] : 0;
+            const s200A = a.indicators.sma200 ? a.indicators.sma200[lastA] : 0;
+            const s200B = b.indicators.sma200 ? b.indicators.sma200[lastB] : 0;
+
+            switch (adminStatsSortField) {
+                case 'ticker': valA = a.ticker; valB = b.ticker; break;
+                case 'name': valA = a.name; valB = b.name; break;
+                case 'universe':
+                    valA = MockDataEngine.NIFTY50_LIST.includes(a.ticker) ? 'NIFTY 50' : 'F&O';
+                    valB = MockDataEngine.NIFTY50_LIST.includes(b.ticker) ? 'NIFTY 50' : 'F&O';
+                    break;
+                case 'price': valA = a.current.price; valB = b.current.price; break;
+                case 'status': valA = a.status; valB = b.status; break;
+                case 'pctChange': valA = a.current.pctChange; valB = b.current.pctChange; break;
+                case 'pctChange7d': valA = a.current.pctChange7d; valB = b.current.pctChange7d; break;
+                case 'rsi': valA = a.current.rsi ?? -1; valB = b.current.rsi ?? -1; break;
+                case 'adx': valA = a.current.adx ?? -1; valB = b.current.adx ?? -1; break;
+                case 'drawdown': valA = a.current.drawdown ?? -1; valB = b.current.drawdown ?? -1; break;
+                case 'sma50': valA = s50A; valB = s50B; break;
+                case 'sma200': valA = s200A; valB = s200B; break;
+                case 'dist50':
+                    valA = s50A ? ((a.current.price - s50A) / s50A) : -999;
+                    valB = s50B ? ((b.current.price - s50B) / s50B) : -999;
+                    break;
+                case 'dist200':
+                    valA = s200A ? ((a.current.price - s200A) / s200A) : -999;
+                    valB = s200B ? ((b.current.price - s200B) / s200B) : -999;
+                    break;
+                case 'milestone': valA = a.current.milestone; valB = b.current.milestone; break;
+                case 'momentumShift': valA = a.current.hasMomentumShift ? 1 : 0; valB = b.current.hasMomentumShift ? 1 : 0; break;
+                case 'ret30d': {
+                    const p30A = a.candles.length >= 30 ? a.candles[a.candles.length - 30].close : a.candles[0].close;
+                    const p30B = b.candles.length >= 30 ? b.candles[b.candles.length - 30].close : b.candles[0].close;
+                    valA = p30A ? ((a.current.price - p30A) / p30A) : 0;
+                    valB = p30B ? ((b.current.price - p30B) / p30B) : 0;
+                    break;
+                }
+                case 'ret1y': {
+                    const p1yA = a.candles.length >= 250 ? a.candles[a.candles.length - 250].close : a.candles[0].close;
+                    const p1yB = b.candles.length >= 250 ? b.candles[b.candles.length - 250].close : b.candles[0].close;
+                    valA = p1yA ? ((a.current.price - p1yA) / p1yA) : 0;
+                    valB = p1yB ? ((b.current.price - p1yB) / p1yB) : 0;
+                    break;
+                }
+                case 'high52w': {
+                    const slA = a.candles.slice(-Math.min(250, a.candles.length)).map(x => x.close);
+                    const slB = b.candles.slice(-Math.min(250, b.candles.length)).map(x => x.close);
+                    valA = Math.max(...slA); valB = Math.max(...slB);
+                    break;
+                }
+                case 'low52w': {
+                    const sllA = a.candles.slice(-Math.min(250, a.candles.length)).map(x => x.close);
+                    const sllB = b.candles.slice(-Math.min(250, b.candles.length)).map(x => x.close);
+                    valA = Math.min(...sllA); valB = Math.min(...sllB);
+                    break;
+                }
+                case 'volume': {
+                    const volsA = a.candles.slice(-20).map(x => x.volume || 0);
+                    const volsB = b.candles.slice(-20).map(x => x.volume || 0);
+                    valA = volsA.length ? (volsA.reduce((x, y) => x + y, 0) / volsA.length) : 0;
+                    valB = volsB.length ? (volsB.reduce((x, y) => x + y, 0) / volsB.length) : 0;
+                    break;
+                }
+                default:
+                    valA = a.ticker; valB = b.ticker;
+            }
+
+            if (valA < valB) return adminStatsSortDirection === 'asc' ? -1 : 1;
+            if (valA > valB) return adminStatsSortDirection === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        // 4. Populate Table
+        const tbody = document.getElementById('admin-stats-tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (sortedStocks.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="21" style="text-align: center; color: var(--text-secondary); font-size: 13px; padding: 30px;">No stocks match your filter criteria.</td></tr>`;
+            return;
+        }
+
+        sortedStocks.forEach(stock => {
+            const tr = document.createElement('tr');
+            tr.style.cursor = 'pointer';
+            tr.style.borderBottom = '1px solid rgba(255, 255, 255, 0.04)';
+            tr.style.transition = 'background 0.2s';
+            tr.addEventListener('mouseover', () => tr.style.background = 'rgba(255, 255, 255, 0.04)');
+            tr.addEventListener('mouseout', () => tr.style.background = 'transparent');
+            tr.addEventListener('click', () => openDetailDrawer(stock.ticker));
+
+            const c = stock.current;
+            const ind = stock.indicators;
+            const lastIdx = stock.candles.length - 1;
+            const prices = stock.candles.map(x => x.close);
+            const sma50 = ind.sma50 ? ind.sma50[lastIdx] : null;
+            const sma200 = ind.sma200 ? ind.sma200[lastIdx] : null;
+
+            const dist50 = (sma50 && c.price) ? (((c.price - sma50) / sma50) * 100).toFixed(1) : '-';
+            const dist200 = (sma200 && c.price) ? (((c.price - sma200) / sma200) * 100).toFixed(1) : '-';
+
+            const lookback = Math.min(250, stock.candles.length);
+            const slice52w = prices.slice(-lookback);
+            const max52w = slice52w.length ? Math.max(...slice52w) : c.price;
+            const min52w = slice52w.length ? Math.min(...slice52w) : c.price;
+
+            const p30d = stock.candles.length >= 30 ? prices[stock.candles.length - 30] : prices[0];
+            const ret30d = p30d ? (((c.price - p30d) / p30d) * 100).toFixed(1) : '0.0';
+
+            const p1y = stock.candles.length >= 250 ? prices[stock.candles.length - 250] : prices[0];
+            const ret1y = p1y ? (((c.price - p1y) / p1y) * 100).toFixed(1) : '0.0';
+
+            const vols = stock.candles.slice(-20).map(x => x.volume || 0);
+            const avgVol = vols.length ? Math.round(vols.reduce((a, b) => a + b, 0) / vols.length) : 0;
+
+            const isN50 = MockDataEngine.NIFTY50_LIST.includes(stock.ticker);
+            const universeBadge = isN50
+                ? `<span style="font-size: 9px; padding: 2px 6px; border-radius: 4px; background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); font-weight: 600;">NIFTY 50</span>`
+                : `<span style="font-size: 9px; padding: 2px 6px; border-radius: 4px; background: rgba(244, 162, 97, 0.15); color: #f4a261; border: 1px solid rgba(244, 162, 97, 0.3); font-weight: 600;">F&O</span>`;
+
+            const statusBadge = stock.status === 'Safe'
+                ? `<span class="badge badge-green" style="font-size: 10px; padding: 2px 8px;">Safe</span>`
+                : `<span class="badge badge-red" style="font-size: 10px; padding: 2px 8px;">Knife</span>`;
+
+            const shiftBadge = c.hasMomentumShift
+                ? `<span style="color: #34d399; font-weight: 700; font-size: 11px;"><i class="fa-solid fa-arrow-trend-up"></i> YES</span>`
+                : `<span style="color: var(--text-muted); font-size: 11px;">-</span>`;
+
+            const rsiColor = (c.rsi !== null && c.rsi < 30) ? '#34d399' : (c.rsi !== null && c.rsi > 70) ? '#f87171' : 'var(--text-primary)';
+            const rsiVal = (c.rsi !== null && c.rsi !== undefined) ? `<span style="color: ${rsiColor}; font-weight: 600;">${c.rsi.toFixed(1)}</span>` : '-';
+            const adxVal = (c.adx !== null && c.adx !== undefined) ? `<span style="font-weight: 600; color: ${c.adx >= 25 ? '#c084fc' : 'var(--text-secondary)'};">${c.adx.toFixed(1)}</span>` : '-';
+
+            const pct1dColor = c.pctChange >= 0 ? '#34d399' : '#f87171';
+            const pct7dColor = c.pctChange7d >= 0 ? '#34d399' : '#f87171';
+            const ret30dColor = parseFloat(ret30d) >= 0 ? '#34d399' : '#f87171';
+            const ret1yColor = parseFloat(ret1y) >= 0 ? '#34d399' : '#f87171';
+
+            tr.innerHTML = `
+                <td class="stats-col-ticker" style="padding: 8px 12px; font-weight: 700; color: var(--text-primary); white-space: nowrap;">${stock.ticker}</td>
+                <td style="padding: 8px 12px; color: var(--text-secondary); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${stock.name}</td>
+                <td style="padding: 8px 12px; white-space: nowrap;">${universeBadge}</td>
+                <td style="padding: 8px 12px; text-align: right; font-weight: 600; color: var(--text-primary); white-space: nowrap;">₹${c.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td style="padding: 8px 12px; text-align: center; white-space: nowrap;">${statusBadge}</td>
+                <td style="padding: 8px 12px; text-align: right; color: ${pct1dColor}; font-weight: 600; white-space: nowrap;">${c.pctChange >= 0 ? '+' : ''}${c.pctChange}%</td>
+                <td style="padding: 8px 12px; text-align: right; color: ${pct7dColor}; font-weight: 600; white-space: nowrap;">${c.pctChange7d >= 0 ? '+' : ''}${c.pctChange7d}%</td>
+                <td style="padding: 8px 12px; text-align: right; white-space: nowrap;">${rsiVal}</td>
+                <td style="padding: 8px 12px; text-align: right; white-space: nowrap;">${adxVal}</td>
+                <td style="padding: 8px 12px; text-align: right; color: ${c.drawdown > 20 ? '#f87171' : 'var(--text-primary)'}; white-space: nowrap;">${c.drawdown ?? 0}%</td>
+                <td style="padding: 8px 12px; text-align: right; color: var(--text-secondary); white-space: nowrap;">${sma50 ? '₹' + sma50.toFixed(1) : '-'}</td>
+                <td style="padding: 8px 12px; text-align: right; color: var(--text-secondary); white-space: nowrap;">${sma200 ? '₹' + sma200.toFixed(1) : '-'}</td>
+                <td style="padding: 8px 12px; text-align: right; color: ${parseFloat(dist50) >= 0 ? '#34d399' : '#f87171'}; white-space: nowrap;">${dist50 !== '-' && parseFloat(dist50) >= 0 ? '+' : ''}${dist50}%</td>
+                <td style="padding: 8px 12px; text-align: right; color: ${parseFloat(dist200) >= 0 ? '#34d399' : '#f87171'}; white-space: nowrap;">${dist200 !== '-' && parseFloat(dist200) >= 0 ? '+' : ''}${dist200}%</td>
+                <td style="padding: 8px 12px; white-space: nowrap;"><span class="badge-milestone">${c.milestone || 'Stable'}</span></td>
+                <td style="padding: 8px 12px; text-align: center; white-space: nowrap;">${shiftBadge}</td>
+                <td style="padding: 8px 12px; text-align: right; color: ${ret30dColor}; white-space: nowrap;">${parseFloat(ret30d) >= 0 ? '+' : ''}${ret30d}%</td>
+                <td style="padding: 8px 12px; text-align: right; color: ${ret1yColor}; white-space: nowrap;">${parseFloat(ret1y) >= 0 ? '+' : ''}${ret1y}%</td>
+                <td style="padding: 8px 12px; text-align: right; color: var(--text-secondary); white-space: nowrap;">₹${max52w.toLocaleString(undefined, {maximumFractionDigits: 1})}</td>
+                <td style="padding: 8px 12px; text-align: right; color: var(--text-secondary); white-space: nowrap;">₹${min52w.toLocaleString(undefined, {maximumFractionDigits: 1})}</td>
+                <td style="padding: 8px 12px; text-align: right; color: var(--text-muted); white-space: nowrap;">${avgVol.toLocaleString()}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // 5. Update header sort indicators
+        document.querySelectorAll('#admin-stats-table th.stats-th.sortable').forEach(th => {
+            const field = th.getAttribute('data-sort');
+            const icon = th.querySelector('i');
+            if (icon) {
+                if (adminStatsSortField === field) {
+                    icon.className = adminStatsSortDirection === 'asc' ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down';
+                    icon.style.color = 'var(--text-primary)';
+                } else {
+                    icon.className = 'fa-solid fa-sort';
+                    icon.style.color = 'var(--text-muted)';
+                }
+            }
+        });
+    }
+
+    function exportScreenerDataCSV() {
+        const stocks = Object.values(state.stocks);
+        if (!stocks || stocks.length === 0) {
+            alert("No screener data loaded yet to export.");
+            return;
+        }
+
+        const selUniverse = document.getElementById('sel-stats-universe')?.value || 'all';
+        const selStatus = document.getElementById('sel-stats-status')?.value || 'all';
+        const selSignal = document.getElementById('sel-stats-momentum')?.value || 'all';
+
+        const filtered = stocks.filter(stock => {
+            const isN50 = MockDataEngine.NIFTY50_LIST.includes(stock.ticker);
+            const isFo = MockDataEngine.FO_LIST.includes(stock.ticker);
+            if (selUniverse === 'nifty50' && !isN50) return false;
+            if (selUniverse === 'fo' && !isFo) return false;
+            if (selStatus !== 'all' && stock.status !== selStatus) return false;
+            if (selSignal === 'shift' && !stock.current.hasMomentumShift) return false;
+            if (selSignal === 'oversold' && (stock.current.rsi === null || stock.current.rsi >= 30)) return false;
+            if (selSignal === 'overbought' && (stock.current.rsi === null || stock.current.rsi <= 70)) return false;
+            if (selSignal === 'near50' && stock.current.milestone !== 'Near EMA50') return false;
+            if (selSignal === 'near200' && stock.current.milestone !== 'Near SMA200') return false;
+            return true;
+        });
+
+        const headers = [
+            "Ticker",
+            "Company Name",
+            "Universe",
+            "Price (INR)",
+            "Status",
+            "Milestone",
+            "Momentum Shift Today",
+            "50 SMA (INR)",
+            "200 SMA (INR)",
+            "Distance from 50 SMA (%)",
+            "Distance from 200 SMA (%)",
+            "Position vs 200 SMA",
+            "RSI (14)",
+            "RSI Classification",
+            "ADX (14)",
+            "Trend Strength",
+            "+DI",
+            "-DI",
+            "1-Yr Max Drawdown (%)",
+            "1-Day Change (%)",
+            "7-Day Return (%)",
+            "30-Day Return (%)",
+            "1-Year Return (%)",
+            "52-Week High (INR)",
+            "52-Week Low (INR)",
+            "Distance from 52W High (%)",
+            "20-Day Avg Volume",
+            "MACD Win Rate (%)",
+            "MACD Total Trades",
+            "MACD Avg PnL (%)",
+            "Data Source",
+            "Export Timestamp"
+        ];
+
+        const rows = filtered.map(stock => {
+            const c = stock.current;
+            const ind = stock.indicators;
+            const prices = stock.candles.map(x => x.close);
+            const lastIdx = stock.candles.length - 1;
+            const sma50 = ind.sma50 ? ind.sma50[lastIdx] : null;
+            const sma200 = ind.sma200 ? ind.sma200[lastIdx] : null;
+            const dist50 = (sma50 && c.price) ? (((c.price - sma50) / sma50) * 100).toFixed(2) : "N/A";
+            const dist200 = (sma200 && c.price) ? (((c.price - sma200) / sma200) * 100).toFixed(2) : "N/A";
+
+            const lookback = Math.min(250, stock.candles.length);
+            const slice52w = prices.slice(-lookback);
+            const max52w = slice52w.length ? Math.max(...slice52w) : c.price;
+            const min52w = slice52w.length ? Math.min(...slice52w) : c.price;
+            const dist52wHigh = max52w ? (((c.price - max52w) / max52w) * 100).toFixed(2) : "0.00";
+
+            const p30d = stock.candles.length >= 30 ? prices[stock.candles.length - 30] : prices[0];
+            const ret30d = p30d ? (((c.price - p30d) / p30d) * 100).toFixed(2) : "0.00";
+
+            const p1y = stock.candles.length >= 250 ? prices[stock.candles.length - 250] : prices[0];
+            const ret1y = p1y ? (((c.price - p1y) / p1y) * 100).toFixed(2) : "0.00";
+
+            const vols = stock.candles.slice(-20).map(x => x.volume || 0);
+            const avgVol = vols.length ? Math.round(vols.reduce((a, b) => a + b, 0) / vols.length) : 0;
+
+            const isN50 = MockDataEngine.NIFTY50_LIST.includes(stock.ticker);
+            const universe = isN50 ? "NIFTY 50" : "NIFTY F&O";
+
+            const rsiClass = (c.rsi !== null && c.rsi !== undefined) ? (c.rsi < 30 ? "Oversold (<30)" : c.rsi > 70 ? "Overbought (>70)" : "Neutral (30-70)") : "N/A";
+            const trendStr = (c.adx !== null && c.adx !== undefined) ? (c.adx >= 25 ? "Strong Trend (ADX>=25)" : "Consolidation (ADX<25)") : "N/A";
+
+            return [
+                stock.ticker,
+                `"${(stock.name || stock.ticker).replace(/"/g, '""')}"`,
+                universe,
+                c.price.toFixed(2),
+                stock.status,
+                c.milestone || "Stable",
+                c.hasMomentumShift ? "YES" : "NO",
+                sma50 ? sma50.toFixed(2) : "N/A",
+                sma200 ? sma200.toFixed(2) : "N/A",
+                dist50,
+                dist200,
+                c.aboveSMA200 ? "Above 200 SMA" : "Below 200 SMA",
+                c.rsi !== null && c.rsi !== undefined ? c.rsi.toFixed(1) : "N/A",
+                rsiClass,
+                c.adx !== null && c.adx !== undefined ? c.adx.toFixed(1) : "N/A",
+                trendStr,
+                c.plusDI !== null && c.plusDI !== undefined ? c.plusDI.toFixed(1) : "N/A",
+                c.minusDI !== null && c.minusDI !== undefined ? c.minusDI.toFixed(1) : "N/A",
+                c.drawdown !== null && c.drawdown !== undefined ? c.drawdown.toFixed(2) : "0.00",
+                c.pctChange !== null && c.pctChange !== undefined ? c.pctChange.toFixed(2) : "0.00",
+                c.pctChange7d !== null && c.pctChange7d !== undefined ? c.pctChange7d.toFixed(2) : "0.00",
+                ret30d,
+                ret1y,
+                max52w.toFixed(2),
+                min52w.toFixed(2),
+                dist52wHigh,
+                avgVol,
+                c.macdWinRate !== undefined ? c.macdWinRate + "%" : "N/A",
+                c.macdTrades !== undefined ? c.macdTrades : "N/A",
+                c.macdAvgPnL !== undefined ? c.macdAvgPnL + "%" : "N/A",
+                state.dataSource === "zerodha" ? "Zerodha Kite API" : "Historical Simulation Dump",
+                new Date().toISOString()
+            ].join(",");
+        });
+
+        const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        const today = new Date().toISOString().split("T")[0];
+        link.setAttribute("download", `TradeKriya_Screener_Parameters_${selUniverse}_${today}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    function exportScreenerDataJSON() {
+        const stocks = Object.values(state.stocks);
+        if (!stocks || stocks.length === 0) {
+            alert("No screener data loaded yet to export.");
+            return;
+        }
+
+        const dataDump = stocks.map(stock => {
+            const c = stock.current;
+            const ind = stock.indicators;
+            const lastIdx = stock.candles.length - 1;
+            return {
+                ticker: stock.ticker,
+                name: stock.name,
+                universe: MockDataEngine.NIFTY50_LIST.includes(stock.ticker) ? 'NIFTY 50' : 'NIFTY F&O',
+                price: c.price,
+                status: stock.status,
+                milestone: c.milestone,
+                momentumShiftToday: c.hasMomentumShift,
+                sma50: ind.sma50 ? ind.sma50[lastIdx] : null,
+                sma200: ind.sma200 ? ind.sma200[lastIdx] : null,
+                aboveSMA200: c.aboveSMA200,
+                rsi: c.rsi,
+                adx: c.adx,
+                plusDI: c.plusDI,
+                minusDI: c.minusDI,
+                drawdown1Y: c.drawdown,
+                change1D: c.pctChange,
+                return7D: c.pctChange7d,
+                candlesCount: stock.candles.length
+            };
+        });
+
+        const jsonStr = JSON.stringify(dataDump, null, 2);
+        const blob = new Blob([jsonStr], { type: "application/json;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        const today = new Date().toISOString().split("T")[0];
+        link.setAttribute("download", `TradeKriya_Screener_Dump_${today}.json`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     }
 
     function init() {

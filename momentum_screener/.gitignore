@@ -3,3 +3,4 @@ db.sqlite3
 .env
 screener/data/
 **/fo_historical_dump.json
+PitchDeck.pptx
