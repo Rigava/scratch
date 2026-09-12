@@ -612,8 +612,8 @@ const App = (function() {
 
             const momentumShiftHtml = stock.current.hasMomentumShift 
                 ? `<div class="badge-momentum-shift"><i class="fa-solid fa-rocket"></i> Shift</div>
-                   <div class="macd-backtest-info">Win: ${stock.current.macdWinRate}% (${stock.current.macdTrades} tr)</div>`
-                : `<div class="macd-backtest-info" style="margin-top: 0;">Win: ${stock.current.macdWinRate}% (${stock.current.macdTrades} tr)</div>`;
+                   <div class="macd-backtest-info" style="cursor: pointer;" title="Click to view backtest trade log" onclick="event.stopPropagation(); App.triggerTradeLog('${stock.ticker}')">Win: ${stock.current.macdWinRate}% (${stock.current.macdTrades} tr)</div>`
+                : `<div class="macd-backtest-info" style="margin-top: 0; cursor: pointer;" title="Click to view backtest trade log" onclick="event.stopPropagation(); App.triggerTradeLog('${stock.ticker}')">Win: ${stock.current.macdWinRate}% (${stock.current.macdTrades} tr)</div>`;
 
             let milestoneClass = 'normal';
             if (stock.current.milestone === '52W High') milestoneClass = 'high';
@@ -905,6 +905,48 @@ const App = (function() {
         const badge = document.getElementById('detail-status-badge');
         badge.innerText = stock.status;
         badge.className = `badge ${stock.status === 'Knife' ? 'badge-red' : 'badge-green'}`;
+
+        // Update strategy backtesting results in drawer
+        const rsiRes = runRSIBacktestJS(stock.candles);
+        const winRateEl = document.getElementById('drawer-backtest-winrate');
+        const tradesEl = document.getElementById('drawer-backtest-trades');
+        const expEl = document.getElementById('drawer-backtest-expectancy');
+        const wlEl = document.getElementById('drawer-backtest-winloss');
+        const macdWinEl = document.getElementById('drawer-backtest-macd-win');
+        const macdTradesEl = document.getElementById('drawer-backtest-macd-trades');
+        const btnDrawerTradeLog = document.getElementById('btn-drawer-tradelog');
+
+        if (winRateEl) {
+            winRateEl.innerText = `${rsiRes.winRate}%`;
+            winRateEl.style.color = rsiRes.winRate >= 50 ? 'var(--color-safe)' : 'var(--text-secondary)';
+        }
+        if (tradesEl) {
+            tradesEl.innerText = `${rsiRes.totalTrades} Trades`;
+        }
+        if (expEl) {
+            expEl.innerText = `${rsiRes.expectancy >= 0 ? '+' : ''}${rsiRes.expectancy.toFixed(2)}%`;
+            expEl.style.color = rsiRes.expectancy >= 0 ? 'var(--color-safe)' : 'var(--color-knife)';
+        }
+        if (wlEl) {
+            wlEl.innerText = `Win: +${rsiRes.avgWin.toFixed(1)}% | Loss: ${rsiRes.avgLoss.toFixed(1)}%`;
+        }
+        if (macdWinEl) {
+            macdWinEl.innerText = stock.current.macdWinRate !== undefined ? `${stock.current.macdWinRate}%` : 'N/A';
+            macdWinEl.style.color = (stock.current.macdWinRate && stock.current.macdWinRate >= 50) ? '#34d399' : 'var(--text-secondary)';
+        }
+        if (macdTradesEl) {
+            macdTradesEl.innerText = stock.current.macdTrades !== undefined ? `${stock.current.macdTrades} Trades (Avg: ${stock.current.macdAvgPnL || 0}%)` : '0 Trades';
+        }
+        if (btnDrawerTradeLog) {
+            btnDrawerTradeLog.onclick = (e) => {
+                e.stopPropagation();
+                if (USER_STATUS === 'expired') {
+                    document.getElementById('trial-expired-overlay').classList.remove('hidden');
+                    return;
+                }
+                showTradeLogModal(stock.ticker, stock.name, rsiRes.tradesLog);
+            };
+        }
 
         // Render visual charts
         renderCharts(stock);
@@ -3525,15 +3567,31 @@ const App = (function() {
     }
 
     function showTradeLogModal(ticker, name, tradesLog) {
+        if (USER_STATUS === 'expired') {
+            document.getElementById('trial-expired-overlay').classList.remove('hidden');
+            return;
+        }
+
+        const stock = state.stocks[ticker];
+        if (!name && stock) name = stock.name;
+        if ((!tradesLog || tradesLog.length === 0) && stock && stock.candles) {
+            const backtestPeriodSelect = document.getElementById('sel-backtest-period');
+            const backtestYears = backtestPeriodSelect ? parseInt(backtestPeriodSelect.value) : 1;
+            const lookbackDays = backtestYears * 250;
+            const candlesSlice = stock.candles.slice(-lookbackDays);
+            const res = runRSIBacktestJS(candlesSlice);
+            tradesLog = res.tradesLog;
+        }
+
         const modal = document.getElementById('tradelog-modal');
         const title = document.getElementById('tradelog-title');
         const tbody = document.getElementById('tradelog-tbody');
         
-        title.innerHTML = `<i class="fa-solid fa-list-check" style="color: var(--accent-indigo);"></i> Trade Log: ${ticker} (${name})`;
+        title.innerHTML = `<i class="fa-solid fa-list-check" style="color: var(--accent-indigo);"></i> Trade Log: ${ticker} (${name || ticker})`;
         tbody.innerHTML = '';
         
         if (!tradesLog || tradesLog.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 20px;">No trades executed for this stock.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 20px;">No trades executed for this stock under RSI 30/70 strategy.</td></tr>`;
         } else {
             tradesLog.forEach((t, idx) => {
                 const tr = document.createElement('tr');
@@ -4529,6 +4587,11 @@ const App = (function() {
             // Switch back to screener tab first
             document.getElementById('btn-tab-screener').click();
             openDetailDrawer(ticker);
+        },
+        triggerTradeLog: (ticker) => {
+            const stock = state.stocks[ticker];
+            const name = stock ? stock.name : ticker;
+            showTradeLogModal(ticker, name);
         },
         triggerCloseTrade: (tradeId) => {
             openCloseTradeModal(tradeId);
