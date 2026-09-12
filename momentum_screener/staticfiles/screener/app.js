@@ -413,6 +413,26 @@ const App = (function() {
             milestonePriority = 3;
         }
 
+        // Check RSI Buy / Sell signal triggered in last 5 days
+        let hasRsiBuy5d = false;
+        let hasRsiSell5d = false;
+        const start5d = Math.max(15, candles.length - 5);
+
+        for (let i = start5d; i < candles.length; i++) {
+            const prev = rsi[i - 1];
+            const curr = rsi[i];
+            if (prev !== null && curr !== null) {
+                // RSI Buy: Crossed 30 from below OR in oversold recovery (curr <= 35)
+                if ((prev < 30 && curr >= 30) || curr <= 35) {
+                    hasRsiBuy5d = true;
+                }
+                // RSI Sell: Reached/crossed 70, crossed back below 70, OR in overbought exhaustion (curr >= 65)
+                if ((prev < 70 && curr >= 70) || (prev >= 70 && curr < 70) || curr >= 65) {
+                    hasRsiSell5d = true;
+                }
+            }
+        }
+
         stock.current = {
             price: prices[lastIdx],
             drawdown: drawdown[lastIdx],
@@ -424,6 +444,8 @@ const App = (function() {
             pctChange: Math.round(pctChange * 100) / 100,
             pctChange7d: Math.round(pctChange7d * 100) / 100,
             hasMomentumShift,
+            hasRsiBuy5d,
+            hasRsiSell5d,
             macdWinRate: macdBacktest.winRate,
             macdTrades: macdBacktest.totalTrades,
             macdAvgPnL: macdBacktest.avgPnL,
@@ -485,6 +507,8 @@ const App = (function() {
             const filterPerf = filterPerfSelect ? filterPerfSelect.value : 'all';
             const matchesPerf = filterPerf === 'all' || 
                                 (filterPerf === 'momentum-shift' && stock.current.hasMomentumShift) ||
+                                (filterPerf === 'rsi-buy-5d' && stock.current.hasRsiBuy5d) ||
+                                (filterPerf === 'rsi-sell-5d' && stock.current.hasRsiSell5d) ||
                                 (filterPerf === '1d-winners' && stock.current.pctChange > 0) || 
                                 (filterPerf === '1d-losers' && stock.current.pctChange < 0) || 
                                 (filterPerf === '7d-winners' && stock.current.pctChange7d > 0) || 
@@ -645,7 +669,11 @@ const App = (function() {
                 <td>${momentumShiftHtml}</td>
                 <td>${milestoneHtml}</td>
                 <td class="detail-col ${stock.current.drawdown > state.filters.drawdown.threshold && state.filters.drawdown.enabled ? 'text-red' : ''}">${stock.current.drawdown}%</td>
-                <td class="detail-col ${stock.current.rsi < state.filters.rsi.threshold && state.filters.rsi.enabled ? 'text-red' : ''}">${stock.current.rsi ?? '-'}</td>
+                <td class="detail-col ${stock.current.rsi < state.filters.rsi.threshold && state.filters.rsi.enabled ? 'text-red' : ''}">
+                    ${stock.current.rsi ?? '-'}
+                    ${stock.current.hasRsiBuy5d ? '<span title="RSI Buy Signal triggered in last 5 days" style="display: inline-block; margin-left: 4px; font-size: 8.5px; padding: 1px 4px; border-radius: 3px; background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 700; vertical-align: middle;">BUY 5D</span>' : ''}
+                    ${stock.current.hasRsiSell5d ? '<span title="RSI Sell Signal triggered in last 5 days" style="display: inline-block; margin-left: 4px; font-size: 8.5px; padding: 1px 4px; border-radius: 3px; background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 700; vertical-align: middle;">SELL 5D</span>' : ''}
+                </td>
                 <td class="detail-col">${stock.current.adx ?? '-'}</td>
                 <td class="detail-col"><span class="badge ${badgeClass}">${icon} ${stock.status}</span></td>
             `;
@@ -3473,6 +3501,8 @@ const App = (function() {
                                   (filterStatus === 'knife' && stock.status === 'Knife');
             const matchesPerf = filterPerf === 'all' || 
                                 (filterPerf === 'momentum-shift' && stock.current.hasMomentumShift) ||
+                                (filterPerf === 'rsi-buy-5d' && stock.current.hasRsiBuy5d) ||
+                                (filterPerf === 'rsi-sell-5d' && stock.current.hasRsiSell5d) ||
                                 (filterPerf === '1d-winners' && stock.current.pctChange > 0) || 
                                 (filterPerf === '1d-losers' && stock.current.pctChange < 0) || 
                                 (filterPerf === '7d-winners' && stock.current.pctChange7d > 0) || 
@@ -4083,6 +4113,8 @@ const App = (function() {
 
             // Signal filter
             if (selSignal === 'shift' && !stock.current.hasMomentumShift) return false;
+            if (selSignal === 'rsi-buy-5d' && !stock.current.hasRsiBuy5d) return false;
+            if (selSignal === 'rsi-sell-5d' && !stock.current.hasRsiSell5d) return false;
             if (selSignal === 'oversold' && (stock.current.rsi === null || stock.current.rsi >= 30)) return false;
             if (selSignal === 'overbought' && (stock.current.rsi === null || stock.current.rsi <= 70)) return false;
             if (selSignal === 'near50' && stock.current.milestone !== 'Near EMA50') return false;
@@ -4377,6 +4409,8 @@ const App = (function() {
             if (selUniverse === 'fo' && !isFo) return false;
             if (selStatus !== 'all' && stock.status !== selStatus) return false;
             if (selSignal === 'shift' && !stock.current.hasMomentumShift) return false;
+            if (selSignal === 'rsi-buy-5d' && !stock.current.hasRsiBuy5d) return false;
+            if (selSignal === 'rsi-sell-5d' && !stock.current.hasRsiSell5d) return false;
             if (selSignal === 'oversold' && (stock.current.rsi === null || stock.current.rsi >= 30)) return false;
             if (selSignal === 'overbought' && (stock.current.rsi === null || stock.current.rsi <= 70)) return false;
             if (selSignal === 'near50' && stock.current.milestone !== 'Near EMA50') return false;
@@ -4399,6 +4433,7 @@ const App = (function() {
             "Position vs 200 SMA",
             "RSI (14)",
             "RSI Classification",
+            "RSI Signal (5D)",
             "ADX (14)",
             "Trend Strength",
             "+DI",
@@ -4448,6 +4483,7 @@ const App = (function() {
             const universe = isN50 ? "NIFTY 50" : "NIFTY F&O";
 
             const rsiClass = (c.rsi !== null && c.rsi !== undefined) ? (c.rsi < 30 ? "Oversold (<30)" : c.rsi > 70 ? "Overbought (>70)" : "Neutral (30-70)") : "N/A";
+            const rsiSignal5d = c.hasRsiBuy5d ? "BUY" : (c.hasRsiSell5d ? "SELL" : "NONE");
             const trendStr = (c.adx !== null && c.adx !== undefined) ? (c.adx >= 25 ? "Strong Trend (ADX>=25)" : "Consolidation (ADX<25)") : "N/A";
 
             return [
@@ -4465,6 +4501,7 @@ const App = (function() {
                 c.aboveSMA200 ? "Above 200 SMA" : "Below 200 SMA",
                 c.rsi !== null && c.rsi !== undefined ? c.rsi.toFixed(1) : "N/A",
                 rsiClass,
+                rsiSignal5d,
                 c.adx !== null && c.adx !== undefined ? c.adx.toFixed(1) : "N/A",
                 trendStr,
                 c.plusDI !== null && c.plusDI !== undefined ? c.plusDI.toFixed(1) : "N/A",
