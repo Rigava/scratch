@@ -298,11 +298,26 @@ def fetch_and_calculate_fundamentals(ticker):
         piotroski_breakdown["higher_asset_turnover"] = p9
 
     # --- Compute Magic Score (0 - 100) ---
-    curr_roce = yearly_trends[0]["roce_pct"] or 0
-    curr_de = yearly_trends[0]["debt_equity"] if yearly_trends[0]["debt_equity"] is not None else 0.5
-    curr_ic = yearly_trends[0]["interest_coverage"] if yearly_trends[0]["interest_coverage"] is not None else 5.0
-    latest_ebit = yearly_trends[0]["ebit_cr"]
-    latest_np = yearly_trends[0]["net_profit_cr"]
+    curr_roce = 0
+    curr_de = 0.5
+    curr_ic = 5.0
+    curr_net_margin = None
+    latest_ebit = None
+    latest_np = None
+
+    for tr in yearly_trends:
+        if curr_roce == 0 and tr.get("roce_pct") is not None:
+            curr_roce = tr["roce_pct"]
+        if curr_de == 0.5 and tr.get("debt_equity") is not None:
+            curr_de = tr["debt_equity"]
+        if curr_ic == 5.0 and tr.get("interest_coverage") is not None:
+            curr_ic = tr["interest_coverage"]
+        if curr_net_margin is None and tr.get("net_margin_pct") is not None:
+            curr_net_margin = tr["net_margin_pct"]
+        if latest_ebit is None and tr.get("ebit_cr") is not None:
+            latest_ebit = tr["ebit_cr"]
+        if latest_np is None and tr.get("net_profit_cr") is not None:
+            latest_np = tr["net_profit_cr"]
 
     # 1. ROCE Score (max 20)
     if curr_roce >= 25: roce_score = 20
@@ -362,8 +377,6 @@ def fetch_and_calculate_fundamentals(ticker):
         "growth": growth_score
     }
 
-    curr_net_margin = yearly_trends[0]["net_margin_pct"] if (yearly_trends and "net_margin_pct" in yearly_trends[0]) else None
-
     result = {
         "ticker": ticker,
         "company_name": company_name,
@@ -406,7 +419,9 @@ def get_or_fetch_stock_fundamentals(ticker, force_refresh=False, max_age_days=30
 
     # Check database cache
     cached = StockFundamental.objects.filter(ticker=clean_ticker).first()
-    if cached and not force_refresh:
+    # Cache is considered incomplete if it was stored prior to net_margin_pct or peg_note support
+    is_incomplete_cache = cached and (cached.net_margin_pct is None or (cached.peg_ratio is None and not cached.peg_note))
+    if cached and not force_refresh and not is_incomplete_cache:
         age = timezone.now() - cached.last_updated
         if age.days < max_age_days:
             try:

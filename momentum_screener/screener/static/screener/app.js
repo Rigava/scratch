@@ -5011,7 +5011,7 @@ const App = (function() {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ tickers: chunk, force: false })
+                    body: JSON.stringify({ tickers: chunk, force: true })
                 });
                 const res = await response.json();
                 if (res.status === 'success' && res.results) {
