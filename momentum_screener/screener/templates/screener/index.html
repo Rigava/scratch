@@ -1294,12 +1294,33 @@
                             </div>
                             <!-- Export and Action Buttons -->
                             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                <button id="btn-export-stats-csv" class="primary-btn" title="Download entire screener dataset with all technical parameters as CSV" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); font-size: 11.5px; padding: 7px 14px; border-radius: var(--border-radius-sm); border: none; color: #fff; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);">
+                                <button id="btn-admin-scan-fundamentals" class="primary-btn" title="Scan yfinance fundamentals and compute Magic Scores for universe" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); font-size: 11.5px; padding: 7px 14px; border-radius: var(--border-radius-sm); border: none; color: #fff; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Scan Fundamentals (Magic Score)
+                                </button>
+                                <button id="btn-export-stats-csv" class="primary-btn" title="Download entire screener dataset with all technical and fundamental parameters as CSV" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); font-size: 11.5px; padding: 7px 14px; border-radius: var(--border-radius-sm); border: none; color: #fff; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);">
                                     <i class="fa-solid fa-file-arrow-down"></i> Download Full Screener (CSV)
                                 </button>
                                 <button id="btn-export-stats-json" class="guide-btn" title="Export full data dump in structured JSON format" style="font-size: 11.5px; padding: 7px 12px; border-radius: var(--border-radius-sm); display: inline-flex; align-items: center; gap: 5px; cursor: pointer;">
                                     <i class="fa-solid fa-code"></i> JSON
                                 </button>
+                            </div>
+                        </div>
+
+                        <!-- Admin Fundamental Batch Scan Progress Banner (Hidden by default) -->
+                        <div id="admin-fundamental-progress-box" style="display: none; background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: var(--border-radius-sm); padding: 10px 14px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <i class="fa-solid fa-circle-notch fa-spin" style="color: #818cf8; font-size: 13px;"></i>
+                                    <span id="admin-fundamental-progress-title" style="font-size: 12px; font-weight: 600; color: var(--text-primary);">Scanning fundamentals...</span>
+                                </div>
+                                <span id="admin-fundamental-progress-pct" style="font-size: 11.5px; font-weight: 700; color: #818cf8;">0%</span>
+                            </div>
+                            <div style="width: 100%; height: 6px; background: rgba(255, 255, 255, 0.08); border-radius: 3px; overflow: hidden;">
+                                <div id="admin-fundamental-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #6366f1, #10b981); transition: width 0.3s ease;"></div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+                                <span id="admin-fundamental-progress-detail" style="font-size: 10.5px; color: var(--text-muted);">Paced batch scanning (1.2s delay to prevent Yahoo Finance 429 block)...</span>
+                                <button id="btn-admin-cancel-scan" class="guide-btn" style="font-size: 10px; padding: 2px 8px; border-radius: 3px; display: none;">Stop</button>
                             </div>
                         </div>
 
@@ -1375,6 +1396,10 @@
                                     <label for="sel-stats-momentum" style="font-size: 10.5px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Signal:</label>
                                     <select id="sel-stats-momentum" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); border-radius: var(--border-radius-sm); padding: 5px 8px; font-size: 11.5px; outline: none; cursor: pointer; height: 28px;">
                                         <option value="all" selected>All Signals</option>
+                                        <option value="magic-elite">🌟 Elite Magic Score (80+)</option>
+                                        <option value="magic-high">🟢 High Magic Score (65+)</option>
+                                        <option value="low-debt">📉 Low Debt (D/E &le; 0.3)</option>
+                                        <option value="high-roce">💎 High ROCE (&ge; 20%)</option>
                                         <option value="shift">Momentum Shift Today</option>
                                         <option value="rsi-buy-5d">🟢 RSI Buy Signal (Last 5 Days)</option>
                                         <option value="rsi-sell-5d">🔴 RSI Sell Signal (Last 5 Days)</option>
@@ -1393,7 +1418,7 @@
                                 <span id="lbl-stats-count" style="font-size: 11px; color: var(--text-muted); font-weight: 500; white-space: nowrap;">0 stocks</span>
                                 <!-- Table Horizontal Navigation Quick Buttons -->
                                 <div style="display: inline-flex; align-items: center; gap: 4px; border-left: 1px solid rgba(255,255,255,0.08); padding-left: 8px;">
-                                    <span style="font-size: 10.5px; color: var(--text-muted); margin-right: 2px;" title="Scroll horizontally across 21 parameters">
+                                    <span style="font-size: 10.5px; color: var(--text-muted); margin-right: 2px;" title="Scroll horizontally across all technical and fundamental parameters">
                                         <i class="fa-solid fa-arrows-left-right" style="color: var(--accent-indigo); font-size: 10px;"></i>
                                     </span>
                                     <button type="button" id="btn-stats-scroll-left" class="guide-btn" title="Scroll Table Left" style="padding: 0; width: 26px; height: 26px; font-size: 11px; border-radius: var(--border-radius-sm); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;">
@@ -1417,6 +1442,11 @@
                                         <th class="stats-th stats-col-ticker sortable" data-sort="ticker">Ticker <i class="fa-solid fa-sort"></i></th>
                                         <th class="stats-th sortable" data-sort="name">Company Name <i class="fa-solid fa-sort"></i></th>
                                         <th class="stats-th sortable" data-sort="universe">Universe <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="magicScore" style="text-align: center; background: rgba(99, 102, 241, 0.1);">Magic Score <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="roce" style="text-align: right;">ROCE (%) <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="debtEquity" style="text-align: right;">Debt/Equity <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="piotroski" style="text-align: center;">Piotroski <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="peg" style="text-align: right;">PEG <i class="fa-solid fa-sort"></i></th>
                                         <th class="stats-th sortable" data-sort="price" style="text-align: right;">Price (₹) <i class="fa-solid fa-sort"></i></th>
                                         <th class="stats-th sortable" data-sort="status" style="text-align: center;">Status <i class="fa-solid fa-sort"></i></th>
                                         <th class="stats-th sortable" data-sort="pctChange" style="text-align: right;">1D Change <i class="fa-solid fa-sort"></i></th>
@@ -1439,7 +1469,7 @@
                                 </thead>
                                 <tbody id="admin-stats-tbody">
                                     <tr>
-                                        <td colspan="21" style="text-align: center; color: var(--text-secondary); font-size: 12px; padding: 25px;">
+                                        <td colspan="26" style="text-align: center; color: var(--text-secondary); font-size: 12px; padding: 25px;">
                                             Loading statistical data...
                                         </td>
                                     </tr>
@@ -1523,6 +1553,33 @@
                             </div>
                             <div style="font-size: 10.5px; color: var(--text-muted); line-height: 1.35;">
                                 <i class="fa-solid fa-circle-info"></i> Historical daily empirical simulation (Wilder's RSI 30/70 mean-reversion & MACD histogram crossover momentum shifts).
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Company Fundamentals & 5-Year Historical Trends Card -->
+                    <div id="detail-fundamentals-container" class="fundamentals-summary-section" style="margin-top: 20px;">
+                        <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--border-radius-md); padding: 16px; font-family: var(--font-stack);">
+                            <!-- Header -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                                <h4 style="font-size: 12.5px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; margin: 0; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fa-solid fa-building-columns" style="color: #60a5fa;"></i> 5-Year Financial Fundamentals &amp; Magic Score
+                                </h4>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span class="badge" style="background: rgba(96, 165, 250, 0.15); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.3); font-size: 9.5px; font-weight: 700; padding: 2px 7px; border-radius: 4px;">
+                                        PRO ANALYST
+                                    </span>
+                                    <button id="btn-refresh-fundamentals" class="guide-btn" title="Refresh fundamental metrics from Yahoo Finance" style="font-size: 11px; padding: 4px 8px; border-radius: 4px; cursor: pointer; display: none;">
+                                        <i class="fa-solid fa-arrows-rotate"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Content Dynamic Container (loaded by JS based on user tier) -->
+                            <div id="drawer-fundamentals-content">
+                                <div style="text-align: center; padding: 18px; color: var(--text-secondary); font-size: 12px;">
+                                    <i class="fa-solid fa-circle-notch fa-spin" style="margin-right: 6px; color: var(--accent-indigo);"></i> Loading fundamentals...
+                                </div>
                             </div>
                         </div>
                     </div>

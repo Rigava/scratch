@@ -11,7 +11,7 @@ from django.db import IntegrityError
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
-from .models import UserProfile, TradeJournal, AdminNotification, PaymentVerificationRequest, UserNotification
+from .models import UserProfile, TradeJournal, AdminNotification, PaymentVerificationRequest, UserNotification, StockFundamental
 import json
 import datetime
 from pathlib import Path
@@ -2718,3 +2718,100 @@ def admin_screener_export_csv(request):
     return response
 
 
+@login_required(login_url='screener:login')
+def stock_fundamentals_view(request):
+    """
+    Returns 5-year fundamental trends and Magic Score for a single stock.
+    Restricted to users with Pro License ('pro') or Superusers/Staff.
+    """
+    from .fundamental_service import get_or_fetch_stock_fundamentals
+
+    user = request.user
+    is_pro = user.is_superuser or user.is_staff
+    if not is_pro:
+        try:
+            profile = user.profile
+            if profile.plan_tier == 'pro':
+                is_pro = True
+        except UserProfile.DoesNotExist:
+            pass
+
+    if not is_pro:
+        return JsonResponse({
+            'status': 'error',
+            'requires_pro': True,
+            'message': 'Pro Analyst subscription required to view 5-Year Fundamental Trends and Magic Score.'
+        }, status=403)
+
+    ticker = request.GET.get('ticker', '').strip().upper()
+    if not ticker:
+        return JsonResponse({'status': 'error', 'message': 'Missing ticker parameter'}, status=400)
+
+    force = request.GET.get('force', 'false').lower() == 'true'
+    data = get_or_fetch_stock_fundamentals(ticker, force_refresh=force)
+    return JsonResponse({'status': 'success', 'data': data})
+
+
+@csrf_exempt
+@login_required(login_url='screener:login')
+def admin_scan_fundamentals_view(request):
+    """
+    Scans fundamentals and calculates Magic Scores for a batch of tickers.
+    Strictly restricted to Administrators/Superusers.
+    """
+    from .fundamental_service import scan_fundamentals_batch
+
+    if not (request.user.is_superuser or request.user.is_staff):
+        return JsonResponse({'status': 'error', 'message': 'Admin privileges required'}, status=403)
+
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Only POST method is allowed'}, status=405)
+
+    try:
+        payload = json.loads(request.body)
+    except ValueError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON body'}, status=400)
+
+    tickers = payload.get('tickers', [])
+    force = payload.get('force', False)
+
+    if not tickers or not isinstance(tickers, list):
+        return JsonResponse({'status': 'error', 'message': 'tickers must be a non-empty list'}, status=400)
+
+    results = scan_fundamentals_batch(tickers, force_refresh=force, delay_seconds=1.2)
+    return JsonResponse({
+        'status': 'success',
+        'scanned_count': len(results),
+        'results': results
+    })
+
+
+@login_required(login_url='screener:login')
+def admin_fundamentals_summary_view(request):
+    """
+    Returns summary dictionary of all cached fundamental metrics and Magic Scores
+    for admin screener statistics display and CSV export.
+    Strictly restricted to Administrators/Superusers.
+    """
+    if not (request.user.is_superuser or request.user.is_staff):
+        return JsonResponse({'status': 'error', 'message': 'Admin privileges required'}, status=403)
+
+    records = StockFundamental.objects.all().order_by('-magic_score')
+    data = {}
+    for r in records:
+        data[r.ticker] = {
+            'ticker': r.ticker,
+            'company_name': r.company_name,
+            'market_cap_cr': r.market_cap_cr,
+            'magic_score': r.magic_score,
+            'piotroski_score': r.piotroski_score,
+            'peg_ratio': r.peg_ratio,
+            'roce_pct': r.roce_pct,
+            'debt_equity': r.debt_equity,
+            'ebit_cr': r.ebit_cr,
+            'net_profit_cr': r.net_profit_cr,
+            'interest_coverage': r.interest_coverage,
+            'last_updated': r.last_updated.isoformat()
+        }
+
+    return JsonResponse({'status': 'success', 'fundamentals': data})

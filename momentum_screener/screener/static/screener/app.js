@@ -39,6 +39,7 @@ const App = (function() {
     const state = {
         dataSource: 'simulation', // 'simulation' or 'zerodha'
         stocks: {},               // Holds all loaded stock records
+        fundamentals: {},         // Holds cached fundamental metrics and Magic Scores
         activeTicker: null,       // Currently selected stock
         zerodhaAuthErrorAlerted: false, // Flag to prevent alert floods on API auth errors
         universeFilter: 'all',    // 'all', 'nifty50', or 'fo'
@@ -1072,6 +1073,9 @@ const App = (function() {
             }
         }
 
+        // Load 5-Year Fundamentals & Magic Score
+        loadDrawerFundamentals(stock.ticker);
+
         // Open panel
         document.getElementById('detail-drawer').classList.add('active');
 
@@ -1090,6 +1094,179 @@ const App = (function() {
         state.activeTicker = null;
         document.getElementById('detail-drawer').classList.remove('active');
         document.querySelectorAll('#screener-tbody tr').forEach(row => row.classList.remove('selected'));
+    }
+
+    function loadDrawerFundamentals(ticker, force = false) {
+        const container = document.getElementById('drawer-fundamentals-content');
+        const refreshBtn = document.getElementById('btn-refresh-fundamentals');
+        if (!container) return;
+
+        const isPro = (typeof PLAN_TIER !== 'undefined' && PLAN_TIER === 'pro') || (typeof IS_SUPERUSER !== 'undefined' && IS_SUPERUSER);
+
+        if (!isPro) {
+            if (refreshBtn) refreshBtn.style.display = 'none';
+            container.innerHTML = `
+                <div class="pro-locked-card">
+                    <div class="pro-locked-badge">
+                        <i class="fa-solid fa-lock"></i> Pro Analyst Exclusive
+                    </div>
+                    <h4>5-Year Financial Fundamentals &amp; Magic Score</h4>
+                    <p>
+                        Unlock 5-year historical trends of <strong>Market Cap, ROCE, Debt/Equity, and Net Profit</strong>, 
+                        plus our 0-100 <strong>Value-Growth Magic Score</strong> and 9-point Piotroski F-Score for <strong>${ticker}</strong>.
+                    </p>
+                    <button type="button" class="pro-upgrade-cta-btn" id="btn-upgrade-drawer-pro">
+                        <i class="fa-solid fa-bolt"></i> Upgrade to Pro Analyst (₹199/Month)
+                    </button>
+                </div>
+            `;
+            const upgradeBtn = document.getElementById('btn-upgrade-drawer-pro');
+            if (upgradeBtn) {
+                upgradeBtn.onclick = () => {
+                    if (typeof openGPayModal === 'function') openGPayModal('pro');
+                };
+            }
+            return;
+        }
+
+        if (refreshBtn) {
+            refreshBtn.style.display = 'inline-flex';
+            refreshBtn.onclick = (e) => {
+                e.stopPropagation();
+                loadDrawerFundamentals(ticker, true);
+            };
+        }
+
+        container.innerHTML = `
+            <div style="text-align: center; padding: 22px; color: var(--text-secondary); font-size: 12px;">
+                <i class="fa-solid fa-circle-notch fa-spin" style="margin-right: 8px; color: #818cf8; font-size: 15px;"></i> 
+                Retrieving 5-year financials and calculating Magic Score for ${ticker}...
+            </div>
+        `;
+
+        fetch(`/api/stock-fundamentals/?ticker=${encodeURIComponent(ticker)}${force ? '&force=true' : ''}`)
+            .then(res => res.json())
+            .then(res => {
+                if (state.activeTicker !== ticker) return; // Discard if user switched stocks
+
+                if (res.status === 'error') {
+                    container.innerHTML = `
+                        <div style="padding: 14px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 6px; color: #f87171; font-size: 11.5px; text-align: center;">
+                            <i class="fa-solid fa-triangle-exclamation" style="margin-right: 6px;"></i> ${res.message || 'Unable to load fundamentals for this symbol.'}
+                        </div>
+                    `;
+                    return;
+                }
+
+                const data = res.data;
+                if (data.is_index) {
+                    container.innerHTML = `
+                        <div style="padding: 16px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; color: var(--text-secondary); font-size: 12px; text-align: center;">
+                            <i class="fa-solid fa-circle-info" style="margin-right: 6px; color: #60a5fa;"></i> 
+                            <strong>${ticker}</strong> is a market index. Corporate balance sheets and ROCE are not applicable.
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Determine score tier and color
+                const score = (data.magic_score !== null && data.magic_score !== undefined) ? data.magic_score : 'N/A';
+                let scoreTierClass = 'score-neutral';
+                let scoreTierLabel = 'Moderate';
+                if (score !== 'N/A') {
+                    if (score >= 80) { scoreTierClass = 'score-elite'; scoreTierLabel = '🌟 Elite Compounder'; }
+                    else if (score >= 65) { scoreTierClass = 'score-strong'; scoreTierLabel = '🟢 Strong Fundamentals'; }
+                    else if (score >= 50) { scoreTierClass = 'score-neutral'; scoreTierLabel = '🟡 Moderate'; }
+                    else { scoreTierClass = 'score-risk'; scoreTierLabel = '🔴 High Risk'; }
+                }
+
+                // Build Magic Score and Key Ratio Strip
+                let html = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 10px 14px; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <div style="font-size: 10px; text-transform: uppercase; color: var(--text-secondary); font-weight: 600; letter-spacing: 0.5px;">Magic Score (Value &amp; Growth)</div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                                <span class="magic-score-pill ${scoreTierClass}" style="font-size: 13px; padding: 4px 10px;">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> ${score} / 100
+                                </span>
+                                <span style="font-size: 11.5px; font-weight: 600; color: var(--text-primary);">${scoreTierLabel}</span>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; text-align: center;">
+                            <div style="background: rgba(255,255,255,0.03); border-radius: 4px; padding: 4px 8px;">
+                                <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase;">Piotroski</div>
+                                <div style="font-size: 12px; font-weight: 700; color: #60a5fa;">${data.piotroski_score !== null ? data.piotroski_score + '/9' : 'N/A'}</div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.03); border-radius: 4px; padding: 4px 8px;">
+                                <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase;">PEG Ratio</div>
+                                <div style="font-size: 12px; font-weight: 700; color: #a78bfa;">${data.peg_ratio ? data.peg_ratio : 'N/A'}</div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.03); border-radius: 4px; padding: 4px 8px;">
+                                <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase;">Int. Coverage</div>
+                                <div style="font-size: 12px; font-weight: 700; color: #34d399;">${data.interest_coverage !== null ? data.interest_coverage + 'x' : 'N/A'}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Build 5-Year Historical Trends Table
+                const trends = data.yearly_trends || [];
+                if (trends.length > 0) {
+                    html += `
+                        <div class="fundamental-table-wrapper">
+                            <table class="fundamental-trend-table">
+                                <thead>
+                                    <tr>
+                                        <th>5-Year Financial Parameter</th>
+                                        ${trends.map(t => `<th>FY${t.year}</th>`).join('')}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><i class="fa-solid fa-coins" style="color: #fbbf24; margin-right: 5px;"></i> Market Cap (₹ Cr)</td>
+                                        ${trends.map(t => `<td>${t.market_cap_cr !== null ? '₹' + t.market_cap_cr.toLocaleString() : 'N/A'}</td>`).join('')}
+                                    </tr>
+                                    <tr>
+                                        <td><i class="fa-solid fa-chart-line" style="color: #34d399; margin-right: 5px;"></i> ROCE (%)</td>
+                                        ${trends.map(t => `<td style="color: ${t.roce_pct >= 15 ? '#34d399' : (t.roce_pct < 8 ? '#f87171' : 'inherit')}">${t.roce_pct !== null ? t.roce_pct + '%' : 'N/A'}</td>`).join('')}
+                                    </tr>
+                                    <tr>
+                                        <td><i class="fa-solid fa-scale-balanced" style="color: #f4a261; margin-right: 5px;"></i> Debt / Equity</td>
+                                        ${trends.map(t => `<td style="color: ${t.debt_equity <= 0.3 ? '#34d399' : (t.debt_equity > 1 ? '#f87171' : 'inherit')}">${t.debt_equity !== null ? t.debt_equity : 'N/A'}</td>`).join('')}
+                                    </tr>
+                                    <tr>
+                                        <td><i class="fa-solid fa-arrow-trend-up" style="color: #60a5fa; margin-right: 5px;"></i> Net Profit (₹ Cr)</td>
+                                        ${trends.map(t => `<td style="color: ${t.net_profit_cr > 0 ? '#34d399' : (t.net_profit_cr < 0 ? '#f87171' : 'inherit')}">${t.net_profit_cr !== null ? '₹' + t.net_profit_cr.toLocaleString() : 'N/A'}</td>`).join('')}
+                                    </tr>
+                                    <tr>
+                                        <td><i class="fa-solid fa-briefcase" style="color: #a78bfa; margin-right: 5px;"></i> EBIT (₹ Cr)</td>
+                                        ${trends.map(t => `<td>${t.ebit_cr !== null ? '₹' + t.ebit_cr.toLocaleString() : 'N/A'}</td>`).join('')}
+                                    </tr>
+                                    <tr>
+                                        <td><i class="fa-solid fa-shield-halved" style="color: #38bdf8; margin-right: 5px;"></i> Interest Coverage</td>
+                                        ${trends.map(t => `<td>${t.interest_coverage !== null ? t.interest_coverage + 'x' : 'N/A'}</td>`).join('')}
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 10px; color: var(--text-muted);">
+                            <span><i class="fa-brands fa-yahoo"></i> Audited corporate annual filings via Yahoo Finance</span>
+                            <span>${data.cached ? 'Loaded from DB cache' : 'Live fetched'} (${new Date(data.last_updated).toLocaleDateString()})</span>
+                        </div>
+                    `;
+                } else {
+                    html += `<div style="text-align: center; padding: 15px; color: var(--text-muted); font-size: 11px;">Historical financial trend rows not available for this stock.</div>`;
+                }
+
+                container.innerHTML = html;
+            })
+            .catch(err => {
+                container.innerHTML = `
+                    <div style="padding: 14px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 6px; color: #f87171; font-size: 11.5px; text-align: center;">
+                        <i class="fa-solid fa-triangle-exclamation" style="margin-right: 6px;"></i> Error fetching fundamentals: ${err.message}
+                    </div>
+                `;
+            });
     }
 
     // --- Data Loaders (Simulation vs. Zerodha Proxy) ---
@@ -2919,6 +3096,7 @@ const App = (function() {
                 if (adminStatsViewCard) {
                     adminStatsViewCard.classList.remove('hidden');
                 }
+                fetchAdminFundamentalsSummary();
                 renderAdminStatsDashboard();
             });
         }
@@ -2939,6 +3117,7 @@ const App = (function() {
         const txtStatsSearch = document.getElementById('txt-stats-search');
         const btnExportCsv = document.getElementById('btn-export-stats-csv');
         const btnExportJson = document.getElementById('btn-export-stats-json');
+        const btnAdminScanFundamentals = document.getElementById('btn-admin-scan-fundamentals');
 
         if (selStatsUniverse) selStatsUniverse.addEventListener('change', renderAdminStatsDashboard);
         if (selStatsStatus) selStatsStatus.addEventListener('change', renderAdminStatsDashboard);
@@ -2946,6 +3125,7 @@ const App = (function() {
         if (txtStatsSearch) txtStatsSearch.addEventListener('input', renderAdminStatsDashboard);
         if (btnExportCsv) btnExportCsv.addEventListener('click', exportScreenerDataCSV);
         if (btnExportJson) btnExportJson.addEventListener('click', exportScreenerDataJSON);
+        if (btnAdminScanFundamentals) btnAdminScanFundamentals.addEventListener('click', startAdminFundamentalScan);
 
         const btnStatsScrollLeft = document.getElementById('btn-stats-scroll-left');
         const btnStatsScrollRight = document.getElementById('btn-stats-scroll-right');
@@ -4113,6 +4293,22 @@ const App = (function() {
 
             // Signal filter
             if (selSignal === 'shift' && !stock.current.hasMomentumShift) return false;
+            if (selSignal === 'magic-elite') {
+                const f = (state.fundamentals && state.fundamentals[stock.ticker]) || null;
+                if (!f || f.magic_score === null || f.magic_score < 80) return false;
+            }
+            if (selSignal === 'magic-high') {
+                const f = (state.fundamentals && state.fundamentals[stock.ticker]) || null;
+                if (!f || f.magic_score === null || f.magic_score < 65) return false;
+            }
+            if (selSignal === 'low-debt') {
+                const f = (state.fundamentals && state.fundamentals[stock.ticker]) || null;
+                if (!f || f.debt_equity === null || f.debt_equity > 0.3) return false;
+            }
+            if (selSignal === 'high-roce') {
+                const f = (state.fundamentals && state.fundamentals[stock.ticker]) || null;
+                if (!f || f.roce_pct === null || f.roce_pct < 20) return false;
+            }
             if (selSignal === 'rsi-buy-5d' && !stock.current.hasRsiBuy5d) return false;
             if (selSignal === 'rsi-sell-5d' && !stock.current.hasRsiSell5d) return false;
             if (selSignal === 'oversold' && (stock.current.rsi === null || stock.current.rsi >= 30)) return false;
@@ -4179,32 +4375,28 @@ const App = (function() {
 
         // Update KPI Elements
         const elTotal = document.getElementById('stat-admin-total');
-        if (elTotal) elTotal.textContent = total.toString();
-        const elHealth = document.getElementById('stat-admin-health-sub');
-        if (elHealth) elHealth.textContent = `${safePct}% Safe (${safeCount}/${total})`;
-
+        const elHealthSub = document.getElementById('stat-admin-health-sub');
         const elAbove200 = document.getElementById('stat-admin-above200');
-        if (elAbove200) elAbove200.textContent = `${above200Pct}%`;
         const elCrossSub = document.getElementById('stat-admin-cross-sub');
-        if (elCrossSub) elCrossSub.textContent = `${above200Count} Above / ${total - above200Count} Below`;
-
         const elAbove50 = document.getElementById('stat-admin-above50');
-        if (elAbove50) elAbove50.textContent = `${above50Pct}%`;
         const elRsiSub = document.getElementById('stat-admin-rsi-sub');
-        if (elRsiSub) elRsiSub.textContent = `Avg RSI: ${avgRsi}`;
-
         const elStrongAdx = document.getElementById('stat-admin-strong-adx');
-        if (elStrongAdx) elStrongAdx.textContent = `${strongAdxPct}%`;
         const elAdxSub = document.getElementById('stat-admin-adx-sub');
-        if (elAdxSub) elAdxSub.textContent = `Avg: ${avgAdx} (${strongAdxCount} Trend)`;
-
         const elAvgDd = document.getElementById('stat-admin-avg-dd');
-        if (elAvgDd) elAvgDd.textContent = `${avgDd}%`;
         const elMaxDdSub = document.getElementById('stat-admin-max-dd-sub');
-        if (elMaxDdSub) elMaxDdSub.textContent = `Max DD: ${maxDd.toFixed(1)}%`;
-
         const elCount = document.getElementById('lbl-stats-count');
-        if (elCount) elCount.textContent = `${total} of ${stocks.length} stocks`;
+
+        if (elTotal) elTotal.innerText = total;
+        if (elHealthSub) elHealthSub.innerText = `${safePct}% Safe (${safeCount}/${total})`;
+        if (elAbove200) elAbove200.innerText = `${above200Pct}%`;
+        if (elCrossSub) elCrossSub.innerText = `${above200Count} Above SMA200`;
+        if (elAbove50) elAbove50.innerText = `${above50Pct}%`;
+        if (elRsiSub) elRsiSub.innerText = `Avg RSI: ${avgRsi}`;
+        if (elStrongAdx) elStrongAdx.innerText = `${strongAdxPct}%`;
+        if (elAdxSub) elAdxSub.innerText = `Avg ADX: ${avgAdx}`;
+        if (elAvgDd) elAvgDd.innerText = `${avgDd}%`;
+        if (elMaxDdSub) elMaxDdSub.innerText = `Max DD: ${maxDd.toFixed(1)}%`;
+        if (elCount) elCount.innerText = `${total} stocks matching`;
 
         // 3. Sort Filtered Stocks
         const sortedStocks = [...filteredStocks].sort((a, b) => {
@@ -4223,6 +4415,41 @@ const App = (function() {
                     valA = MockDataEngine.NIFTY50_LIST.includes(a.ticker) ? 'NIFTY 50' : 'F&O';
                     valB = MockDataEngine.NIFTY50_LIST.includes(b.ticker) ? 'NIFTY 50' : 'F&O';
                     break;
+                case 'magicScore': {
+                    const fA = (state.fundamentals && state.fundamentals[a.ticker]) || null;
+                    const fB = (state.fundamentals && state.fundamentals[b.ticker]) || null;
+                    valA = (fA && fA.magic_score !== null && fA.magic_score !== undefined) ? fA.magic_score : -1;
+                    valB = (fB && fB.magic_score !== null && fB.magic_score !== undefined) ? fB.magic_score : -1;
+                    break;
+                }
+                case 'roce': {
+                    const fA = (state.fundamentals && state.fundamentals[a.ticker]) || null;
+                    const fB = (state.fundamentals && state.fundamentals[b.ticker]) || null;
+                    valA = (fA && fA.roce_pct !== null && fA.roce_pct !== undefined) ? fA.roce_pct : -999;
+                    valB = (fB && fB.roce_pct !== null && fB.roce_pct !== undefined) ? fB.roce_pct : -999;
+                    break;
+                }
+                case 'debtEquity': {
+                    const fA = (state.fundamentals && state.fundamentals[a.ticker]) || null;
+                    const fB = (state.fundamentals && state.fundamentals[b.ticker]) || null;
+                    valA = (fA && fA.debt_equity !== null && fA.debt_equity !== undefined) ? fA.debt_equity : 999;
+                    valB = (fB && fB.debt_equity !== null && fB.debt_equity !== undefined) ? fB.debt_equity : 999;
+                    break;
+                }
+                case 'piotroski': {
+                    const fA = (state.fundamentals && state.fundamentals[a.ticker]) || null;
+                    const fB = (state.fundamentals && state.fundamentals[b.ticker]) || null;
+                    valA = (fA && fA.piotroski_score !== null && fA.piotroski_score !== undefined) ? fA.piotroski_score : -1;
+                    valB = (fB && fB.piotroski_score !== null && fB.piotroski_score !== undefined) ? fB.piotroski_score : -1;
+                    break;
+                }
+                case 'peg': {
+                    const fA = (state.fundamentals && state.fundamentals[a.ticker]) || null;
+                    const fB = (state.fundamentals && state.fundamentals[b.ticker]) || null;
+                    valA = (fA && fA.peg_ratio !== null && fA.peg_ratio !== undefined) ? fA.peg_ratio : 999;
+                    valB = (fB && fB.peg_ratio !== null && fB.peg_ratio !== undefined) ? fB.peg_ratio : 999;
+                    break;
+                }
                 case 'price': valA = a.current.price; valB = b.current.price; break;
                 case 'status': valA = a.status; valB = b.status; break;
                 case 'pctChange': valA = a.current.pctChange; valB = b.current.pctChange; break;
@@ -4290,7 +4517,7 @@ const App = (function() {
         tbody.innerHTML = '';
 
         if (sortedStocks.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="21" style="text-align: center; color: var(--text-secondary); font-size: 13px; padding: 30px;">No stocks match your filter criteria.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="26" style="text-align: center; color: var(--text-secondary); font-size: 13px; padding: 30px;">No stocks match your filter criteria.</td></tr>`;
             return;
         }
 
@@ -4349,10 +4576,39 @@ const App = (function() {
             const ret30dColor = parseFloat(ret30d) >= 0 ? '#34d399' : '#f87171';
             const ret1yColor = parseFloat(ret1y) >= 0 ? '#34d399' : '#f87171';
 
+            const f = (state.fundamentals && state.fundamentals[stock.ticker]) || null;
+            let magicScorePill = `<span class="magic-score-pill score-na">-</span>`;
+            if (f && f.magic_score !== null && f.magic_score !== undefined) {
+                const sc = f.magic_score;
+                const tierClass = sc >= 80 ? 'score-elite' : sc >= 65 ? 'score-strong' : sc >= 50 ? 'score-neutral' : 'score-risk';
+                magicScorePill = `<span class="magic-score-pill ${tierClass}"><i class="fa-solid fa-wand-magic-sparkles"></i> ${sc}</span>`;
+            }
+
+            const roceVal = (f && f.roce_pct !== null && f.roce_pct !== undefined)
+                ? `<span style="color: ${f.roce_pct >= 15 ? '#34d399' : (f.roce_pct < 8 ? '#f87171' : 'inherit')}; font-weight: 600;">${f.roce_pct}%</span>`
+                : `<span style="color: var(--text-muted);">-</span>`;
+
+            const deVal = (f && f.debt_equity !== null && f.debt_equity !== undefined)
+                ? `<span style="color: ${f.debt_equity <= 0.3 ? '#34d399' : (f.debt_equity > 1 ? '#f87171' : 'inherit')}; font-weight: 600;">${f.debt_equity}</span>`
+                : `<span style="color: var(--text-muted);">-</span>`;
+
+            const pioVal = (f && f.piotroski_score !== null && f.piotroski_score !== undefined)
+                ? `<span style="color: #60a5fa; font-weight: 700;">${f.piotroski_score}/9</span>`
+                : `<span style="color: var(--text-muted);">-</span>`;
+
+            const pegVal = (f && f.peg_ratio !== null && f.peg_ratio !== undefined)
+                ? `<span style="color: #a78bfa; font-weight: 600;">${f.peg_ratio}</span>`
+                : `<span style="color: var(--text-muted);">-</span>`;
+
             tr.innerHTML = `
                 <td class="stats-col-ticker" style="padding: 8px 12px; font-weight: 700; color: var(--text-primary); white-space: nowrap;">${stock.ticker}</td>
                 <td style="padding: 8px 12px; color: var(--text-secondary); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${stock.name}</td>
                 <td style="padding: 8px 12px; white-space: nowrap;">${universeBadge}</td>
+                <td style="padding: 8px 12px; text-align: center; white-space: nowrap;">${magicScorePill}</td>
+                <td style="padding: 8px 12px; text-align: right; white-space: nowrap;">${roceVal}</td>
+                <td style="padding: 8px 12px; text-align: right; white-space: nowrap;">${deVal}</td>
+                <td style="padding: 8px 12px; text-align: center; white-space: nowrap;">${pioVal}</td>
+                <td style="padding: 8px 12px; text-align: right; white-space: nowrap;">${pegVal}</td>
                 <td style="padding: 8px 12px; text-align: right; font-weight: 600; color: var(--text-primary); white-space: nowrap;">₹${c.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                 <td style="padding: 8px 12px; text-align: center; white-space: nowrap;">${statusBadge}</td>
                 <td style="padding: 8px 12px; text-align: right; color: ${pct1dColor}; font-weight: 600; white-space: nowrap;">${c.pctChange >= 0 ? '+' : ''}${c.pctChange}%</td>
@@ -4409,6 +4665,22 @@ const App = (function() {
             if (selUniverse === 'fo' && !isFo) return false;
             if (selStatus !== 'all' && stock.status !== selStatus) return false;
             if (selSignal === 'shift' && !stock.current.hasMomentumShift) return false;
+            if (selSignal === 'magic-elite') {
+                const f = (state.fundamentals && state.fundamentals[stock.ticker]) || null;
+                if (!f || f.magic_score === null || f.magic_score < 80) return false;
+            }
+            if (selSignal === 'magic-high') {
+                const f = (state.fundamentals && state.fundamentals[stock.ticker]) || null;
+                if (!f || f.magic_score === null || f.magic_score < 65) return false;
+            }
+            if (selSignal === 'low-debt') {
+                const f = (state.fundamentals && state.fundamentals[stock.ticker]) || null;
+                if (!f || f.debt_equity === null || f.debt_equity > 0.3) return false;
+            }
+            if (selSignal === 'high-roce') {
+                const f = (state.fundamentals && state.fundamentals[stock.ticker]) || null;
+                if (!f || f.roce_pct === null || f.roce_pct < 20) return false;
+            }
             if (selSignal === 'rsi-buy-5d' && !stock.current.hasRsiBuy5d) return false;
             if (selSignal === 'rsi-sell-5d' && !stock.current.hasRsiSell5d) return false;
             if (selSignal === 'oversold' && (stock.current.rsi === null || stock.current.rsi >= 30)) return false;
@@ -4422,6 +4694,12 @@ const App = (function() {
             "Ticker",
             "Company Name",
             "Universe",
+            "Magic Score (0-100)",
+            "Piotroski F-Score (0-9)",
+            "ROCE (%)",
+            "Debt to Equity",
+            "PEG Ratio",
+            "Interest Coverage",
             "Price (INR)",
             "Status",
             "Milestone",
@@ -4486,10 +4764,24 @@ const App = (function() {
             const rsiSignal5d = c.hasRsiBuy5d ? "BUY" : (c.hasRsiSell5d ? "SELL" : "NONE");
             const trendStr = (c.adx !== null && c.adx !== undefined) ? (c.adx >= 25 ? "Strong Trend (ADX>=25)" : "Consolidation (ADX<25)") : "N/A";
 
+            const f = (state.fundamentals && state.fundamentals[stock.ticker]) || null;
+            const magicScore = (f && f.magic_score !== null && f.magic_score !== undefined) ? f.magic_score : "N/A";
+            const piotroski = (f && f.piotroski_score !== null && f.piotroski_score !== undefined) ? f.piotroski_score : "N/A";
+            const roce = (f && f.roce_pct !== null && f.roce_pct !== undefined) ? f.roce_pct + "%" : "N/A";
+            const de = (f && f.debt_equity !== null && f.debt_equity !== undefined) ? f.debt_equity : "N/A";
+            const peg = (f && f.peg_ratio !== null && f.peg_ratio !== undefined) ? f.peg_ratio : "N/A";
+            const ic = (f && f.interest_coverage !== null && f.interest_coverage !== undefined) ? f.interest_coverage + "x" : "N/A";
+
             return [
                 stock.ticker,
                 `"${(stock.name || stock.ticker).replace(/"/g, '""')}"`,
                 universe,
+                magicScore,
+                piotroski,
+                roce,
+                de,
+                peg,
+                ic,
                 c.price.toFixed(2),
                 stock.status,
                 c.milestone || "Stable",
@@ -4580,6 +4872,138 @@ const App = (function() {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
+    }
+
+    function fetchAdminFundamentalsSummary() {
+        if (typeof IS_SUPERUSER === 'undefined' || !IS_SUPERUSER) return;
+        fetch('/api/admin/fundamentals-summary/')
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === 'success' && res.fundamentals) {
+                    state.fundamentals = res.fundamentals;
+                    renderAdminStatsDashboard();
+                }
+            })
+            .catch(err => console.warn('Could not fetch fundamentals summary:', err));
+    }
+
+    let isScanningFundamentals = false;
+    let cancelFundamentalScan = false;
+
+    async function startAdminFundamentalScan() {
+        if (typeof IS_SUPERUSER === 'undefined' || !IS_SUPERUSER) {
+            alert("Admin privileges required to scan universe fundamentals.");
+            return;
+        }
+
+        if (isScanningFundamentals) {
+            alert("A fundamental scan is already in progress.");
+            return;
+        }
+
+        const selUniverse = document.getElementById('sel-stats-universe')?.value || 'all';
+        let tickers = [];
+        if (selUniverse === 'nifty50') {
+            tickers = [...MockDataEngine.NIFTY50_LIST];
+        } else if (selUniverse === 'fo') {
+            tickers = [...MockDataEngine.FO_LIST];
+        } else {
+            tickers = [...new Set([...MockDataEngine.NIFTY50_LIST, ...MockDataEngine.FO_LIST])];
+        }
+
+        // Filter out indices (Nifty 50 Index, Bank, IT)
+        tickers = tickers.filter(t => !['NIFTY 50', 'NIFTY BANK', 'NIFTY IT'].includes(t));
+
+        if (tickers.length === 0) {
+            alert("No corporate stocks available in the selected universe to scan.");
+            return;
+        }
+
+        const progressBox = document.getElementById('admin-fundamental-progress-box');
+        const progressBar = document.getElementById('admin-fundamental-progress-bar');
+        const progressTitle = document.getElementById('admin-fundamental-progress-title');
+        const progressPct = document.getElementById('admin-fundamental-progress-pct');
+        const progressDetail = document.getElementById('admin-fundamental-progress-detail');
+        const scanBtn = document.getElementById('btn-admin-scan-fundamentals');
+        const cancelBtn = document.getElementById('btn-admin-cancel-scan');
+
+        if (progressBox) progressBox.style.display = 'block';
+        if (scanBtn) {
+            scanBtn.disabled = true;
+            scanBtn.style.opacity = '0.6';
+        }
+        if (cancelBtn) {
+            cancelBtn.style.display = 'inline-block';
+            cancelBtn.onclick = () => {
+                cancelFundamentalScan = true;
+                if (progressDetail) progressDetail.innerText = 'Cancelling scan after current chunk...';
+            };
+        }
+
+        isScanningFundamentals = true;
+        cancelFundamentalScan = false;
+
+        const batchSize = 3; // 3 stocks per batch with 1.2s delay to strictly avoid Yahoo Finance 429
+        const total = tickers.length;
+        let processed = 0;
+
+        for (let i = 0; i < total; i += batchSize) {
+            if (cancelFundamentalScan) {
+                if (progressTitle) progressTitle.innerHTML = `<i class="fa-solid fa-ban" style="color: #f87171;"></i> Fundamental Scan Cancelled`;
+                if (progressDetail) progressDetail.innerText = `Stopped at ${processed}/${total} stocks. Completed stocks saved to database.`;
+                break;
+            }
+
+            const chunk = tickers.slice(i, i + batchSize);
+            const currentPct = Math.round((i / total) * 100);
+
+            if (progressBar) progressBar.style.width = `${currentPct}%`;
+            if (progressPct) progressPct.innerText = `${currentPct}%`;
+            if (progressTitle) progressTitle.innerText = `Scanning fundamentals (${i + 1}/${total})...`;
+            if (progressDetail) progressDetail.innerText = `Fetching ${chunk.join(', ')} via Yahoo Finance...`;
+
+            try {
+                const response = await fetch('/api/admin/scan-fundamentals/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ tickers: chunk, force: false })
+                });
+                const res = await response.json();
+                if (res.status === 'success' && res.results) {
+                    res.results.forEach(item => {
+                        if (item && item.ticker && !item.skipped) {
+                            if (!state.fundamentals) state.fundamentals = {};
+                            state.fundamentals[item.ticker] = item;
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error("Batch scan error for chunk:", chunk, err);
+            }
+
+            processed = Math.min(total, i + batchSize);
+            renderAdminStatsDashboard(); // Refresh table progressively
+        }
+
+        if (!cancelFundamentalScan) {
+            if (progressBar) progressBar.style.width = '100%';
+            if (progressPct) progressPct.innerText = '100%';
+            if (progressTitle) progressTitle.innerHTML = `<i class="fa-solid fa-check" style="color: #34d399;"></i> Fundamental Scan Complete! (${total} stocks)`;
+            if (progressDetail) progressDetail.innerText = 'All financial metrics, 5-year trends & Magic Scores updated successfully in cache.';
+        }
+
+        isScanningFundamentals = false;
+        if (cancelBtn) cancelBtn.style.display = 'none';
+        if (scanBtn) {
+            scanBtn.disabled = false;
+            scanBtn.style.opacity = '1';
+        }
+
+        setTimeout(() => {
+            if (progressBox) progressBox.style.display = 'none';
+        }, 5000);
     }
 
     function init() {

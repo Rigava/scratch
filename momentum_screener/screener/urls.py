@@ -39,4 +39,7 @@ urlpatterns = [
     path('api/generate-pm-brief/', views.generate_pm_brief_view, name='api_generate_pm_brief'),
     path('api/publish-pm-brief/', views.publish_pm_brief_view, name='api_publish_pm_brief'),
     path('api/admin/screener-export/', views.admin_screener_export_csv, name='admin_screener_export'),
+    path('api/stock-fundamentals/', views.stock_fundamentals_view, name='stock_fundamentals'),
+    path('api/admin/scan-fundamentals/', views.admin_scan_fundamentals_view, name='admin_scan_fundamentals'),
+    path('api/admin/fundamentals-summary/', views.admin_fundamentals_summary_view, name='admin_fundamentals_summary'),
 ]

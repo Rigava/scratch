@@ -145,3 +145,23 @@ class CommunityPost(models.Model):
     def __str__(self):
         return f"{self.title} ({self.stock_symbol})"
 
+
+class StockFundamental(models.Model):
+    ticker = models.CharField(max_length=25, unique=True, db_index=True)
+    company_name = models.CharField(max_length=150, blank=True, default='')
+    market_cap_cr = models.FloatField(null=True, blank=True)
+    magic_score = models.IntegerField(default=0, db_index=True)
+    piotroski_score = models.IntegerField(default=0)
+    peg_ratio = models.FloatField(null=True, blank=True)
+    roce_pct = models.FloatField(null=True, blank=True)
+    debt_equity = models.FloatField(null=True, blank=True)
+    ebit_cr = models.FloatField(null=True, blank=True)
+    net_profit_cr = models.FloatField(null=True, blank=True)
+    interest_coverage = models.FloatField(null=True, blank=True)
+    score_breakdown_json = models.TextField(default='{}')
+    yearly_trends_json = models.TextField(default='[]')
+    last_updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.ticker} (Magic Score: {self.magic_score})"
+
