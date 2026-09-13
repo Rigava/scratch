@@ -1197,8 +1197,10 @@ const App = (function() {
                                 <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase;">Piotroski</div>
                                 <div style="font-size: 12px; font-weight: 700; color: #60a5fa;">${data.piotroski_score !== null ? data.piotroski_score + '/9' : 'N/A'}</div>
                             </div>
-                            <div style="background: rgba(255,255,255,0.03); border-radius: 4px; padding: 4px 8px;">
-                                <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase;">PEG Ratio</div>
+                            <div style="background: rgba(255,255,255,0.03); border-radius: 4px; padding: 4px 8px;" title="${data.peg_note || ''}">
+                                <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase;">
+                                    PEG Ratio ${data.peg_is_fallback ? '<span style="color: #f59e0b; font-size: 10px; font-weight: 700;" title="Estimated via fallback formula">*</span>' : ''}
+                                </div>
                                 <div style="font-size: 12px; font-weight: 700; color: #a78bfa;">${data.peg_ratio ? data.peg_ratio : 'N/A'}</div>
                             </div>
                             <div style="background: rgba(255,255,255,0.03); border-radius: 4px; padding: 4px 8px;">
@@ -1207,6 +1209,12 @@ const App = (function() {
                             </div>
                         </div>
                     </div>
+                    ${data.peg_is_fallback && data.peg_note ? `
+                        <div style="margin-top: -6px; margin-bottom: 12px; font-size: 10.5px; color: #fbbf24; background: rgba(245, 158, 11, 0.08); border: 1px dashed rgba(245, 158, 11, 0.25); border-radius: 6px; padding: 5px 10px; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-circle-info" style="font-size: 11px;"></i>
+                            <span><strong>PEG Assumption:</strong> ${data.peg_note}</span>
+                        </div>
+                    ` : ''}
                 `;
 
                 // Build 5-Year Historical Trends Table
@@ -1233,6 +1241,10 @@ const App = (function() {
                                     <tr>
                                         <td><i class="fa-solid fa-scale-balanced" style="color: #f4a261; margin-right: 5px;"></i> Debt / Equity</td>
                                         ${trends.map(t => `<td style="color: ${t.debt_equity <= 0.3 ? '#34d399' : (t.debt_equity > 1 ? '#f87171' : 'inherit')}">${t.debt_equity !== null ? t.debt_equity : 'N/A'}</td>`).join('')}
+                                    </tr>
+                                    <tr>
+                                        <td><i class="fa-solid fa-percent" style="color: #2dd4bf; margin-right: 5px;"></i> Net Margin (%)</td>
+                                        ${trends.map(t => `<td style="color: ${t.net_margin_pct >= 15 ? '#34d399' : (t.net_margin_pct < 5 ? '#f87171' : 'inherit')}">${t.net_margin_pct !== null && t.net_margin_pct !== undefined ? t.net_margin_pct + '%' : 'N/A'}</td>`).join('')}
                                     </tr>
                                     <tr>
                                         <td><i class="fa-solid fa-arrow-trend-up" style="color: #60a5fa; margin-right: 5px;"></i> Net Profit (₹ Cr)</td>
@@ -4309,6 +4321,10 @@ const App = (function() {
                 const f = (state.fundamentals && state.fundamentals[stock.ticker]) || null;
                 if (!f || f.roce_pct === null || f.roce_pct < 20) return false;
             }
+            if (selSignal === 'high-margin') {
+                const f = (state.fundamentals && state.fundamentals[stock.ticker]) || null;
+                if (!f || f.net_margin_pct === null || f.net_margin_pct < 15) return false;
+            }
             if (selSignal === 'rsi-buy-5d' && !stock.current.hasRsiBuy5d) return false;
             if (selSignal === 'rsi-sell-5d' && !stock.current.hasRsiSell5d) return false;
             if (selSignal === 'oversold' && (stock.current.rsi === null || stock.current.rsi >= 30)) return false;
@@ -4434,6 +4450,13 @@ const App = (function() {
                     const fB = (state.fundamentals && state.fundamentals[b.ticker]) || null;
                     valA = (fA && fA.debt_equity !== null && fA.debt_equity !== undefined) ? fA.debt_equity : 999;
                     valB = (fB && fB.debt_equity !== null && fB.debt_equity !== undefined) ? fB.debt_equity : 999;
+                    break;
+                }
+                case 'netMargin': {
+                    const fA = (state.fundamentals && state.fundamentals[a.ticker]) || null;
+                    const fB = (state.fundamentals && state.fundamentals[b.ticker]) || null;
+                    valA = (fA && fA.net_margin_pct !== null && fA.net_margin_pct !== undefined) ? fA.net_margin_pct : -999;
+                    valB = (fB && fB.net_margin_pct !== null && fB.net_margin_pct !== undefined) ? fB.net_margin_pct : -999;
                     break;
                 }
                 case 'piotroski': {
@@ -4592,13 +4615,22 @@ const App = (function() {
                 ? `<span style="color: ${f.debt_equity <= 0.3 ? '#34d399' : (f.debt_equity > 1 ? '#f87171' : 'inherit')}; font-weight: 600;">${f.debt_equity}</span>`
                 : `<span style="color: var(--text-muted);">-</span>`;
 
+            const netMarginVal = (f && f.net_margin_pct !== null && f.net_margin_pct !== undefined)
+                ? `<span style="color: ${f.net_margin_pct >= 15 ? '#34d399' : (f.net_margin_pct < 5 ? '#f87171' : 'inherit')}; font-weight: 600;">${f.net_margin_pct}%</span>`
+                : `<span style="color: var(--text-muted);">-</span>`;
+
             const pioVal = (f && f.piotroski_score !== null && f.piotroski_score !== undefined)
                 ? `<span style="color: #60a5fa; font-weight: 700;">${f.piotroski_score}/9</span>`
                 : `<span style="color: var(--text-muted);">-</span>`;
 
-            const pegVal = (f && f.peg_ratio !== null && f.peg_ratio !== undefined)
-                ? `<span style="color: #a78bfa; font-weight: 600;">${f.peg_ratio}</span>`
-                : `<span style="color: var(--text-muted);">-</span>`;
+            let pegVal = `<span style="color: var(--text-muted);">-</span>`;
+            if (f && f.peg_ratio !== null && f.peg_ratio !== undefined) {
+                if (f.peg_is_fallback) {
+                    pegVal = `<span style="color: #a78bfa; font-weight: 600; cursor: help;" title="${(f.peg_note || 'Calculated via fallback formula').replace(/"/g, '&quot;')}">${f.peg_ratio} <span style="font-size: 9px; padding: 1px 3px; background: rgba(245, 158, 11, 0.2); border-radius: 3px; color: #fbbf24; font-weight: 700;" title="${(f.peg_note || '').replace(/"/g, '&quot;')}">*</span></span>`;
+                } else {
+                    pegVal = `<span style="color: #a78bfa; font-weight: 600;" title="${(f.peg_note || 'Yahoo Finance consensus').replace(/"/g, '&quot;')}">${f.peg_ratio}</span>`;
+                }
+            }
 
             tr.innerHTML = `
                 <td class="stats-col-ticker" style="padding: 8px 12px; font-weight: 700; color: var(--text-primary); white-space: nowrap;">${stock.ticker}</td>
@@ -4607,6 +4639,7 @@ const App = (function() {
                 <td style="padding: 8px 12px; text-align: center; white-space: nowrap;">${magicScorePill}</td>
                 <td style="padding: 8px 12px; text-align: right; white-space: nowrap;">${roceVal}</td>
                 <td style="padding: 8px 12px; text-align: right; white-space: nowrap;">${deVal}</td>
+                <td style="padding: 8px 12px; text-align: right; white-space: nowrap;">${netMarginVal}</td>
                 <td style="padding: 8px 12px; text-align: center; white-space: nowrap;">${pioVal}</td>
                 <td style="padding: 8px 12px; text-align: right; white-space: nowrap;">${pegVal}</td>
                 <td style="padding: 8px 12px; text-align: right; font-weight: 600; color: var(--text-primary); white-space: nowrap;">₹${c.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
@@ -4681,6 +4714,10 @@ const App = (function() {
                 const f = (state.fundamentals && state.fundamentals[stock.ticker]) || null;
                 if (!f || f.roce_pct === null || f.roce_pct < 20) return false;
             }
+            if (selSignal === 'high-margin') {
+                const f = (state.fundamentals && state.fundamentals[stock.ticker]) || null;
+                if (!f || f.net_margin_pct === null || f.net_margin_pct < 15) return false;
+            }
             if (selSignal === 'rsi-buy-5d' && !stock.current.hasRsiBuy5d) return false;
             if (selSignal === 'rsi-sell-5d' && !stock.current.hasRsiSell5d) return false;
             if (selSignal === 'oversold' && (stock.current.rsi === null || stock.current.rsi >= 30)) return false;
@@ -4698,7 +4735,9 @@ const App = (function() {
             "Piotroski F-Score (0-9)",
             "ROCE (%)",
             "Debt to Equity",
+            "Net Margin (%)",
             "PEG Ratio",
+            "PEG Note / Assumption",
             "Interest Coverage",
             "Price (INR)",
             "Status",
@@ -4769,7 +4808,9 @@ const App = (function() {
             const piotroski = (f && f.piotroski_score !== null && f.piotroski_score !== undefined) ? f.piotroski_score : "N/A";
             const roce = (f && f.roce_pct !== null && f.roce_pct !== undefined) ? f.roce_pct + "%" : "N/A";
             const de = (f && f.debt_equity !== null && f.debt_equity !== undefined) ? f.debt_equity : "N/A";
-            const peg = (f && f.peg_ratio !== null && f.peg_ratio !== undefined) ? f.peg_ratio : "N/A";
+            const netMargin = (f && f.net_margin_pct !== null && f.net_margin_pct !== undefined) ? f.net_margin_pct + "%" : "N/A";
+            const peg = (f && f.peg_ratio !== null && f.peg_ratio !== undefined) ? (f.peg_is_fallback ? f.peg_ratio + "*" : f.peg_ratio) : "N/A";
+            const pegNote = (f && f.peg_note) ? `"${f.peg_note.replace(/"/g, '""')}"` : "N/A";
             const ic = (f && f.interest_coverage !== null && f.interest_coverage !== undefined) ? f.interest_coverage + "x" : "N/A";
 
             return [
@@ -4780,7 +4821,9 @@ const App = (function() {
                 piotroski,
                 roce,
                 de,
+                netMargin,
                 peg,
+                pegNote,
                 ic,
                 c.price.toFixed(2),
                 stock.status,

@@ -1400,6 +1400,7 @@
                                         <option value="magic-high">🟢 High Magic Score (65+)</option>
                                         <option value="low-debt">📉 Low Debt (D/E &le; 0.3)</option>
                                         <option value="high-roce">💎 High ROCE (&ge; 20%)</option>
+                                        <option value="high-margin">💰 High Net Margin (&ge; 15%)</option>
                                         <option value="shift">Momentum Shift Today</option>
                                         <option value="rsi-buy-5d">🟢 RSI Buy Signal (Last 5 Days)</option>
                                         <option value="rsi-sell-5d">🔴 RSI Sell Signal (Last 5 Days)</option>
@@ -1445,8 +1446,9 @@
                                         <th class="stats-th sortable" data-sort="magicScore" style="text-align: center; background: rgba(99, 102, 241, 0.1);">Magic Score <i class="fa-solid fa-sort"></i></th>
                                         <th class="stats-th sortable" data-sort="roce" style="text-align: right;">ROCE (%) <i class="fa-solid fa-sort"></i></th>
                                         <th class="stats-th sortable" data-sort="debtEquity" style="text-align: right;">Debt/Equity <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="netMargin" style="text-align: right;">Net Margin (%) <i class="fa-solid fa-sort"></i></th>
                                         <th class="stats-th sortable" data-sort="piotroski" style="text-align: center;">Piotroski <i class="fa-solid fa-sort"></i></th>
-                                        <th class="stats-th sortable" data-sort="peg" style="text-align: right;">PEG <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="peg" style="text-align: right;" title="Price/Earnings to Growth (* denotes calculated fallback based on trailing P/E and reported earnings growth)">PEG <i class="fa-solid fa-sort"></i></th>
                                         <th class="stats-th sortable" data-sort="price" style="text-align: right;">Price (₹) <i class="fa-solid fa-sort"></i></th>
                                         <th class="stats-th sortable" data-sort="status" style="text-align: center;">Status <i class="fa-solid fa-sort"></i></th>
                                         <th class="stats-th sortable" data-sort="pctChange" style="text-align: right;">1D Change <i class="fa-solid fa-sort"></i></th>
@@ -1469,7 +1471,7 @@
                                 </thead>
                                 <tbody id="admin-stats-tbody">
                                     <tr>
-                                        <td colspan="26" style="text-align: center; color: var(--text-secondary); font-size: 12px; padding: 25px;">
+                                        <td colspan="27" style="text-align: center; color: var(--text-secondary); font-size: 12px; padding: 25px;">
                                             Loading statistical data...
                                         </td>
                                     </tr>

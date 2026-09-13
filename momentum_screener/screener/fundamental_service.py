@@ -111,13 +111,6 @@ def fetch_and_calculate_fundamentals(ticker):
     # Current metrics from info
     raw_mcap = info.get('marketCap') or 0
     current_mcap_cr = round(raw_mcap / 1e7, 1) if raw_mcap else None
-    peg_ratio = info.get('pegRatio')
-    if peg_ratio is not None:
-        try:
-            peg_ratio = round(float(peg_ratio), 2)
-        except (ValueError, TypeError):
-            peg_ratio = None
-
     company_name = info.get('shortName') or info.get('longName') or f"{ticker} Ltd."
 
     # Build 5-Year Historical Trends
@@ -160,6 +153,12 @@ def fetch_and_calculate_fundamentals(ticker):
             else:
                 ic = 99.0 # Effectively no interest burden
 
+        # Net Margin (%) = (Net Income / Total Revenue) * 100
+        net_margin = None
+        rev = float(rev_s[col]) if rev_s is not None and col in rev_s.index and pd.notnull(rev_s[col]) else None
+        if ni is not None and rev and rev > 0:
+            net_margin = round((ni / rev) * 100, 2)
+
         # Estimated Historical Market Cap (₹ Cr)
         # Uses latest Mcap scaled by book value or share count if historical price is unavailable
         hist_mcap_cr = None
@@ -179,8 +178,53 @@ def fetch_and_calculate_fundamentals(ticker):
             "ebit_cr": round(eb / 1e7, 1) if eb is not None else None,
             "roce_pct": roce,
             "debt_equity": de,
+            "net_margin_pct": net_margin,
             "interest_coverage": ic,
         })
+
+    # PEG Ratio with Fallback and Transparency Note
+    raw_peg = info.get('pegRatio')
+    peg_ratio = None
+    peg_is_fallback = False
+    peg_note = ""
+
+    if raw_peg is not None:
+        try:
+            peg_val = float(raw_peg)
+            if peg_val > 0:
+                peg_ratio = round(peg_val, 2)
+                peg_note = "Sourced from Yahoo Finance 5-Year Forward Analyst Consensus"
+        except (ValueError, TypeError):
+            peg_ratio = None
+
+    if peg_ratio is None:
+        pe = info.get('trailingPE') or info.get('forwardPE')
+        eg = info.get('earningsGrowth') or info.get('earningsQuarterlyGrowth')
+        
+        # Fallback 1: Trailing P/E divided by Reported YoY Earnings Growth (%)
+        if pe and eg and eg > 0.02:
+            peg_ratio = round(pe / (eg * 100), 2)
+            peg_is_fallback = True
+            peg_note = f"Calculated: Trailing P/E ({pe:.1f}) / Reported YoY Earnings Growth ({eg*100:.1f}%)"
+        
+        # Fallback 2: Trailing P/E divided by 2-Year Net Profit CAGR (%)
+        elif pe and len(yearly_trends) >= 3 and yearly_trends[0]["net_profit_cr"] and yearly_trends[2]["net_profit_cr"] and yearly_trends[2]["net_profit_cr"] > 0:
+            p0 = yearly_trends[0]["net_profit_cr"]
+            p2 = yearly_trends[2]["net_profit_cr"]
+            if p0 > p2:
+                cagr2y = ((p0 / p2) ** 0.5 - 1) * 100
+                if cagr2y > 2:
+                    peg_ratio = round(pe / cagr2y, 2)
+                    peg_is_fallback = True
+                    peg_note = f"Calculated: Trailing P/E ({pe:.1f}) / 2-Year Net Profit CAGR ({cagr2y:.1f}%)"
+        
+        if peg_ratio is None:
+            if pe and eg and eg <= 0:
+                peg_note = f"N/A: Stagnant/Negative Earnings Growth ({eg*100:.1f}%) with P/E ({pe:.1f})"
+            elif not pe:
+                peg_note = "N/A: P/E unavailable (Net Loss / Nil Earnings)"
+            else:
+                peg_note = "N/A: Insufficient forward or historical growth data"
 
     # --- Compute Piotroski F-Score (9 points) ---
     piotroski = 0
@@ -318,6 +362,8 @@ def fetch_and_calculate_fundamentals(ticker):
         "growth": growth_score
     }
 
+    curr_net_margin = yearly_trends[0]["net_margin_pct"] if (yearly_trends and "net_margin_pct" in yearly_trends[0]) else None
+
     result = {
         "ticker": ticker,
         "company_name": company_name,
@@ -325,8 +371,11 @@ def fetch_and_calculate_fundamentals(ticker):
         "magic_score": magic_score,
         "piotroski_score": piotroski,
         "peg_ratio": peg_ratio,
+        "peg_is_fallback": peg_is_fallback,
+        "peg_note": peg_note,
         "roce_pct": curr_roce,
         "debt_equity": curr_de,
+        "net_margin_pct": curr_net_margin,
         "ebit_cr": latest_ebit,
         "net_profit_cr": latest_np,
         "interest_coverage": curr_ic,
@@ -370,8 +419,11 @@ def get_or_fetch_stock_fundamentals(ticker, force_refresh=False, max_age_days=30
                     "magic_score": cached.magic_score,
                     "piotroski_score": cached.piotroski_score,
                     "peg_ratio": cached.peg_ratio,
+                    "peg_is_fallback": cached.peg_is_fallback,
+                    "peg_note": cached.peg_note,
                     "roce_pct": cached.roce_pct,
                     "debt_equity": cached.debt_equity,
+                    "net_margin_pct": cached.net_margin_pct,
                     "ebit_cr": cached.ebit_cr,
                     "net_profit_cr": cached.net_profit_cr,
                     "interest_coverage": cached.interest_coverage,
@@ -395,8 +447,11 @@ def get_or_fetch_stock_fundamentals(ticker, force_refresh=False, max_age_days=30
                 "magic_score": cached.magic_score,
                 "piotroski_score": cached.piotroski_score,
                 "peg_ratio": cached.peg_ratio,
+                "peg_is_fallback": cached.peg_is_fallback,
+                "peg_note": cached.peg_note,
                 "roce_pct": cached.roce_pct,
                 "debt_equity": cached.debt_equity,
+                "net_margin_pct": cached.net_margin_pct,
                 "ebit_cr": cached.ebit_cr,
                 "net_profit_cr": cached.net_profit_cr,
                 "interest_coverage": cached.interest_coverage,
@@ -417,8 +472,11 @@ def get_or_fetch_stock_fundamentals(ticker, force_refresh=False, max_age_days=30
             "magic_score": data.get("magic_score", 0),
             "piotroski_score": data.get("piotroski_score", 0),
             "peg_ratio": data.get("peg_ratio"),
+            "peg_is_fallback": data.get("peg_is_fallback", False),
+            "peg_note": data.get("peg_note", ""),
             "roce_pct": data.get("roce_pct"),
             "debt_equity": data.get("debt_equity"),
+            "net_margin_pct": data.get("net_margin_pct"),
             "ebit_cr": data.get("ebit_cr"),
             "net_profit_cr": data.get("net_profit_cr"),
             "interest_coverage": data.get("interest_coverage"),
