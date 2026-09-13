@@ -1184,7 +1184,9 @@ const App = (function() {
                 let html = `
                     <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 10px 14px; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
                         <div>
-                            <div style="font-size: 10px; text-transform: uppercase; color: var(--text-secondary); font-weight: 600; letter-spacing: 0.5px;">Magic Score (Value &amp; Growth)</div>
+                            <div style="font-size: 10px; text-transform: uppercase; color: var(--text-secondary); font-weight: 600; letter-spacing: 0.5px;">
+                                Magic Score (Value &amp; Growth) <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('magicScore')" title="Magic Score Breakdown &amp; Criteria"><i class="fa-solid fa-circle-question"></i></button>
+                            </div>
                             <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
                                 <span class="magic-score-pill ${scoreTierClass}" style="font-size: 13px; padding: 4px 10px;">
                                     <i class="fa-solid fa-wand-magic-sparkles"></i> ${score} / 100
@@ -1194,17 +1196,21 @@ const App = (function() {
                         </div>
                         <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; text-align: center;">
                             <div style="background: rgba(255,255,255,0.03); border-radius: 4px; padding: 4px 8px;">
-                                <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase;">Piotroski</div>
+                                <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase;">
+                                    Piotroski <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('piotroski')" title="Piotroski 9-Point Checklist"><i class="fa-solid fa-circle-question"></i></button>
+                                </div>
                                 <div style="font-size: 12px; font-weight: 700; color: #60a5fa;">${data.piotroski_score !== null ? data.piotroski_score + '/9' : 'N/A'}</div>
                             </div>
                             <div style="background: rgba(255,255,255,0.03); border-radius: 4px; padding: 4px 8px;" title="${data.peg_note || ''}">
                                 <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase;">
-                                    PEG Ratio ${data.peg_is_fallback ? '<span style="color: #f59e0b; font-size: 10px; font-weight: 700;" title="Estimated via fallback formula">*</span>' : ''}
+                                    PEG Ratio ${data.peg_is_fallback ? '<span style="color: #f59e0b; font-size: 10px; font-weight: 700;" title="Estimated via fallback formula">*</span>' : ''} <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('peg')" title="PEG Ratio &amp; Fallback Formula"><i class="fa-solid fa-circle-question"></i></button>
                                 </div>
                                 <div style="font-size: 12px; font-weight: 700; color: #a78bfa;">${data.peg_ratio ? data.peg_ratio : 'N/A'}</div>
                             </div>
                             <div style="background: rgba(255,255,255,0.03); border-radius: 4px; padding: 4px 8px;">
-                                <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase;">Int. Coverage</div>
+                                <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase;">
+                                    Int. Coverage <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('interestCoverage')" title="Interest Coverage Explanation"><i class="fa-solid fa-circle-question"></i></button>
+                                </div>
                                 <div style="font-size: 12px; font-weight: 700; color: #34d399;">${data.interest_coverage !== null ? data.interest_coverage + 'x' : 'N/A'}</div>
                             </div>
                         </div>
@@ -1231,31 +1237,31 @@ const App = (function() {
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td><i class="fa-solid fa-coins" style="color: #fbbf24; margin-right: 5px;"></i> Market Cap (₹ Cr)</td>
+                                        <td><i class="fa-solid fa-coins" style="color: #fbbf24; margin-right: 5px;"></i> Market Cap (₹ Cr) <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('marketCap')" title="Explain Market Cap"><i class="fa-solid fa-circle-question"></i></button></td>
                                         ${trends.map(t => `<td>${t.market_cap_cr !== null ? '₹' + t.market_cap_cr.toLocaleString() : 'N/A'}</td>`).join('')}
                                     </tr>
                                     <tr>
-                                        <td><i class="fa-solid fa-chart-line" style="color: #34d399; margin-right: 5px;"></i> ROCE (%)</td>
+                                        <td><i class="fa-solid fa-chart-line" style="color: #34d399; margin-right: 5px;"></i> ROCE (%) <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('roce')" title="Explain Return on Capital Employed"><i class="fa-solid fa-circle-question"></i></button></td>
                                         ${trends.map(t => `<td style="color: ${t.roce_pct >= 15 ? '#34d399' : (t.roce_pct < 8 ? '#f87171' : 'inherit')}">${t.roce_pct !== null ? t.roce_pct + '%' : 'N/A'}</td>`).join('')}
                                     </tr>
                                     <tr>
-                                        <td><i class="fa-solid fa-scale-balanced" style="color: #f4a261; margin-right: 5px;"></i> Debt / Equity</td>
+                                        <td><i class="fa-solid fa-scale-balanced" style="color: #f4a261; margin-right: 5px;"></i> Debt / Equity <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('debtEquity')" title="Explain Debt to Equity"><i class="fa-solid fa-circle-question"></i></button></td>
                                         ${trends.map(t => `<td style="color: ${t.debt_equity <= 0.3 ? '#34d399' : (t.debt_equity > 1 ? '#f87171' : 'inherit')}">${t.debt_equity !== null ? t.debt_equity : 'N/A'}</td>`).join('')}
                                     </tr>
                                     <tr>
-                                        <td><i class="fa-solid fa-percent" style="color: #2dd4bf; margin-right: 5px;"></i> Net Margin (%)</td>
+                                        <td><i class="fa-solid fa-percent" style="color: #2dd4bf; margin-right: 5px;"></i> Net Margin (%) <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('netMargin')" title="Explain Net Margin"><i class="fa-solid fa-circle-question"></i></button></td>
                                         ${trends.map(t => `<td style="color: ${t.net_margin_pct >= 15 ? '#34d399' : (t.net_margin_pct < 5 ? '#f87171' : 'inherit')}">${t.net_margin_pct !== null && t.net_margin_pct !== undefined ? t.net_margin_pct + '%' : 'N/A'}</td>`).join('')}
                                     </tr>
                                     <tr>
-                                        <td><i class="fa-solid fa-arrow-trend-up" style="color: #60a5fa; margin-right: 5px;"></i> Net Profit (₹ Cr)</td>
+                                        <td><i class="fa-solid fa-arrow-trend-up" style="color: #60a5fa; margin-right: 5px;"></i> Net Profit (₹ Cr) <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('netProfit')" title="Explain Net Profit"><i class="fa-solid fa-circle-question"></i></button></td>
                                         ${trends.map(t => `<td style="color: ${t.net_profit_cr > 0 ? '#34d399' : (t.net_profit_cr < 0 ? '#f87171' : 'inherit')}">${t.net_profit_cr !== null ? '₹' + t.net_profit_cr.toLocaleString() : 'N/A'}</td>`).join('')}
                                     </tr>
                                     <tr>
-                                        <td><i class="fa-solid fa-briefcase" style="color: #a78bfa; margin-right: 5px;"></i> EBIT (₹ Cr)</td>
+                                        <td><i class="fa-solid fa-briefcase" style="color: #a78bfa; margin-right: 5px;"></i> EBIT (₹ Cr) <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('ebit')" title="Explain EBIT"><i class="fa-solid fa-circle-question"></i></button></td>
                                         ${trends.map(t => `<td>${t.ebit_cr !== null ? '₹' + t.ebit_cr.toLocaleString() : 'N/A'}</td>`).join('')}
                                     </tr>
                                     <tr>
-                                        <td><i class="fa-solid fa-shield-halved" style="color: #38bdf8; margin-right: 5px;"></i> Interest Coverage</td>
+                                        <td><i class="fa-solid fa-shield-halved" style="color: #38bdf8; margin-right: 5px;"></i> Interest Coverage <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('interestCoverage')" title="Explain Interest Coverage"><i class="fa-solid fa-circle-question"></i></button></td>
                                         ${trends.map(t => `<td>${t.interest_coverage !== null ? t.interest_coverage + 'x' : 'N/A'}</td>`).join('')}
                                     </tr>
                                 </tbody>
@@ -3213,6 +3219,305 @@ const App = (function() {
             }
         };
 
+        // ==========================================================================
+        // Fundamental Metrics Guide & Plain-English Interpretation Engine
+        // ==========================================================================
+
+        const METRIC_GUIDE_DATA = {
+            magicScore: {
+                title: "Aegis Fundamental Magic Score (0–100)",
+                icon: "fa-solid fa-wand-magic-sparkles",
+                formula: "Composite Multi-Factor Model: ROCE (20%) + Debt/Equity (20%) + Piotroski F-Score (20%) + PEG (15%) + Interest Coverage (15%) + 3Y Net Profit CAGR (10%)",
+                meaning: "Think of the Magic Score as an institutional-grade financial health exam (0 to 100) designed for non-financial investors. Instead of buying a stock just because its stock chart looks good, the Magic Score audits whether the underlying business is truly rock-solid, generating high returns on invested capital, virtually debt-free, expanding profits, and reasonably priced. Stocks scoring 75+ are prime compounders with wide moats; stocks below 50 carry high debt leverage, deteriorating cash flows, or speculative valuations.",
+                benchmarks: [
+                    { label: "75–100: Elite Compounder", class: "chip-good", desc: "Top-tier business moats, pristine balance sheets, and strong compounding power." },
+                    { label: "50–74: Moderate Quality", class: "chip-neutral", desc: "Stable or maturing business; acceptable fundamentals but may carry moderate debt or slower growth." },
+                    { label: "0–49: High Risk / Trap", class: "chip-risk", desc: "Weak profitability, high debt leverage, or eroding accounting health. Extreme caution." }
+                ],
+                scoringTable: [
+                    { factor: "ROCE (%)", weight: "Max 20 pts", rule: "≥25%: 20 pts | ≥20%: 16 pts | ≥15%: 12 pts | ≥10%: 6 pts | <10%: 0 pts" },
+                    { factor: "Debt to Equity", weight: "Max 20 pts", rule: "≤0.1: 20 pts (Virtually Debt-Free) | ≤0.3: 16 pts | ≤0.6: 12 pts | ≤1.0: 6 pts | >1.0: 0 pts" },
+                    { factor: "Piotroski F-Score", weight: "Max 20 pts", rule: "8–9 pts: 20 pts | 6–7 pts: 14 pts | 5 pts: 8 pts | ≤4 pts: 0 pts" },
+                    { factor: "PEG Ratio", weight: "Max 15 pts", rule: "0 < PEG ≤ 1.0: 15 pts (GARP) | 1.0 < PEG ≤ 1.5: 10 pts | 1.5 < PEG ≤ 2.0: 5 pts | >2.0 or Neg: 0 pts" },
+                    { factor: "Interest Coverage", weight: "Max 15 pts", rule: "≥10x: 15 pts | ≥5x: 11 pts | ≥3x: 7 pts | ≥1.5x: 3 pts | <1.5x: 0 pts" },
+                    { factor: "Profit Growth (3Y CAGR)", weight: "Max 10 pts", rule: ">20%: 10 pts | >10%: 7 pts | >0%: 4 pts | Negative: 0 pts" }
+                ],
+                notes: "Total maximum score is 100 points. Automatically computed across audited corporate filings."
+            },
+            roce: {
+                title: "Return on Capital Employed (ROCE %)",
+                icon: "fa-solid fa-chart-line",
+                formula: "EBIT / Capital Employed × 100 = EBIT / (Total Assets − Current Liabilities) × 100",
+                meaning: "If you put ₹100 of total capital into running this business (including equity plus all bank loans), how many rupees of pure operating profit does the company generate back each year? If ROCE is 25%, the business produces ₹25 of profit every year for every ₹100 of capital employed. Warren Buffett and Charlie Munger regard this as the ultimate test of an 'economic moat'—companies that earn high ROCE can reinvest their profits at high rates of return to compound shareholder wealth without needing constant debt or dilution.",
+                benchmarks: [
+                    { label: "> 20%: Elite Moat", class: "chip-good", desc: "Supreme pricing power, high efficiency, and self-funding compounding machines." },
+                    { label: "15% – 20%: Healthy Standard", class: "chip-neutral", desc: "Consistently beats the corporate cost of borrowing (typically 8–10% in India)." },
+                    { label: "< 10%: Capital Destroyer", class: "chip-risk", desc: "Earns less than bank fixed deposits or corporate loan rates; capital is being eroded." }
+                ],
+                howToRead: "Compare ROCE against industry peers. A company that consistently maintains ROCE above 20% over 5 consecutive years is almost always a superior long-term wealth generator."
+            },
+            debtEquity: {
+                title: "Debt to Equity Ratio (D/E)",
+                icon: "fa-solid fa-scale-balanced",
+                formula: "Total Debt (Short-Term + Long-Term Borrowings) / Total Shareholders' Equity",
+                meaning: "How much borrowed money (bank loans, bonds) is the company using compared to the shareholders' own equity? A Debt/Equity of 0.2 means the company has only ₹20 of debt for every ₹100 of net worth. High debt acts like a heavy personal loan: when times are good, profits look magnified, but during an economic downturn or interest rate spike, loan interest and principal must still be paid, which can push a leveraged company into bankruptcy.",
+                benchmarks: [
+                    { label: "0.0 – 0.3: Virtually Debt-Free", class: "chip-good", desc: "Bulletproof balance sheet. Immune to interest rate hikes and banking freezes." },
+                    { label: "0.3 – 0.8: Moderate Leverage", class: "chip-neutral", desc: "Manageable debt typical for asset-heavy manufacturing, automotive, or infrastructure." },
+                    { label: "> 1.0: High Solvency Risk", class: "chip-risk", desc: "Lenders have supplied more capital than shareholders; highly vulnerable to credit shocks." }
+                ],
+                howToRead: "For non-financial investors, companies with D/E below 0.3 provide peace of mind. Note: Financial institutions and banks naturally operate at higher leverage because customer savings deposits are counted as debt."
+            },
+            netMargin: {
+                title: "Net Profit Margin (%)",
+                icon: "fa-solid fa-percent",
+                formula: "(Net Profit After Tax / Total Revenue) × 100",
+                meaning: "Out of every ₹100 in total sales revenue the company generates, how many rupees actually drop down to the bottom line as pure 'take-home' profit after paying for raw materials, employee wages, electricity, interest on loans, and government taxes? A 20% margin means the company keeps ₹20 as net profit for every ₹100 sold. High margins signify strong 'pricing power'—customers value the brand and products so much that the company can raise prices without losing sales, protecting it against inflation.",
+                benchmarks: [
+                    { label: "> 15%: High Pricing Power", class: "chip-good", desc: "Top software leaders, consumer FMCG monopolies, pharmaceuticals, and specialty leaders." },
+                    { label: "8% – 15%: Solid Standard", class: "chip-neutral", desc: "Well-managed automotive, engineering, and consumer retail businesses." },
+                    { label: "< 5%: Razor-Thin Margin", class: "chip-risk", desc: "Vulnerable to raw material spikes; one bad quarter or cost inflation can wipe out all profit." }
+                ],
+                howToRead: "Watch the 5-year trend in the stock detail drawer. Expanding net margins indicate growing competitive advantage and brand pricing power."
+            },
+            piotroski: {
+                title: "Piotroski F-Score (0–9 Accounting Checklist)",
+                icon: "fa-solid fa-list-check",
+                formula: "9-Point Fundamental Quality Checklist (Devised by Stanford Prof. Joseph Piotroski)",
+                meaning: "Instead of blindly trusting company-reported profits, the Piotroski Score runs a strict 9-point audit across profitability, financial leverage, and operational efficiency. Every passed test adds 1 point. A high score of 8 or 9 proves that reported profits are backed by genuine cash collected from customers, debt is decreasing, and the business is running more efficiently year-over-year without diluting shareholders.",
+                benchmarks: [
+                    { label: "8 – 9: Top Financial Health", class: "chip-good", desc: "Superior accounting quality, expanding cash flows, and strengthening balance sheet." },
+                    { label: "5 – 7: Average / Stable", class: "chip-neutral", desc: "Typical healthy business with steady, standard operations." },
+                    { label: "0 – 4: Financially Weak", class: "chip-risk", desc: "Warning signals of earnings quality deterioration or rising financial distress." }
+                ],
+                checklist: [
+                    "1. Positive Net Income (+1 pt)",
+                    "2. Positive Operating Cash Flow (+1 pt)",
+                    "3. Cash Flow from Operations > Net Income (Real Cash vs Accounting Accruals) (+1 pt)",
+                    "4. Higher Return on Assets (ROA) than previous year (+1 pt)",
+                    "5. Lower Long-Term Debt Ratio than previous year (+1 pt)",
+                    "6. Higher Current Ratio (Short-Term Liquidity) than previous year (+1 pt)",
+                    "7. No New Shares Issued (Zero Share Dilution) (+1 pt)",
+                    "8. Higher Gross Margin than previous year (+1 pt)",
+                    "9. Higher Asset Turnover Ratio (Sales / Assets) than previous year (+1 pt)"
+                ]
+            },
+            peg: {
+                title: "Price/Earnings to Growth (PEG Ratio)",
+                icon: "fa-solid fa-calculator",
+                formula: "Trailing or Forward P/E Ratio / Annual Earnings Growth Rate (%) = P/E / Growth",
+                meaning: "Created by legendary Fidelity Magellan investor Peter Lynch. A normal P/E ratio only tells you if a stock looks cheap or expensive today, but ignores how fast profits are growing! A company with a high P/E of 30 that is growing profits at 30% per year has a PEG of 1.0 (fairly priced). But a 'cheap' P/E 15 stock growing at only 3% has a PEG of 5.0 (overpriced!). PEG answers the question: 'Am I paying a fair price for this company's actual growth?'",
+                benchmarks: [
+                    { label: "< 1.0: Undervalued vs Growth (GARP)", class: "chip-good", desc: "Growth at a Reasonable Price. The stock is cheap relative to its earnings expansion rate." },
+                    { label: "1.0 – 1.5: Fair Value", class: "chip-neutral", desc: "Growth is accurately priced into the current stock quotation." },
+                    { label: "> 2.0 or Negative: Overvalued / Shrinking", class: "chip-risk", desc: "Expensive relative to growth, or earnings are currently contracting." }
+                ],
+                fallbackMethod: "Intelligent Fallback Calculation:\nWhen Yahoo Finance does not provide Wall Street consensus estimates (very common for Indian stocks), TradeKriya automatically calculates an intelligent fallback:\n• Tier 1 Fallback: Trailing P/E ÷ Latest YoY Quarterly Net Income Growth\n• Tier 2 Fallback: Trailing P/E ÷ 2-Year Audited Net Profit CAGR\nStocks evaluated via the fallback method display an asterisk (*) in tables, with full calculation notes shown in the detail drawer."
+            },
+            interestCoverage: {
+                title: "Interest Coverage Ratio",
+                icon: "fa-solid fa-shield-halved",
+                formula: "EBIT (Operating Profit) / Annual Interest Expense",
+                meaning: "How comfortably can the company pay the interest due on its borrowings from its everyday operating profits? If EBIT is ₹1,000 Cr and interest is ₹100 Cr, interest coverage is 10x—the company earns 10 times more than what it owes in interest. A high coverage ratio ensures that even if sales plunge during a recession, the company will have no trouble paying its bank loans.",
+                benchmarks: [
+                    { label: "≥ 5.0x: Very Safe", class: "chip-good", desc: "Ample earnings cushion to cover interest obligations even during market crashes." },
+                    { label: "2.5x – 5.0x: Adequate", class: "chip-neutral", desc: "Standard debt coverage for capital-intensive sectors." },
+                    { label: "< 1.5x: Danger Zone", class: "chip-risk", desc: "Company struggles to cover interest; high debt distress and solvency risk." }
+                ]
+            },
+            marketCap: {
+                title: "Market Capitalization (Market Cap ₹ Cr)",
+                icon: "fa-solid fa-coins",
+                formula: "Current Share Price × Total Outstanding Shares",
+                meaning: "The total market price tag of the entire company if you purchased 100% of all its shares. In India, companies with market caps above ₹20,000 Cr are Large Cap (stable, liquid blue chips), ₹5,000–₹20,000 Cr are Mid Cap (strong growth potential), and below ₹5,000 Cr are Small Cap (higher volatility and risk)."
+            },
+            netProfit: {
+                title: "Net Profit / Profit After Tax (PAT ₹ Cr)",
+                icon: "fa-solid fa-arrow-trend-up",
+                formula: "Total Revenue − All Operating Costs − Depreciation − Interest − Corporate Taxes",
+                meaning: "The final 'take-home' net earnings that belong entirely to shareholders. This profit can be paid out directly to you as cash dividends, or reinvested back into the business to build new factories, fund R&D, and compound future earnings."
+            },
+            ebit: {
+                title: "EBIT / Operating Profit (₹ Cr)",
+                icon: "fa-solid fa-briefcase",
+                formula: "Earnings Before Interest and Taxes = Total Revenue − Operating Costs",
+                meaning: "The pure operational earnings generated by the business before taking into account how much debt it carries (interest) or what taxes it pays. It allows fair, apples-to-apples comparison between competing companies in the same industry."
+            }
+        };
+
+        window.showMetricHelpModal = function(metricKey) {
+            const modal = document.getElementById('metric-help-modal');
+            const iconEl = document.getElementById('modal-metric-icon');
+            const titleEl = document.getElementById('modal-metric-title');
+            const bodyEl = document.getElementById('modal-metric-body');
+
+            if (!modal || !bodyEl) return;
+
+            const info = METRIC_GUIDE_DATA[metricKey] || {
+                title: metricKey,
+                icon: "fa-solid fa-circle-question",
+                formula: "N/A",
+                meaning: "Detailed metric description not found."
+            };
+
+            if (iconEl) iconEl.className = info.icon || 'fa-solid fa-circle-question';
+            if (titleEl) titleEl.innerText = info.title;
+
+            let bodyHtml = `
+                <div>
+                    <div style="font-size: 10.5px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; margin-bottom: 4px;">Formula &amp; Definition</div>
+                    <div class="metric-formula-badge" style="display: block; padding: 6px 10px; font-size: 11px; line-height: 1.4; word-break: break-word;">${info.formula}</div>
+                </div>
+
+                <div>
+                    <div style="font-size: 10.5px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; margin-bottom: 4px;">💡 What it Means for Non-Financial Users</div>
+                    <div class="metric-meaning-box" style="font-size: 12px; padding: 10px 12px;">
+                        ${info.meaning}
+                    </div>
+                </div>
+            `;
+
+            if (info.benchmarks && info.benchmarks.length > 0) {
+                bodyHtml += `
+                    <div>
+                        <div style="font-size: 10.5px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; margin-bottom: 6px;">Benchmark Thresholds &amp; Interpretation</div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            ${info.benchmarks.map(b => `
+                                <div style="display: flex; align-items: baseline; gap: 8px; font-size: 11.5px; background: rgba(255,255,255,0.02); padding: 5px 8px; border-radius: 4px;">
+                                    <span class="benchmark-chip ${b.class}" style="white-space: nowrap; font-size: 10.5px;">${b.label}</span>
+                                    <span style="color: var(--text-secondary); line-height: 1.35;">${b.desc}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (info.scoringTable) {
+                bodyHtml += `
+                    <div>
+                        <div style="font-size: 10.5px; text-transform: uppercase; color: #818cf8; font-weight: 700; margin-bottom: 6px;">
+                            <i class="fa-solid fa-list-check" style="margin-right: 4px;"></i> 6-Factor Magic Scoring Criteria Breakdown
+                        </div>
+                        <div style="overflow-x: auto; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: left;">
+                                <thead style="background: rgba(99, 102, 241, 0.1); color: var(--text-primary);">
+                                    <tr>
+                                        <th style="padding: 6px 10px;">Factor</th>
+                                        <th style="padding: 6px 10px;">Weight</th>
+                                        <th style="padding: 6px 10px;">Scoring Rules</th>
+                                    </tr>
+                                </thead>
+                                <tbody style="color: var(--text-secondary);">
+                                    ${info.scoringTable.map((r, idx) => `
+                                        <tr style="border-top: 1px solid rgba(255,255,255,0.05); background: ${idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)'};">
+                                            <td style="padding: 6px 10px; font-weight: 600; color: var(--text-primary);">${r.factor}</td>
+                                            <td style="padding: 6px 10px; color: #818cf8; font-weight: 600; white-space: nowrap;">${r.weight}</td>
+                                            <td style="padding: 6px 10px; font-size: 10.5px;">${r.rule}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        ${info.notes ? `<div style="font-size: 10px; color: var(--text-muted); margin-top: 4px; font-style: italic;"><i class="fa-solid fa-info-circle"></i> ${info.notes}</div>` : ''}
+                    </div>
+                `;
+            }
+
+            if (info.checklist) {
+                bodyHtml += `
+                    <div>
+                        <div style="font-size: 10.5px; text-transform: uppercase; color: #60a5fa; font-weight: 700; margin-bottom: 6px;">
+                            <i class="fa-solid fa-square-check" style="margin-right: 4px;"></i> 9-Point Piotroski Audit Criteria
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 4px; font-size: 11px; color: var(--text-secondary); background: rgba(0,0,0,0.25); padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
+                            ${info.checklist.map(item => `
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-check" style="color: #34d399; font-size: 10px;"></i>
+                                    <span>${item}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (info.fallbackMethod) {
+                bodyHtml += `
+                    <div style="background: rgba(245, 158, 11, 0.08); border: 1px dashed rgba(245, 158, 11, 0.3); border-radius: 6px; padding: 10px; font-size: 11px; color: #fbbf24; line-height: 1.45;">
+                        <div style="font-weight: 700; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                            <i class="fa-solid fa-calculator"></i> ${info.fallbackMethod.split('\n')[0]}
+                        </div>
+                        <div style="color: var(--text-secondary); font-size: 11px; white-space: pre-line;">
+                            ${info.fallbackMethod.split('\n').slice(1).join('\n')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (info.howToRead) {
+                bodyHtml += `
+                    <div style="font-size: 11px; color: var(--text-muted); line-height: 1.4; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px;">
+                        <strong>💡 Practical Reading Tip:</strong> ${info.howToRead}
+                    </div>
+                `;
+            }
+
+            bodyEl.innerHTML = bodyHtml;
+            modal.style.display = 'flex';
+        };
+
+        // Collapsible Fundamental Guide Accordion Toggling
+        const btnToggleGuide = document.getElementById('btn-toggle-fundamental-guide');
+        const guideContent = document.getElementById('admin-fundamental-guide-content');
+        const guideChevron = document.getElementById('fundamental-guide-chevron');
+        const guideStatusText = document.getElementById('fundamental-guide-status-text');
+
+        if (btnToggleGuide && guideContent) {
+            btnToggleGuide.addEventListener('click', () => {
+                const isHidden = guideContent.style.display === 'none';
+                guideContent.style.display = isHidden ? 'block' : 'none';
+                if (guideChevron) {
+                    guideChevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+                }
+                if (guideStatusText) {
+                    guideStatusText.innerText = isHidden ? 'Click to collapse guide' : 'Click to expand guide';
+                }
+                localStorage.setItem('admin_fundamental_guide_expanded', isHidden ? 'true' : 'false');
+            });
+
+            // Restore saved accordion state
+            if (localStorage.getItem('admin_fundamental_guide_expanded') === 'true') {
+                guideContent.style.display = 'block';
+                if (guideChevron) guideChevron.style.transform = 'rotate(180deg)';
+                if (guideStatusText) guideStatusText.innerText = 'Click to collapse guide';
+            }
+        }
+
+        // Metric Help Modal Dismiss Handlers
+        const metricHelpModal = document.getElementById('metric-help-modal');
+        const btnCloseMetricHelp = document.getElementById('btn-close-metric-help');
+        if (btnCloseMetricHelp && metricHelpModal) {
+            btnCloseMetricHelp.addEventListener('click', () => {
+                metricHelpModal.style.display = 'none';
+            });
+        }
+        if (metricHelpModal) {
+            metricHelpModal.addEventListener('click', (e) => {
+                if (e.target === metricHelpModal) {
+                    metricHelpModal.style.display = 'none';
+                }
+            });
+        }
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const m = document.getElementById('metric-help-modal');
+                if (m && m.style.display !== 'none') {
+                    m.style.display = 'none';
+                }
+            }
+        });
+
         async function renderAdvancedStrategyDashboard() {
             const absBody = document.getElementById('abs-ranking-table-body');
             const bearBody = document.getElementById('bearish-exh-table-body');
@@ -4667,7 +4972,7 @@ const App = (function() {
         // 5. Update header sort indicators
         document.querySelectorAll('#admin-stats-table th.stats-th.sortable').forEach(th => {
             const field = th.getAttribute('data-sort');
-            const icon = th.querySelector('i');
+            const icon = th.querySelector('i.fa-sort, i.fa-sort-up, i.fa-sort-down');
             if (icon) {
                 if (adminStatsSortField === field) {
                     icon.className = adminStatsSortDirection === 'asc' ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down';

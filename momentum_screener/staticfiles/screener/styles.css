@@ -1814,3 +1814,229 @@ body.fullscreen-stats-active #admin-stats-table-container {
     transform: translateY(-1px);
     box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
 }
+
+/* ==========================================================================
+   Collapsible Tooltips & Fundamental Guide Styles
+   ========================================================================== */
+
+.btn-metric-help {
+    background: transparent;
+    border: none;
+    color: #818cf8;
+    cursor: pointer;
+    padding: 0 3px;
+    font-size: 11px;
+    opacity: 0.75;
+    transition: all 0.15s ease;
+    vertical-align: middle;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-metric-help:hover {
+    opacity: 1;
+    transform: scale(1.2);
+    color: #c7d2fe;
+}
+
+.admin-guide-accordion {
+    margin-bottom: 12px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--border-radius-sm);
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+
+.admin-guide-accordion:hover {
+    border-color: rgba(99, 102, 241, 0.25);
+}
+
+.admin-guide-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 14px;
+    cursor: pointer;
+    background: rgba(99, 102, 241, 0.07);
+    user-select: none;
+    transition: background 0.2s;
+}
+
+.admin-guide-header:hover {
+    background: rgba(99, 102, 241, 0.12);
+}
+
+.admin-guide-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 12px;
+    padding: 14px;
+}
+
+.metric-guide-card {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 6px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.metric-guide-card:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(99, 102, 241, 0.3);
+    transform: translateY(-1px);
+}
+
+.metric-guide-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 6px;
+}
+
+.metric-guide-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.metric-formula-badge {
+    font-size: 10px;
+    font-family: var(--font-mono, monospace);
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #94a3b8;
+}
+
+.metric-meaning-box {
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    line-height: 1.45;
+    background: rgba(99, 102, 241, 0.04);
+    border-left: 2px solid #818cf8;
+    padding: 6px 10px;
+    border-radius: 0 4px 4px 0;
+}
+
+.metric-benchmark-bar {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-size: 10.5px;
+    margin-top: 2px;
+}
+
+.benchmark-chip {
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.benchmark-chip.chip-good {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.benchmark-chip.chip-neutral {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.benchmark-chip.chip-risk {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.metric-collapsible-details {
+    margin-top: 4px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.07);
+    padding-top: 6px;
+}
+
+.metric-details-toggle {
+    font-size: 10.5px;
+    color: #818cf8;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 600;
+}
+
+.metric-details-toggle:hover {
+    text-decoration: underline;
+    color: #a5b4fc;
+}
+
+/* Floating Metric Help Modal */
+.metric-help-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+    animation: fadeIn 0.15s ease-out;
+}
+
+.metric-help-modal-card {
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--border-radius-md);
+    width: 100%;
+    max-width: 520px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+    animation: scaleUp 0.18s ease-out;
+}
+
+@keyframes scaleUp {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.metric-help-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    background: rgba(99, 102, 241, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.metric-help-modal-body {
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 75vh;
+    overflow-y: auto;
+}
+
