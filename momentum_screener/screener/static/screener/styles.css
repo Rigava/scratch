@@ -906,7 +906,7 @@ td span.symbol-name {
     right: 0;
     bottom: 0;
     left: 0;
-    z-index: 100010;
+    z-index: 200000 !important;
     background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(6px);
     display: flex;
@@ -1996,24 +1996,26 @@ body.fullscreen-stats-active #admin-stats-table-container {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(6px);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 10000;
+    z-index: 200000 !important;
     padding: 20px;
     animation: fadeIn 0.15s ease-out;
 }
 
 .metric-help-modal-card {
     background: #0f172a;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: var(--border-radius-md);
     width: 100%;
     max-width: 520px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
     overflow: hidden;
+    position: relative;
+    z-index: 200001 !important;
     animation: scaleUp 0.18s ease-out;
 }
 
@@ -2214,5 +2216,69 @@ body.fullscreen-stats-active #admin-stats-table-container {
 
 .grid-filter-select:focus {
     border-color: var(--accent-indigo);
+}
+
+/* Fundamental Collapsible Sections */
+.fundamental-collapsible-box {
+    margin-top: 14px;
+    background: rgba(15, 23, 42, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--border-radius-sm);
+    overflow: hidden;
+    transition: border-color 0.2s ease;
+}
+
+.fundamental-collapsible-box:hover {
+    border-color: rgba(99, 102, 241, 0.35);
+}
+
+.fundamental-collapsible-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.03);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s ease;
+}
+
+.fundamental-collapsible-header:hover {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.fundamental-collapsible-header h5 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.fundamental-collapsible-icon {
+    font-size: 11px;
+    color: var(--text-muted);
+    transition: transform 0.25s ease;
+}
+
+.fundamental-collapsible-box.collapsed .fundamental-collapsible-icon {
+    transform: rotate(-90deg);
+}
+
+.fundamental-collapsible-body {
+    padding: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.fundamental-collapsible-box.collapsed .fundamental-collapsible-body {
+    display: none;
+}
+
+.collapse-toggle-hint {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.2px;
 }
 

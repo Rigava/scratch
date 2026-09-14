@@ -58,6 +58,10 @@ class StockFundamentalAdmin(admin.ModelAdmin):
         'sector', 
         'industry', 
         'colored_magic_score', 
+        'colored_macd_signal',
+        'macd_crossover_date',
+        'colored_rsi_signal',
+        'rsi_crossover_date',
         'piotroski_score', 
         'formatted_roce', 
         'formatted_debt_equity', 
@@ -67,8 +71,8 @@ class StockFundamentalAdmin(admin.ModelAdmin):
         'peg_is_fallback', 
         'last_updated'
     )
-    search_fields = ('ticker', 'company_name', 'sector', 'industry')
-    list_filter = ('sector', 'industry', 'peg_is_fallback')
+    search_fields = ('ticker', 'company_name', 'sector', 'industry', 'macd_signal', 'rsi_signal')
+    list_filter = ('sector', 'industry', 'macd_signal', 'rsi_signal', 'peg_is_fallback')
     ordering = ('-magic_score', 'ticker')
     readonly_fields = ('last_updated',)
     list_per_page = 25
@@ -85,6 +89,12 @@ class StockFundamentalAdmin(admin.ModelAdmin):
                 ('magic_score', 'piotroski_score'),
                 ('roce_pct', 'debt_equity'),
                 ('net_margin_pct', 'peg_ratio'),
+            )
+        }),
+        ('Technical Momentum & Crossovers', {
+            'fields': (
+                ('macd_signal', 'macd_crossover_date'),
+                ('rsi_signal', 'rsi_crossover_date'),
             )
         }),
         ('PEG Valuation & Fallback Assumptions', {
@@ -108,6 +118,42 @@ class StockFundamentalAdmin(admin.ModelAdmin):
             )
         }),
     )
+
+    def colored_macd_signal(self, obj):
+        sig = obj.macd_signal or "Neutral"
+        if "Bullish" in sig:
+            color = "#10b981"
+            bg = "rgba(16, 185, 129, 0.15)"
+        elif "Bearish" in sig:
+            color = "#ef4444"
+            bg = "rgba(239, 68, 68, 0.15)"
+        else:
+            color = "#64748b"
+            bg = "rgba(100, 116, 139, 0.15)"
+        return format_html(
+            '<span style="display:inline-block; font-weight:600; color:{}; background:{}; padding:2px 7px; border-radius:4px; font-size:11px; white-space:nowrap;">{}</span>',
+            color, bg, sig
+        )
+    colored_macd_signal.short_description = 'MACD Signal'
+    colored_macd_signal.admin_order_field = 'macd_signal'
+
+    def colored_rsi_signal(self, obj):
+        sig = obj.rsi_signal or "Neutral"
+        if "Bullish" in sig:
+            color = "#10b981"
+            bg = "rgba(16, 185, 129, 0.15)"
+        elif "Bearish" in sig:
+            color = "#ef4444"
+            bg = "rgba(239, 68, 68, 0.15)"
+        else:
+            color = "#64748b"
+            bg = "rgba(100, 116, 139, 0.15)"
+        return format_html(
+            '<span style="display:inline-block; font-weight:600; color:{}; background:{}; padding:2px 7px; border-radius:4px; font-size:11px; white-space:nowrap;">{}</span>',
+            color, bg, sig
+        )
+    colored_rsi_signal.short_description = 'RSI Signal'
+    colored_rsi_signal.admin_order_field = 'rsi_signal'
 
     def colored_magic_score(self, obj):
         score = obj.magic_score

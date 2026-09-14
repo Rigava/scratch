@@ -1428,6 +1428,10 @@
                                     <label for="sel-stats-momentum" style="font-size: 10.5px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Signal:</label>
                                     <select id="sel-stats-momentum" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); border-radius: var(--border-radius-sm); padding: 5px 8px; font-size: 11.5px; outline: none; cursor: pointer; height: 28px;">
                                         <option value="all" selected>All Signals</option>
+                                        <option value="macd-bullish">🟢 MACD Bullish Crossover</option>
+                                        <option value="macd-bearish">🔴 MACD Bearish Crossover</option>
+                                        <option value="rsi-bullish">🟢 RSI Bullish Crossover</option>
+                                        <option value="rsi-bearish">🔴 RSI Bearish Crossover</option>
                                         <option value="magic-elite">🌟 Elite Magic Score (80+)</option>
                                         <option value="magic-high">🟢 High Magic Score (65+)</option>
                                         <option value="low-debt">📉 Low Debt (D/E &le; 0.3)</option>
@@ -1644,6 +1648,12 @@
                                         <th class="stats-th sortable" data-sort="pctChange" style="text-align: right;">1D Change <i class="fa-solid fa-sort"></i></th>
                                         <th class="stats-th sortable" data-sort="pctChange7d" style="text-align: right;">7D Return <i class="fa-solid fa-sort"></i></th>
                                         <th class="stats-th sortable" data-sort="rsi" style="text-align: right;">RSI (14) <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="macdCross" style="text-align: center; min-width: 125px;">
+                                            MACD Crossover <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('macdCross'); event.stopPropagation();" title="12/26/9 MACD crossover status &amp; latest crossover date"><i class="fa-solid fa-circle-question"></i></button> <i class="fa-solid fa-sort"></i>
+                                        </th>
+                                        <th class="stats-th sortable" data-sort="rsiCross" style="text-align: center; min-width: 125px;">
+                                            RSI Crossover <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('rsiCross'); event.stopPropagation();" title="14-period RSI / 9-SMA signal line crossover &amp; latest date"><i class="fa-solid fa-circle-question"></i></button> <i class="fa-solid fa-sort"></i>
+                                        </th>
                                         <th class="stats-th sortable" data-sort="adx" style="text-align: right;">ADX (14) <i class="fa-solid fa-sort"></i></th>
                                         <th class="stats-th sortable" data-sort="drawdown" style="text-align: right;">1Y Drawdown <i class="fa-solid fa-sort"></i></th>
                                         <th class="stats-th sortable" data-sort="sma50" style="text-align: right;">50 SMA (₹) <i class="fa-solid fa-sort"></i></th>
@@ -1662,7 +1672,7 @@
                                 </thead>
                                 <tbody id="admin-stats-tbody">
                                     <tr>
-                                        <td colspan="30" style="text-align: center; color: var(--text-secondary); font-size: 12px; padding: 25px;">
+                                        <td colspan="32" style="text-align: center; color: var(--text-secondary); font-size: 12px; padding: 25px;">
                                             Loading statistical data...
                                         </td>
                                     </tr>
@@ -1750,6 +1760,22 @@
                         </div>
                     </div>
 
+                    <!-- Charts Area -->
+                    <div class="charts-container" style="margin-top: 20px;">
+                        <div class="chart-wrapper">
+                            <h4>Price Trend & Moving Averages</h4>
+                            <div class="canvas-holder">
+                                <canvas id="chart-price"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <h4>Momentum Indicator (RSI & ADX)</h4>
+                            <div class="canvas-holder">
+                                <canvas id="chart-indicators"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Company Fundamentals & 5-Year Historical Trends Card -->
                     <div id="detail-fundamentals-container" class="fundamentals-summary-section" style="margin-top: 20px;">
                         <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--border-radius-md); padding: 16px; font-family: var(--font-stack);">
@@ -1765,6 +1791,9 @@
                                     <button id="btn-refresh-fundamentals" class="guide-btn" title="Refresh fundamental metrics from Yahoo Finance" style="font-size: 11px; padding: 4px 8px; border-radius: 4px; cursor: pointer; display: none;">
                                         <i class="fa-solid fa-arrows-rotate"></i>
                                     </button>
+                                    <button type="button" id="btn-toggle-fundamentals-card" class="guide-btn" onclick="window.toggleFundamentalCard()" title="Collapse or expand fundamentals section" style="font-size: 11px; padding: 4px 8px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                                        <span id="text-toggle-fundamentals">Collapse</span> <i id="icon-toggle-fundamentals" class="fa-solid fa-chevron-up"></i>
+                                    </button>
                                 </div>
                             </div>
 
@@ -1773,22 +1802,6 @@
                                 <div style="text-align: center; padding: 18px; color: var(--text-secondary); font-size: 12px;">
                                     <i class="fa-solid fa-circle-notch fa-spin" style="margin-right: 6px; color: var(--accent-indigo);"></i> Loading fundamentals...
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Charts Area -->
-                    <div class="charts-container">
-                        <div class="chart-wrapper">
-                            <h4>Price Trend & Moving Averages</h4>
-                            <div class="canvas-holder">
-                                <canvas id="chart-price"></canvas>
-                            </div>
-                        </div>
-                        <div class="chart-wrapper">
-                            <h4>Momentum Indicator (RSI & ADX)</h4>
-                            <div class="canvas-holder">
-                                <canvas id="chart-indicators"></canvas>
                             </div>
                         </div>
                     </div>
@@ -2248,7 +2261,7 @@
     </section>
 
     <!-- Fundamental Metric Help & Criteria Modal -->
-    <div id="metric-help-modal" class="metric-help-modal-overlay" style="display: none;">
+    <div id="metric-help-modal" class="metric-help-modal-overlay" style="display: none; z-index: 200000;">
         <div class="metric-help-modal-card">
             <div class="metric-help-modal-header">
                 <div style="display: flex; align-items: center; gap: 8px;">
@@ -2264,7 +2277,7 @@
     </div>
 
     <!-- Admin Edit Stock Sector & Sub-Industry Modal -->
-    <div id="admin-edit-sector-modal" class="modal-overlay hidden" style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 9999; padding: 15px;">
+    <div id="admin-edit-sector-modal" class="modal-overlay hidden" style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 200000; padding: 15px;">
         <div class="glass-card" style="width: 100%; max-width: 480px; padding: 22px; border-radius: var(--border-radius-md); border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 20px 40px rgba(0,0,0,0.5); background: var(--bg-card);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                 <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">

@@ -165,6 +165,13 @@ class StockFundamental(models.Model):
     peg_note = models.CharField(max_length=300, blank=True, default='')
     score_breakdown_json = models.TextField(default='{}')
     yearly_trends_json = models.TextField(default='[]')
+    
+    # Technical Momentum & Crossover Signals
+    macd_signal = models.CharField(max_length=30, blank=True, default='Neutral', db_index=True)
+    macd_crossover_date = models.CharField(max_length=15, blank=True, default='')
+    rsi_signal = models.CharField(max_length=30, blank=True, default='Neutral', db_index=True)
+    rsi_crossover_date = models.CharField(max_length=15, blank=True, default='')
+
     last_updated = models.DateTimeField(auto_now=True)
 
     class Meta:

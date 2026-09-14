@@ -39,6 +39,177 @@ def get_row_data(df, candidate_names):
             return df.loc[name]
     return None
 
+def compute_technical_crossovers_from_candles(candles):
+    """
+    Computes MACD (12, 26, 9) and RSI (14, 9-SMA) crossover signals and their latest dates.
+    candles can be a list of lists [date, open, high, low, close, volume] or list of dicts.
+    """
+    if not candles or len(candles) < 30:
+        return {
+            "macd_signal": "Neutral",
+            "macd_crossover_date": "",
+            "rsi_signal": "Neutral",
+            "rsi_crossover_date": "",
+            "latest_rsi": None,
+            "latest_macd": None,
+            "latest_signal": None,
+        }
+
+    dates = []
+    closes = []
+    for c in candles:
+        if isinstance(c, (list, tuple)):
+            dates.append(str(c[0]).split('T')[0])
+            closes.append(float(c[4]))
+        elif isinstance(c, dict):
+            dates.append(str(c.get('date', '')).split('T')[0])
+            closes.append(float(c.get('close', 0.0)))
+
+    n = len(closes)
+    if n < 30:
+        return {
+            "macd_signal": "Neutral",
+            "macd_crossover_date": "",
+            "rsi_signal": "Neutral",
+            "rsi_crossover_date": "",
+            "latest_rsi": None,
+            "latest_macd": None,
+            "latest_signal": None,
+        }
+
+    def _calc_ema(series, period):
+        res = [None] * len(series)
+        if len(series) < period:
+            return res
+        mult = 2.0 / (period + 1.0)
+        res[period - 1] = sum(series[:period]) / period
+        for i in range(period, len(series)):
+            res[i] = (series[i] - res[i - 1]) * mult + res[i - 1]
+        return res
+
+    def _calc_sma(series, period):
+        res = [None] * len(series)
+        for i in range(period - 1, len(series)):
+            sub = [v for v in series[i - period + 1 : i + 1] if v is not None]
+            if len(sub) == period:
+                res[i] = sum(sub) / period
+        return res
+
+    # 1. MACD
+    ema12 = _calc_ema(closes, 12)
+    ema26 = _calc_ema(closes, 26)
+    macd_line = [None] * n
+    for i in range(n):
+        if ema12[i] is not None and ema26[i] is not None:
+            macd_line[i] = ema12[i] - ema26[i]
+
+    valid_indices = [i for i, v in enumerate(macd_line) if v is not None]
+    valid_values = [macd_line[i] for i in valid_indices]
+    sig_sub = _calc_ema(valid_values, 9)
+    signal_line = [None] * n
+    for idx_in_sub, orig_idx in enumerate(valid_indices):
+        signal_line[orig_idx] = sig_sub[idx_in_sub]
+
+    macd_signal_type = "Neutral"
+    macd_crossover_date = ""
+    for i in range(n - 1, 0, -1):
+        if macd_line[i] is not None and signal_line[i] is not None and macd_line[i-1] is not None and signal_line[i-1] is not None:
+            if macd_line[i-1] <= signal_line[i-1] and macd_line[i] > signal_line[i]:
+                macd_signal_type = "Bullish Crossover"
+                macd_crossover_date = dates[i]
+                break
+            elif macd_line[i-1] >= signal_line[i-1] and macd_line[i] < signal_line[i]:
+                macd_signal_type = "Bearish Crossover"
+                macd_crossover_date = dates[i]
+                break
+
+    if macd_signal_type == "Neutral" and macd_line[-1] is not None and signal_line[-1] is not None:
+        macd_signal_type = "Bullish" if macd_line[-1] > signal_line[-1] else "Bearish"
+        macd_crossover_date = dates[-1]
+
+    # 2. RSI (14)
+    gains = [0.0] * n
+    losses = [0.0] * n
+    for i in range(1, n):
+        diff = closes[i] - closes[i - 1]
+        if diff > 0:
+            gains[i] = diff
+        else:
+            losses[i] = -diff
+    rsi_vals = [None] * n
+    if n > 14:
+        avg_gain = sum(gains[1 : 15]) / 14.0
+        avg_loss = sum(losses[1 : 15]) / 14.0
+        rsi_vals[14] = 100.0 if avg_loss == 0 else 100.0 - (100.0 / (1.0 + avg_gain / avg_loss))
+        for i in range(15, n):
+            avg_gain = (avg_gain * 13.0 + gains[i]) / 14.0
+            avg_loss = (avg_loss * 13.0 + losses[i]) / 14.0
+            rsi_vals[i] = 100.0 if avg_loss == 0 else 100.0 - (100.0 / (1.0 + avg_gain / avg_loss))
+
+    rsi_sma9 = _calc_sma(rsi_vals, 9)
+
+    rsi_signal_type = "Neutral"
+    rsi_crossover_date = ""
+    for i in range(n - 1, 0, -1):
+        if rsi_vals[i] is not None and rsi_sma9[i] is not None and rsi_vals[i-1] is not None and rsi_sma9[i-1] is not None:
+            if rsi_vals[i-1] <= rsi_sma9[i-1] and rsi_vals[i] > rsi_sma9[i]:
+                rsi_signal_type = "Bullish Crossover"
+                rsi_crossover_date = dates[i]
+                break
+            elif rsi_vals[i-1] >= rsi_sma9[i-1] and rsi_vals[i] < rsi_sma9[i]:
+                rsi_signal_type = "Bearish Crossover"
+                rsi_crossover_date = dates[i]
+                break
+
+    if rsi_signal_type == "Neutral" and rsi_vals[-1] is not None:
+        rsi_signal_type = "Bullish" if rsi_vals[-1] >= 50 else "Bearish"
+        rsi_crossover_date = dates[-1]
+
+    return {
+        "macd_signal": macd_signal_type,
+        "macd_crossover_date": macd_crossover_date,
+        "rsi_signal": rsi_signal_type,
+        "rsi_crossover_date": rsi_crossover_date,
+        "latest_rsi": round(rsi_vals[-1], 2) if rsi_vals[-1] is not None else None,
+        "latest_macd": round(macd_line[-1], 2) if macd_line[-1] is not None else None,
+        "latest_signal": round(signal_line[-1], 2) if signal_line[-1] is not None else None,
+    }
+
+def get_candles_for_ticker(ticker):
+    """Loads historical daily candles from fo_historical_dump.json with yfinance fallback."""
+    import os
+    clean = ticker.strip().upper()
+    dump_path = os.path.join(os.path.dirname(__file__), 'data', 'fo_historical_dump.json')
+    if os.path.exists(dump_path):
+        try:
+            with open(dump_path, 'r', encoding='utf-8') as f:
+                dump_data = json.load(f)
+                if clean in dump_data and len(dump_data[clean]) >= 30:
+                    return dump_data[clean]
+        except Exception:
+            pass
+    # Fallback to yfinance if missing or insufficient
+    try:
+        import yfinance as yf
+        syms = resolve_yahoo_symbol(clean)
+        if syms:
+            hist = yf.Ticker(syms[0]).history(period='2y')
+            if not hist.empty:
+                candles = []
+                for idx, row in hist.iterrows():
+                    candles.append([
+                        idx.strftime('%Y-%m-%d'),
+                        float(row['Open']),
+                        float(row['High']),
+                        float(row['Low']),
+                        float(row['Close']),
+                        int(row['Volume'])
+                    ])
+                return candles
+    except Exception:
+        pass
+    return []
+
 def fetch_and_calculate_fundamentals(ticker):
     """
     Fetches financial statements and quotes via yfinance for a single stock,
@@ -547,6 +718,10 @@ def get_or_fetch_stock_fundamentals(ticker, force_refresh=False, max_age_days=30
                     "interest_coverage": cached.interest_coverage,
                     "yearly_trends": yearly_trends,
                     "score_components": breakdown,
+                    "macd_signal": cached.macd_signal or "Neutral",
+                    "macd_crossover_date": cached.macd_crossover_date or "",
+                    "rsi_signal": cached.rsi_signal or "Neutral",
+                    "rsi_crossover_date": cached.rsi_crossover_date or "",
                     "peers": peer_info["peers"],
                     "sector_medians": peer_info["sector_medians"],
                     "sector_ranks": peer_info["sector_ranks"],
@@ -583,6 +758,10 @@ def get_or_fetch_stock_fundamentals(ticker, force_refresh=False, max_age_days=30
                 "interest_coverage": cached.interest_coverage,
                 "yearly_trends": json.loads(cached.yearly_trends_json),
                 "score_components": json.loads(cached.score_breakdown_json),
+                "macd_signal": cached.macd_signal or "Neutral",
+                "macd_crossover_date": cached.macd_crossover_date or "",
+                "rsi_signal": cached.rsi_signal or "Neutral",
+                "rsi_crossover_date": cached.rsi_crossover_date or "",
                 "peers": peer_info["peers"],
                 "sector_medians": peer_info["sector_medians"],
                 "sector_ranks": peer_info["sector_ranks"],
@@ -594,6 +773,10 @@ def get_or_fetch_stock_fundamentals(ticker, force_refresh=False, max_age_days=30
 
     sector_val = data.get("sector") or tax.get("sector", "Diversified")
     industry_val = data.get("industry") or tax.get("industry", "Diversified Commercial")
+
+    # Compute technical crossover signals from historical candles
+    stock_candles = get_candles_for_ticker(clean_ticker)
+    tech_signals = compute_technical_crossovers_from_candles(stock_candles)
 
     # Save to database
     StockFundamental.objects.update_or_create(
@@ -614,6 +797,10 @@ def get_or_fetch_stock_fundamentals(ticker, force_refresh=False, max_age_days=30
             "ebit_cr": data.get("ebit_cr"),
             "net_profit_cr": data.get("net_profit_cr"),
             "interest_coverage": data.get("interest_coverage"),
+            "macd_signal": tech_signals.get("macd_signal", "Neutral"),
+            "macd_crossover_date": tech_signals.get("macd_crossover_date", ""),
+            "rsi_signal": tech_signals.get("rsi_signal", "Neutral"),
+            "rsi_crossover_date": tech_signals.get("rsi_crossover_date", ""),
             "score_breakdown_json": json.dumps(data.get("score_components", {})),
             "yearly_trends_json": json.dumps(data.get("yearly_trends", [])),
         }
@@ -622,6 +809,10 @@ def get_or_fetch_stock_fundamentals(ticker, force_refresh=False, max_age_days=30
     peer_info = compute_sector_peers_and_ranks(clean_ticker, sector_val)
     data["sector"] = sector_val
     data["industry"] = industry_val
+    data["macd_signal"] = tech_signals.get("macd_signal", "Neutral")
+    data["macd_crossover_date"] = tech_signals.get("macd_crossover_date", "")
+    data["rsi_signal"] = tech_signals.get("rsi_signal", "Neutral")
+    data["rsi_crossover_date"] = tech_signals.get("rsi_crossover_date", "")
     data["peers"] = peer_info["peers"]
     data["sector_medians"] = peer_info["sector_medians"]
     data["sector_ranks"] = peer_info["sector_ranks"]

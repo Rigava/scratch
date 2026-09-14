@@ -451,6 +451,73 @@ const App = (function() {
             }
         }
 
+        // Technical Crossovers: MACD and RSI with latest crossover dates
+        let macdSignal = 'Neutral';
+        let macdCrossoverDate = '';
+        if (macdData.macdLine && macdData.signalLine && candles.length >= 2) {
+            for (let i = candles.length - 1; i >= 1; i--) {
+                const mPrev = macdData.macdLine[i - 1];
+                const sPrev = macdData.signalLine[i - 1];
+                const mCurr = macdData.macdLine[i];
+                const sCurr = macdData.signalLine[i];
+                if (mPrev !== null && sPrev !== null && mCurr !== null && sCurr !== null) {
+                    const prevDiff = mPrev - sPrev;
+                    const currDiff = mCurr - sCurr;
+                    if (prevDiff <= 0 && currDiff > 0) {
+                        macdSignal = 'Bullish Crossover';
+                        const cDate = candles[i].date || candles[i].datetime || '';
+                        macdCrossoverDate = typeof cDate === 'string' ? cDate.split('T')[0].split(' ')[0] : '';
+                        break;
+                    } else if (prevDiff >= 0 && currDiff < 0) {
+                        macdSignal = 'Bearish Crossover';
+                        const cDate = candles[i].date || candles[i].datetime || '';
+                        macdCrossoverDate = typeof cDate === 'string' ? cDate.split('T')[0].split(' ')[0] : '';
+                        break;
+                    }
+                }
+            }
+            if (macdSignal === 'Neutral' && macdData.macdLine[lastIdx] !== null && macdData.signalLine[lastIdx] !== null) {
+                macdSignal = macdData.macdLine[lastIdx] > macdData.signalLine[lastIdx] ? 'Bullish' : 'Bearish';
+            }
+        }
+
+        // RSI Crossover calculation: 14-period RSI vs 9-period SMA of RSI
+        let rsiSignal = 'Neutral';
+        let rsiCrossoverDate = '';
+        if (rsi && rsi.length >= 10 && candles.length >= 2) {
+            const rsiSignalLine = new Array(rsi.length).fill(null);
+            for (let i = 8; i < rsi.length; i++) {
+                const slice = rsi.slice(i - 8, i + 1);
+                if (slice.every(v => v !== null)) {
+                    rsiSignalLine[i] = slice.reduce((a, b) => a + b, 0) / 9;
+                }
+            }
+            for (let i = candles.length - 1; i >= 1; i--) {
+                const rPrev = rsi[i - 1];
+                const sPrev = rsiSignalLine[i - 1];
+                const rCurr = rsi[i];
+                const sCurr = rsiSignalLine[i];
+                if (rPrev !== null && sPrev !== null && rCurr !== null && sCurr !== null) {
+                    const prevDiff = rPrev - sPrev;
+                    const currDiff = rCurr - sCurr;
+                    if (prevDiff <= 0 && currDiff > 0) {
+                        rsiSignal = 'Bullish Crossover';
+                        const cDate = candles[i].date || candles[i].datetime || '';
+                        rsiCrossoverDate = typeof cDate === 'string' ? cDate.split('T')[0].split(' ')[0] : '';
+                        break;
+                    } else if (prevDiff >= 0 && currDiff < 0) {
+                        rsiSignal = 'Bearish Crossover';
+                        const cDate = candles[i].date || candles[i].datetime || '';
+                        rsiCrossoverDate = typeof cDate === 'string' ? cDate.split('T')[0].split(' ')[0] : '';
+                        break;
+                    }
+                }
+            }
+            if (rsiSignal === 'Neutral' && rsi[lastIdx] !== null) {
+                rsiSignal = rsi[lastIdx] >= 50 ? 'Bullish' : 'Bearish';
+            }
+        }
+
         stock.current = {
             price: prices[lastIdx],
             drawdown: drawdown[lastIdx],
@@ -464,6 +531,10 @@ const App = (function() {
             hasMomentumShift,
             hasRsiBuy5d,
             hasRsiSell5d,
+            macdSignal,
+            macdCrossoverDate,
+            rsiSignal,
+            rsiCrossoverDate,
             macdWinRate: macdBacktest.winRate,
             macdTrades: macdBacktest.totalTrades,
             macdAvgPnL: macdBacktest.avgPnL,
@@ -1099,6 +1170,14 @@ const App = (function() {
             }
         }
 
+        // Reset fundamentals card toggle state to expanded
+        const fContent = document.getElementById('drawer-fundamentals-content');
+        const fText = document.getElementById('text-toggle-fundamentals');
+        const fIcon = document.getElementById('icon-toggle-fundamentals');
+        if (fContent) fContent.style.display = 'block';
+        if (fText) fText.innerText = 'Collapse';
+        if (fIcon) fIcon.className = 'fa-solid fa-chevron-up';
+
         // Load 5-Year Fundamentals & Magic Score
         loadDrawerFundamentals(stock.ticker);
 
@@ -1121,6 +1200,29 @@ const App = (function() {
         document.getElementById('detail-drawer').classList.remove('active');
         document.querySelectorAll('#screener-tbody tr').forEach(row => row.classList.remove('selected'));
     }
+
+    window.toggleFundamentalCard = function() {
+        const content = document.getElementById('drawer-fundamentals-content');
+        const textEl = document.getElementById('text-toggle-fundamentals');
+        const iconEl = document.getElementById('icon-toggle-fundamentals');
+        if (!content) return;
+
+        if (content.style.display === 'none') {
+            content.style.display = 'block';
+            if (textEl) textEl.innerText = 'Collapse';
+            if (iconEl) iconEl.className = 'fa-solid fa-chevron-up';
+        } else {
+            content.style.display = 'none';
+            if (textEl) textEl.innerText = 'Expand';
+            if (iconEl) iconEl.className = 'fa-solid fa-chevron-down';
+        }
+    };
+
+    window.toggleFundamentalSection = function(boxId) {
+        const box = document.getElementById(boxId);
+        if (!box) return;
+        box.classList.toggle('collapsed');
+    };
 
     function loadDrawerFundamentals(ticker, force = false) {
         const container = document.getElementById('drawer-fundamentals-content');
@@ -1270,53 +1372,125 @@ const App = (function() {
                     ` : ''}
                 `;
 
+                // Technical Crossover indicators for Drawer
+                const macdSig = data.macd_signal || (state.stocks[ticker]?.current?.macdSignal) || 'Neutral';
+                const macdDate = data.macd_crossover_date || (state.stocks[ticker]?.current?.macdCrossoverDate) || '';
+                const rsiSig = data.rsi_signal || (state.stocks[ticker]?.current?.rsiSignal) || 'Neutral';
+                const rsiDate = data.rsi_crossover_date || (state.stocks[ticker]?.current?.rsiCrossoverDate) || '';
+
+                const isMacdBull = macdSig.toLowerCase().includes('bullish');
+                const isMacdBear = macdSig.toLowerCase().includes('bearish');
+                const macdColor = isMacdBull ? '#34d399' : (isMacdBear ? '#f87171' : '#94a3b8');
+                const macdBg = isMacdBull ? 'rgba(52, 211, 153, 0.12)' : (isMacdBear ? 'rgba(248, 113, 113, 0.12)' : 'rgba(148, 163, 184, 0.08)');
+                const macdIcon = isMacdBull ? '<i class="fa-solid fa-arrow-trend-up"></i>' : (isMacdBear ? '<i class="fa-solid fa-arrow-trend-down"></i>' : '<i class="fa-solid fa-minus"></i>');
+
+                const isRsiBull = rsiSig.toLowerCase().includes('bullish');
+                const isRsiBear = rsiSig.toLowerCase().includes('bearish');
+                const rsiColor = isRsiBull ? '#34d399' : (isRsiBear ? '#f87171' : '#94a3b8');
+                const rsiBg = isRsiBull ? 'rgba(52, 211, 153, 0.12)' : (isRsiBear ? 'rgba(248, 113, 113, 0.12)' : 'rgba(148, 163, 184, 0.08)');
+                const rsiIcon = isRsiBull ? '<i class="fa-solid fa-arrow-trend-up"></i>' : (isRsiBear ? '<i class="fa-solid fa-arrow-trend-down"></i>' : '<i class="fa-solid fa-minus"></i>');
+
+                html += `
+                    <!-- Technical Momentum & Crossovers Strip -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                        <div style="background: ${macdBg}; border: 1px solid ${macdColor}44; border-radius: 6px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <div style="font-size: 9.5px; text-transform: uppercase; color: var(--text-secondary); font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                                    <i class="fa-solid fa-chart-line" style="color: #60a5fa;"></i> MACD Crossover
+                                    <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('macdCross')" title="MACD Crossover Explanation"><i class="fa-solid fa-circle-question"></i></button>
+                                </div>
+                                <div style="font-size: 12px; font-weight: 700; color: ${macdColor}; margin-top: 3px;">
+                                    ${macdIcon} ${macdSig}
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase;">Latest Date</div>
+                                <div style="font-size: 11px; font-weight: 600; color: var(--text-primary); margin-top: 2px;">
+                                    ${macdDate || 'N/A'}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="background: ${rsiBg}; border: 1px solid ${rsiColor}44; border-radius: 6px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <div style="font-size: 9.5px; text-transform: uppercase; color: var(--text-secondary); font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                                    <i class="fa-solid fa-wave-square" style="color: #c084fc;"></i> RSI Crossover
+                                    <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('rsiCross')" title="RSI Crossover Explanation"><i class="fa-solid fa-circle-question"></i></button>
+                                </div>
+                                <div style="font-size: 12px; font-weight: 700; color: ${rsiColor}; margin-top: 3px;">
+                                    ${rsiIcon} ${rsiSig}
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase;">Latest Date</div>
+                                <div style="font-size: 11px; font-weight: 600; color: var(--text-primary); margin-top: 2px;">
+                                    ${rsiDate || 'N/A'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
                 // Build 5-Year Historical Trends Table
                 const trends = data.yearly_trends || [];
                 if (trends.length > 0) {
                     html += `
-                        <div class="fundamental-table-wrapper">
-                            <table class="fundamental-trend-table">
-                                <thead>
-                                    <tr>
-                                        <th>5-Year Financial Parameter</th>
-                                        ${trends.map(t => `<th>FY${t.year}</th>`).join('')}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td><i class="fa-solid fa-coins" style="color: #fbbf24; margin-right: 5px;"></i> Market Cap (₹ Cr) <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('marketCap')" title="Explain Market Cap"><i class="fa-solid fa-circle-question"></i></button></td>
-                                        ${trends.map(t => `<td>${t.market_cap_cr !== null ? '₹' + t.market_cap_cr.toLocaleString() : 'N/A'}</td>`).join('')}
-                                    </tr>
-                                    <tr>
-                                        <td><i class="fa-solid fa-chart-line" style="color: #34d399; margin-right: 5px;"></i> ROCE (%) <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('roce')" title="Explain Return on Capital Employed"><i class="fa-solid fa-circle-question"></i></button></td>
-                                        ${trends.map(t => `<td style="color: ${t.roce_pct >= 15 ? '#34d399' : (t.roce_pct < 8 ? '#f87171' : 'inherit')}">${t.roce_pct !== null ? t.roce_pct + '%' : 'N/A'}</td>`).join('')}
-                                    </tr>
-                                    <tr>
-                                        <td><i class="fa-solid fa-scale-balanced" style="color: #f4a261; margin-right: 5px;"></i> Debt / Equity <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('debtEquity')" title="Explain Debt to Equity"><i class="fa-solid fa-circle-question"></i></button></td>
-                                        ${trends.map(t => `<td style="color: ${t.debt_equity <= 0.3 ? '#34d399' : (t.debt_equity > 1 ? '#f87171' : 'inherit')}">${t.debt_equity !== null ? t.debt_equity : 'N/A'}</td>`).join('')}
-                                    </tr>
-                                    <tr>
-                                        <td><i class="fa-solid fa-percent" style="color: #2dd4bf; margin-right: 5px;"></i> Net Margin (%) <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('netMargin')" title="Explain Net Margin"><i class="fa-solid fa-circle-question"></i></button></td>
-                                        ${trends.map(t => `<td style="color: ${t.net_margin_pct >= 15 ? '#34d399' : (t.net_margin_pct < 5 ? '#f87171' : 'inherit')}">${t.net_margin_pct !== null && t.net_margin_pct !== undefined ? t.net_margin_pct + '%' : 'N/A'}</td>`).join('')}
-                                    </tr>
-                                    <tr>
-                                        <td><i class="fa-solid fa-arrow-trend-up" style="color: #60a5fa; margin-right: 5px;"></i> Net Profit (₹ Cr) <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('netProfit')" title="Explain Net Profit"><i class="fa-solid fa-circle-question"></i></button></td>
-                                        ${trends.map(t => `<td style="color: ${t.net_profit_cr > 0 ? '#34d399' : (t.net_profit_cr < 0 ? '#f87171' : 'inherit')}">${t.net_profit_cr !== null ? '₹' + t.net_profit_cr.toLocaleString() : 'N/A'}</td>`).join('')}
-                                    </tr>
-                                    <tr>
-                                        <td><i class="fa-solid fa-briefcase" style="color: #a78bfa; margin-right: 5px;"></i> EBIT (₹ Cr) <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('ebit')" title="Explain EBIT"><i class="fa-solid fa-circle-question"></i></button></td>
-                                        ${trends.map(t => `<td>${t.ebit_cr !== null ? '₹' + t.ebit_cr.toLocaleString() : 'N/A'}</td>`).join('')}
-                                    </tr>
-                                    <tr>
-                                        <td><i class="fa-solid fa-shield-halved" style="color: #38bdf8; margin-right: 5px;"></i> Interest Coverage <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('interestCoverage')" title="Explain Interest Coverage"><i class="fa-solid fa-circle-question"></i></button></td>
-                                        ${trends.map(t => `<td>${t.interest_coverage !== null ? t.interest_coverage + 'x' : 'N/A'}</td>`).join('')}
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 10px; color: var(--text-muted);">
-                            <span><i class="fa-brands fa-yahoo"></i> Audited corporate annual filings via Yahoo Finance</span>
-                            <span>${data.cached ? 'Loaded from DB cache' : 'Live fetched'} (${new Date(data.last_updated).toLocaleDateString()})</span>
+                        <div class="fundamental-collapsible-box" id="box-trends-table">
+                            <div class="fundamental-collapsible-header" onclick="window.toggleFundamentalSection('box-trends-table')">
+                                <h5>
+                                    <i class="fa-solid fa-table-list" style="color: #60a5fa;"></i> 5-Year Historical Financial Parameters
+                                    <span class="badge" style="font-size: 9.5px; padding: 2px 7px; background: rgba(96, 165, 250, 0.15); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.3);">7 Metrics</span>
+                                </h5>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span class="collapse-toggle-hint">Click to collapse/expand</span>
+                                    <i class="fa-solid fa-chevron-down fundamental-collapsible-icon"></i>
+                                </div>
+                            </div>
+                            <div class="fundamental-collapsible-body">
+                                <div class="fundamental-table-wrapper">
+                                    <table class="fundamental-trend-table">
+                                        <thead>
+                                            <tr>
+                                                <th>5-Year Financial Parameter</th>
+                                                ${trends.map(t => `<th>FY${t.year}</th>`).join('')}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td><i class="fa-solid fa-coins" style="color: #fbbf24; margin-right: 5px;"></i> Market Cap (₹ Cr) <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('marketCap')" title="Explain Market Cap"><i class="fa-solid fa-circle-question"></i></button></td>
+                                                ${trends.map(t => `<td>${t.market_cap_cr !== null ? '₹' + t.market_cap_cr.toLocaleString() : 'N/A'}</td>`).join('')}
+                                            </tr>
+                                            <tr>
+                                                <td><i class="fa-solid fa-chart-line" style="color: #34d399; margin-right: 5px;"></i> ROCE (%) <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('roce')" title="Explain Return on Capital Employed"><i class="fa-solid fa-circle-question"></i></button></td>
+                                                ${trends.map(t => `<td style="color: ${t.roce_pct >= 15 ? '#34d399' : (t.roce_pct < 8 ? '#f87171' : 'inherit')}">${t.roce_pct !== null ? t.roce_pct + '%' : 'N/A'}</td>`).join('')}
+                                            </tr>
+                                            <tr>
+                                                <td><i class="fa-solid fa-scale-balanced" style="color: #f4a261; margin-right: 5px;"></i> Debt / Equity <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('debtEquity')" title="Explain Debt to Equity"><i class="fa-solid fa-circle-question"></i></button></td>
+                                                ${trends.map(t => `<td style="color: ${t.debt_equity <= 0.3 ? '#34d399' : (t.debt_equity > 1 ? '#f87171' : 'inherit')}">${t.debt_equity !== null ? t.debt_equity : 'N/A'}</td>`).join('')}
+                                            </tr>
+                                            <tr>
+                                                <td><i class="fa-solid fa-percent" style="color: #2dd4bf; margin-right: 5px;"></i> Net Margin (%) <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('netMargin')" title="Explain Net Margin"><i class="fa-solid fa-circle-question"></i></button></td>
+                                                ${trends.map(t => `<td style="color: ${t.net_margin_pct >= 15 ? '#34d399' : (t.net_margin_pct < 5 ? '#f87171' : 'inherit')}">${t.net_margin_pct !== null && t.net_margin_pct !== undefined ? t.net_margin_pct + '%' : 'N/A'}</td>`).join('')}
+                                            </tr>
+                                            <tr>
+                                                <td><i class="fa-solid fa-arrow-trend-up" style="color: #60a5fa; margin-right: 5px;"></i> Net Profit (₹ Cr) <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('netProfit')" title="Explain Net Profit"><i class="fa-solid fa-circle-question"></i></button></td>
+                                                ${trends.map(t => `<td style="color: ${t.net_profit_cr > 0 ? '#34d399' : (t.net_profit_cr < 0 ? '#f87171' : 'inherit')}">${t.net_profit_cr !== null ? '₹' + t.net_profit_cr.toLocaleString() : 'N/A'}</td>`).join('')}
+                                            </tr>
+                                            <tr>
+                                                <td><i class="fa-solid fa-briefcase" style="color: #a78bfa; margin-right: 5px;"></i> EBIT (₹ Cr) <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('ebit')" title="Explain EBIT"><i class="fa-solid fa-circle-question"></i></button></td>
+                                                ${trends.map(t => `<td>${t.ebit_cr !== null ? '₹' + t.ebit_cr.toLocaleString() : 'N/A'}</td>`).join('')}
+                                            </tr>
+                                            <tr>
+                                                <td><i class="fa-solid fa-shield-halved" style="color: #38bdf8; margin-right: 5px;"></i> Interest Coverage <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('interestCoverage')" title="Explain Interest Coverage"><i class="fa-solid fa-circle-question"></i></button></td>
+                                                ${trends.map(t => `<td>${t.interest_coverage !== null ? t.interest_coverage + 'x' : 'N/A'}</td>`).join('')}
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 10px; color: var(--text-muted);">
+                                    <span><i class="fa-brands fa-yahoo"></i> Audited corporate annual filings via Yahoo Finance</span>
+                                    <span>${data.cached ? 'Loaded from DB cache' : 'Live fetched'} (${new Date(data.last_updated).toLocaleDateString()})</span>
+                                </div>
+                            </div>
                         </div>
                     `;
                 } else {
@@ -1329,106 +1503,115 @@ const App = (function() {
 
                 if (peers.length > 0) {
                     html += `
-                        <div class="peer-comparison-container">
-                            <div class="peer-comparison-header">
-                                <div>
-                                    <h5 style="margin: 0; font-size: 12px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
-                                        <i class="fa-solid fa-users" style="color: var(--accent-indigo);"></i> Sector Peer Comparison (${sectorName})
-                                    </h5>
-                                    <div style="font-size: 10.5px; color: var(--text-secondary); margin-top: 2px;">
-                                        Comparing ${ticker} against ${peers.length} corporate constituents in ${sectorName}
-                                    </div>
-                                </div>
-                                <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                                    ${ranks.magic_score_rank ? `
-                                        <span class="rank-pill-badge rank-pill-gold" title="Magic Score Rank">
-                                            <i class="fa-solid fa-trophy"></i> Score Rank: #${ranks.magic_score_rank} of ${ranks.total_peers}
-                                        </span>
-                                    ` : ''}
-                                    ${ranks.roce_rank ? `
-                                        <span class="rank-pill-badge rank-pill-silver" title="ROCE Rank">
-                                            <i class="fa-solid fa-chart-line"></i> ROCE Rank: #${ranks.roce_rank} of ${ranks.total_peers}
-                                        </span>
-                                    ` : ''}
+                        <div class="fundamental-collapsible-box" id="box-peers-table">
+                            <div class="fundamental-collapsible-header" onclick="window.toggleFundamentalSection('box-peers-table')">
+                                <h5>
+                                    <i class="fa-solid fa-users" style="color: var(--accent-indigo);"></i> Sector Peer Comparison (${sectorName})
+                                    <span class="badge" style="font-size: 9.5px; padding: 2px 7px; background: rgba(129, 140, 248, 0.15); color: #818cf8; border: 1px solid rgba(129, 140, 248, 0.3);">${peers.length} Peers</span>
+                                </h5>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span class="collapse-toggle-hint">Click to collapse/expand</span>
+                                    <i class="fa-solid fa-chevron-down fundamental-collapsible-icon"></i>
                                 </div>
                             </div>
+                            <div class="fundamental-collapsible-body">
+                                <div class="peer-comparison-container" style="margin-top: 0; border: none; background: transparent; padding: 0;">
+                                    <div class="peer-comparison-header" style="margin-bottom: 10px;">
+                                        <div style="font-size: 10.5px; color: var(--text-secondary);">
+                                            Comparing <strong>${ticker}</strong> against ${peers.length} corporate constituents in <strong>${sectorName}</strong>
+                                        </div>
+                                        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                                            ${ranks.magic_score_rank ? `
+                                                <span class="rank-pill-badge rank-pill-gold" title="Magic Score Rank">
+                                                    <i class="fa-solid fa-trophy"></i> Score Rank: #${ranks.magic_score_rank} of ${ranks.total_peers}
+                                                </span>
+                                            ` : ''}
+                                            ${ranks.roce_rank ? `
+                                                <span class="rank-pill-badge rank-pill-silver" title="ROCE Rank">
+                                                    <i class="fa-solid fa-chart-line"></i> ROCE Rank: #${ranks.roce_rank} of ${ranks.total_peers}
+                                                </span>
+                                            ` : ''}
+                                        </div>
+                                    </div>
 
-                            <div class="peer-comparison-table-wrapper">
-                                <table class="peer-comparison-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Ticker</th>
-                                            <th>Granular Sub-Industry</th>
-                                            <th style="text-align: center;">Magic Score</th>
-                                            <th style="text-align: right;">ROCE (%)</th>
-                                            <th style="text-align: right;">Debt / Eq</th>
-                                            <th style="text-align: right;">Net Margin (%)</th>
-                                            <th style="text-align: right;">PEG</th>
-                                            <th style="text-align: center;">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        ${peers.map(p => {
-                                            const isActive = p.ticker === ticker;
-                                            const pScore = p.magic_score !== null && p.magic_score !== undefined ? p.magic_score : 'N/A';
-                                            let pScoreClass = 'score-neutral';
-                                            if (pScore !== 'N/A') {
-                                                if (pScore >= 80) pScoreClass = 'score-elite';
-                                                else if (pScore >= 65) pScoreClass = 'score-strong';
-                                                else if (pScore >= 50) pScoreClass = 'score-neutral';
-                                                else pScoreClass = 'score-risk';
-                                            }
-                                            return `
-                                                <tr class="${isActive ? 'peer-row-active' : ''}">
-                                                    <td>
-                                                        <strong style="color: ${isActive ? '#818cf8' : 'var(--text-primary)'};">${p.ticker}</strong>
-                                                        ${isActive ? '<span style="font-size: 9px; margin-left: 4px; color: #818cf8; font-weight: 700;">(Active)</span>' : ''}
-                                                    </td>
-                                                    <td style="color: var(--text-secondary); font-size: 11px;">${p.industry || '-'}</td>
+                                    <div class="peer-comparison-table-wrapper">
+                                        <table class="peer-comparison-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Ticker</th>
+                                                    <th>Granular Sub-Industry</th>
+                                                    <th style="text-align: center;">Magic Score</th>
+                                                    <th style="text-align: right;">ROCE (%)</th>
+                                                    <th style="text-align: right;">Debt / Eq</th>
+                                                    <th style="text-align: right;">Net Margin (%)</th>
+                                                    <th style="text-align: right;">PEG</th>
+                                                    <th style="text-align: center;">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${peers.map(p => {
+                                                    const isActive = p.ticker === ticker;
+                                                    const pScore = p.magic_score !== null && p.magic_score !== undefined ? p.magic_score : 'N/A';
+                                                    let pScoreClass = 'score-neutral';
+                                                    if (pScore !== 'N/A') {
+                                                        if (pScore >= 80) pScoreClass = 'score-elite';
+                                                        else if (pScore >= 65) pScoreClass = 'score-strong';
+                                                        else if (pScore >= 50) pScoreClass = 'score-neutral';
+                                                        else pScoreClass = 'score-risk';
+                                                    }
+                                                    return `
+                                                        <tr class="${isActive ? 'peer-row-active' : ''}">
+                                                            <td>
+                                                                <strong style="color: ${isActive ? '#818cf8' : 'var(--text-primary)'};">${p.ticker}</strong>
+                                                                ${isActive ? '<span style="font-size: 9px; margin-left: 4px; color: #818cf8; font-weight: 700;">(Active)</span>' : ''}
+                                                            </td>
+                                                            <td style="color: var(--text-secondary); font-size: 11px;">${p.industry || '-'}</td>
+                                                            <td style="text-align: center;">
+                                                                <span class="magic-score-pill ${pScoreClass}" style="font-size: 11px; padding: 2px 7px;">
+                                                                    ${pScore}
+                                                                </span>
+                                                            </td>
+                                                            <td style="text-align: right; color: ${p.roce_pct >= 15 ? '#34d399' : (p.roce_pct < 8 ? '#f87171' : 'inherit')}; font-weight: 600;">
+                                                                ${p.roce_pct !== null && p.roce_pct !== undefined ? p.roce_pct + '%' : 'N/A'}
+                                                            </td>
+                                                            <td style="text-align: right; color: ${p.debt_equity <= 0.3 ? '#34d399' : (p.debt_equity > 1 ? '#f87171' : 'inherit')};">
+                                                                ${p.debt_equity !== null && p.debt_equity !== undefined ? p.debt_equity : 'N/A'}
+                                                            </td>
+                                                            <td style="text-align: right; color: ${p.net_margin_pct >= 15 ? '#34d399' : (p.net_margin_pct < 5 ? '#f87171' : 'inherit')};">
+                                                                ${p.net_margin_pct !== null && p.net_margin_pct !== undefined ? p.net_margin_pct + '%' : 'N/A'}
+                                                            </td>
+                                                            <td style="text-align: right; color: ${p.peg_ratio && p.peg_ratio <= 1.0 ? '#34d399' : 'inherit'};">
+                                                                ${p.peg_ratio ? p.peg_ratio : 'N/A'}
+                                                            </td>
+                                                            <td style="text-align: center;">
+                                                                ${!isActive ? `
+                                                                    <button type="button" class="btn-peer-view" data-ticker="${p.ticker}">
+                                                                        <i class="fa-solid fa-arrow-up-right-from-square"></i> View
+                                                                    </button>
+                                                                ` : '<span style="font-size: 10px; color: var(--text-muted);">Current</span>'}
+                                                            </td>
+                                                        </tr>
+                                                    `;
+                                                }).join('')}
+                                                <!-- Sector Median Benchmark Row -->
+                                                <tr class="sector-median-row">
+                                                    <td><i class="fa-solid fa-chart-pie" style="margin-right: 4px;"></i> Sector Median</td>
+                                                    <td style="font-size: 10px; color: rgba(250, 204, 21, 0.8);">Benchmark Baseline</td>
                                                     <td style="text-align: center;">
-                                                        <span class="magic-score-pill ${pScoreClass}" style="font-size: 11px; padding: 2px 7px;">
-                                                            ${pScore}
+                                                        <span style="background: rgba(250, 204, 21, 0.2); color: #facc15; border-radius: 4px; padding: 2px 7px; font-size: 11px;">
+                                                            ${medians.magic_score !== null && medians.magic_score !== undefined ? medians.magic_score : 'N/A'}
                                                         </span>
                                                     </td>
-                                                    <td style="text-align: right; color: ${p.roce_pct >= 15 ? '#34d399' : (p.roce_pct < 8 ? '#f87171' : 'inherit')}; font-weight: 600;">
-                                                        ${p.roce_pct !== null && p.roce_pct !== undefined ? p.roce_pct + '%' : 'N/A'}
-                                                    </td>
-                                                    <td style="text-align: right; color: ${p.debt_equity <= 0.3 ? '#34d399' : (p.debt_equity > 1 ? '#f87171' : 'inherit')};">
-                                                        ${p.debt_equity !== null && p.debt_equity !== undefined ? p.debt_equity : 'N/A'}
-                                                    </td>
-                                                    <td style="text-align: right; color: ${p.net_margin_pct >= 15 ? '#34d399' : (p.net_margin_pct < 5 ? '#f87171' : 'inherit')};">
-                                                        ${p.net_margin_pct !== null && p.net_margin_pct !== undefined ? p.net_margin_pct + '%' : 'N/A'}
-                                                    </td>
-                                                    <td style="text-align: right; color: ${p.peg_ratio && p.peg_ratio <= 1.0 ? '#34d399' : 'inherit'};">
-                                                        ${p.peg_ratio ? p.peg_ratio : 'N/A'}
-                                                    </td>
-                                                    <td style="text-align: center;">
-                                                        ${!isActive ? `
-                                                            <button type="button" class="btn-peer-view" data-ticker="${p.ticker}">
-                                                                <i class="fa-solid fa-arrow-up-right-from-square"></i> View
-                                                            </button>
-                                                        ` : '<span style="font-size: 10px; color: var(--text-muted);">Current</span>'}
-                                                    </td>
+                                                    <td style="text-align: right;">${medians.roce_pct !== null && medians.roce_pct !== undefined ? medians.roce_pct + '%' : 'N/A'}</td>
+                                                    <td style="text-align: right;">${medians.debt_equity !== null && medians.debt_equity !== undefined ? medians.debt_equity : 'N/A'}</td>
+                                                    <td style="text-align: right;">${medians.net_margin_pct !== null && medians.net_margin_pct !== undefined ? medians.net_margin_pct + '%' : 'N/A'}</td>
+                                                    <td style="text-align: right;">${medians.peg_ratio !== null && medians.peg_ratio !== undefined ? medians.peg_ratio : 'N/A'}</td>
+                                                    <td style="text-align: center; font-size: 10px; color: var(--text-muted);">-</td>
                                                 </tr>
-                                            `;
-                                        }).join('')}
-                                        <!-- Sector Median Benchmark Row -->
-                                        <tr class="sector-median-row">
-                                            <td><i class="fa-solid fa-chart-pie" style="margin-right: 4px;"></i> Sector Median</td>
-                                            <td style="font-size: 10px; color: rgba(250, 204, 21, 0.8);">Benchmark Baseline</td>
-                                            <td style="text-align: center;">
-                                                <span style="background: rgba(250, 204, 21, 0.2); color: #facc15; border-radius: 4px; padding: 2px 7px; font-size: 11px;">
-                                                    ${medians.magic_score !== null && medians.magic_score !== undefined ? medians.magic_score : 'N/A'}
-                                                </span>
-                                            </td>
-                                            <td style="text-align: right;">${medians.roce_pct !== null && medians.roce_pct !== undefined ? medians.roce_pct + '%' : 'N/A'}</td>
-                                            <td style="text-align: right;">${medians.debt_equity !== null && medians.debt_equity !== undefined ? medians.debt_equity : 'N/A'}</td>
-                                            <td style="text-align: right;">${medians.net_margin_pct !== null && medians.net_margin_pct !== undefined ? medians.net_margin_pct + '%' : 'N/A'}</td>
-                                            <td style="text-align: right;">${medians.peg_ratio !== null && medians.peg_ratio !== undefined ? medians.peg_ratio : 'N/A'}</td>
-                                            <td style="text-align: center; font-size: 10px; color: var(--text-muted);">-</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -3538,6 +3721,28 @@ const App = (function() {
                 icon: "fa-solid fa-briefcase",
                 formula: "Earnings Before Interest and Taxes = Total Revenue − Operating Costs",
                 meaning: "The pure operational earnings generated by the business before taking into account how much debt it carries (interest) or what taxes it pays. It allows fair, apples-to-apples comparison between competing companies in the same industry."
+            },
+            macdCross: {
+                title: "MACD Crossover (12/26/9)",
+                icon: "fa-solid fa-chart-line",
+                formula: "MACD Line = 12-EMA − 26-EMA | Signal Line = 9-EMA of MACD Line",
+                meaning: "Measures momentum shifts and trend reversals. When the fast MACD line crosses ABOVE the 9-day Signal line, it signals an emerging bullish momentum wave (Bullish Crossover). When it crosses BELOW the Signal line, momentum is turning negative (Bearish Crossover). The screener tracks the exact historical crossover date so traders know if the signal is brand new or mature.",
+                benchmarks: [
+                    { label: "🟢 Bullish Crossover: MACD Line > Signal Line", class: "chip-good", desc: "Upward momentum accelerating; buyers taking control." },
+                    { label: "🔴 Bearish Crossover: MACD Line < Signal Line", class: "chip-risk", desc: "Downward momentum accelerating; sellers taking control." },
+                    { label: "⚪ Neutral: No crossover detected", class: "chip-neutral", desc: "Trend consolidation or insufficient candle history." }
+                ]
+            },
+            rsiCross: {
+                title: "RSI Crossover (14/9)",
+                icon: "fa-solid fa-wave-square",
+                formula: "RSI = 14-period Wilder's RSI | Signal Line = 9-period SMA of RSI",
+                meaning: "Smoothes the 14-period Relative Strength Index with a 9-period moving average signal line. When the RSI line crosses ABOVE its 9-SMA signal line, momentum has turned positive from a prior base. When it crosses BELOW its 9-SMA, momentum is weakening. Captures early turning points ahead of traditional 30/70 overbought/oversold boundaries.",
+                benchmarks: [
+                    { label: "🟢 Bullish Crossover: RSI > 9-SMA", class: "chip-good", desc: "Positive momentum inflection; RSI rising faster than its short-term baseline." },
+                    { label: "🔴 Bearish Crossover: RSI < 9-SMA", class: "chip-risk", desc: "Negative momentum inflection; RSI decaying below its short-term baseline." },
+                    { label: "⚪ Neutral: No crossover detected", class: "chip-neutral", desc: "Momentum flat or oscillating tightly around baseline." }
+                ]
             }
         };
 
@@ -4966,6 +5171,26 @@ const App = (function() {
             if (selStatus !== 'all' && stock.status !== selStatus) return false;
 
             // Signal filter
+            if (selSignal === 'macd-bullish') {
+                const f = (state.fundamentals && state.fundamentals[stock.ticker]) || null;
+                const sig = (f && f.macd_signal) || stock.current?.macdSignal || '';
+                if (!sig.toLowerCase().includes('bullish')) return false;
+            }
+            if (selSignal === 'macd-bearish') {
+                const f = (state.fundamentals && state.fundamentals[stock.ticker]) || null;
+                const sig = (f && f.macd_signal) || stock.current?.macdSignal || '';
+                if (!sig.toLowerCase().includes('bearish')) return false;
+            }
+            if (selSignal === 'rsi-bullish') {
+                const f = (state.fundamentals && state.fundamentals[stock.ticker]) || null;
+                const sig = (f && f.rsi_signal) || stock.current?.rsiSignal || '';
+                if (!sig.toLowerCase().includes('bullish')) return false;
+            }
+            if (selSignal === 'rsi-bearish') {
+                const f = (state.fundamentals && state.fundamentals[stock.ticker]) || null;
+                const sig = (f && f.rsi_signal) || stock.current?.rsiSignal || '';
+                if (!sig.toLowerCase().includes('bearish')) return false;
+            }
             if (selSignal === 'shift' && !stock.current.hasMomentumShift) return false;
             if (selSignal === 'magic-elite') {
                 const f = (state.fundamentals && state.fundamentals[stock.ticker]) || null;
@@ -5152,6 +5377,20 @@ const App = (function() {
                 case 'pctChange': valA = a.current.pctChange; valB = b.current.pctChange; break;
                 case 'pctChange7d': valA = a.current.pctChange7d; valB = b.current.pctChange7d; break;
                 case 'rsi': valA = a.current.rsi ?? -1; valB = b.current.rsi ?? -1; break;
+                case 'macdCross': {
+                    const fA = (state.fundamentals && state.fundamentals[a.ticker]) || null;
+                    const fB = (state.fundamentals && state.fundamentals[b.ticker]) || null;
+                    valA = (fA && fA.macd_crossover_date) || a.current?.macdCrossoverDate || '';
+                    valB = (fB && fB.macd_crossover_date) || b.current?.macdCrossoverDate || '';
+                    break;
+                }
+                case 'rsiCross': {
+                    const fA = (state.fundamentals && state.fundamentals[a.ticker]) || null;
+                    const fB = (state.fundamentals && state.fundamentals[b.ticker]) || null;
+                    valA = (fA && fA.rsi_crossover_date) || a.current?.rsiCrossoverDate || '';
+                    valB = (fB && fB.rsi_crossover_date) || b.current?.rsiCrossoverDate || '';
+                    break;
+                }
                 case 'adx': valA = a.current.adx ?? -1; valB = b.current.adx ?? -1; break;
                 case 'drawdown': valA = a.current.drawdown ?? -1; valB = b.current.drawdown ?? -1; break;
                 case 'sma50': valA = s50A; valB = s50B; break;
@@ -5310,6 +5549,39 @@ const App = (function() {
             const stockSector = (f && f.sector) || stock.sector || tax.sector || 'Diversified';
             const stockIndustry = (f && f.industry) || stock.industry || tax.industry || '-';
 
+            const macdSig = (f && f.macd_signal) || c.macdSignal || 'Neutral';
+            const macdDate = (f && f.macd_crossover_date) || c.macdCrossoverDate || '';
+            const rsiSig = (f && f.rsi_signal) || c.rsiSignal || 'Neutral';
+            const rsiDate = (f && f.rsi_crossover_date) || c.rsiCrossoverDate || '';
+
+            const isMacdBull = macdSig.toLowerCase().includes('bullish');
+            const isMacdBear = macdSig.toLowerCase().includes('bearish');
+            const macdBadgeColor = isMacdBull ? '#34d399' : (isMacdBear ? '#f87171' : 'var(--text-muted)');
+            const macdBadgeBg = isMacdBull ? 'rgba(52, 211, 153, 0.15)' : (isMacdBear ? 'rgba(248, 113, 113, 0.15)' : 'rgba(255, 255, 255, 0.05)');
+            const macdIcon = isMacdBull ? '<i class="fa-solid fa-arrow-trend-up"></i>' : (isMacdBear ? '<i class="fa-solid fa-arrow-trend-down"></i>' : '');
+            const macdCrossBadge = macdSig !== 'Neutral'
+                ? `<div style="display:inline-flex; flex-direction:column; align-items:center; gap:2px;">
+                    <span style="font-size:10px; font-weight:700; color:${macdBadgeColor}; background:${macdBadgeBg}; padding:2px 7px; border-radius:4px; border:1px solid ${macdBadgeColor}44; white-space:nowrap;">
+                        ${macdIcon} ${macdSig}
+                    </span>
+                    ${macdDate ? `<span style="font-size:9.5px; color:var(--text-secondary);">${macdDate}</span>` : ''}
+                   </div>`
+                : `<span style="color:var(--text-muted); font-size:11px;">-</span>`;
+
+            const isRsiBull = rsiSig.toLowerCase().includes('bullish');
+            const isRsiBear = rsiSig.toLowerCase().includes('bearish');
+            const rsiBadgeColor = isRsiBull ? '#34d399' : (isRsiBear ? '#f87171' : 'var(--text-muted)');
+            const rsiBadgeBg = isRsiBull ? 'rgba(52, 211, 153, 0.15)' : (isRsiBear ? 'rgba(248, 113, 113, 0.15)' : 'rgba(255, 255, 255, 0.05)');
+            const rsiIcon = isRsiBull ? '<i class="fa-solid fa-arrow-trend-up"></i>' : (isRsiBear ? '<i class="fa-solid fa-arrow-trend-down"></i>' : '');
+            const rsiCrossBadge = rsiSig !== 'Neutral'
+                ? `<div style="display:inline-flex; flex-direction:column; align-items:center; gap:2px;">
+                    <span style="font-size:10px; font-weight:700; color:${rsiBadgeColor}; background:${rsiBadgeBg}; padding:2px 7px; border-radius:4px; border:1px solid ${rsiBadgeColor}44; white-space:nowrap;">
+                        ${rsiIcon} ${rsiSig}
+                    </span>
+                    ${rsiDate ? `<span style="font-size:9.5px; color:var(--text-secondary);">${rsiDate}</span>` : ''}
+                   </div>`
+                : `<span style="color:var(--text-muted); font-size:11px;">-</span>`;
+
             tr.innerHTML = `
                 <td class="stats-col-ticker" style="padding: 8px 12px; font-weight: 700; color: var(--text-primary); white-space: nowrap;">${stock.ticker}</td>
                 <td style="padding: 8px 12px; color: var(--text-secondary); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${stock.name}</td>
@@ -5327,6 +5599,8 @@ const App = (function() {
                 <td style="padding: 8px 12px; text-align: right; color: ${pct1dColor}; font-weight: 600; white-space: nowrap;">${c.pctChange >= 0 ? '+' : ''}${c.pctChange}%</td>
                 <td style="padding: 8px 12px; text-align: right; color: ${pct7dColor}; font-weight: 600; white-space: nowrap;">${c.pctChange7d >= 0 ? '+' : ''}${c.pctChange7d}%</td>
                 <td style="padding: 8px 12px; text-align: right; white-space: nowrap;">${rsiVal}</td>
+                <td style="padding: 8px 12px; text-align: center; white-space: nowrap;">${macdCrossBadge}</td>
+                <td style="padding: 8px 12px; text-align: center; white-space: nowrap;">${rsiCrossBadge}</td>
                 <td style="padding: 8px 12px; text-align: right; white-space: nowrap;">${adxVal}</td>
                 <td style="padding: 8px 12px; text-align: right; color: ${c.drawdown > 20 ? '#f87171' : 'var(--text-primary)'}; white-space: nowrap;">${c.drawdown ?? 0}%</td>
                 <td style="padding: 8px 12px; text-align: right; color: var(--text-secondary); white-space: nowrap;">${sma50 ? '₹' + sma50.toFixed(1) : '-'}</td>
@@ -5454,6 +5728,10 @@ const App = (function() {
             "RSI (14)",
             "RSI Classification",
             "RSI Signal (5D)",
+            "MACD Crossover Signal",
+            "MACD Crossover Date",
+            "RSI Crossover Signal",
+            "RSI Crossover Date",
             "ADX (14)",
             "Trend Strength",
             "+DI",
@@ -5504,9 +5782,15 @@ const App = (function() {
 
             const rsiClass = (c.rsi !== null && c.rsi !== undefined) ? (c.rsi < 30 ? "Oversold (<30)" : c.rsi > 70 ? "Overbought (>70)" : "Neutral (30-70)") : "N/A";
             const rsiSignal5d = c.hasRsiBuy5d ? "BUY" : (c.hasRsiSell5d ? "SELL" : "NONE");
-            const trendStr = (c.adx !== null && c.adx !== undefined) ? (c.adx >= 25 ? "Strong Trend (ADX>=25)" : "Consolidation (ADX<25)") : "N/A";
 
             const f = (state.fundamentals && state.fundamentals[stock.ticker]) || null;
+            const macdSig = (f && f.macd_signal) || c.macdSignal || "Neutral";
+            const macdDate = (f && f.macd_crossover_date) || c.macdCrossoverDate || "N/A";
+            const rsiSig = (f && f.rsi_signal) || c.rsiSignal || "Neutral";
+            const rsiDate = (f && f.rsi_crossover_date) || c.rsiCrossoverDate || "N/A";
+
+            const trendStr = (c.adx !== null && c.adx !== undefined) ? (c.adx >= 25 ? "Strong Trend (ADX>=25)" : "Consolidation (ADX<25)") : "N/A";
+
             const magicScore = (f && f.magic_score !== null && f.magic_score !== undefined) ? f.magic_score : "N/A";
             const piotroski = (f && f.piotroski_score !== null && f.piotroski_score !== undefined) ? f.piotroski_score : "N/A";
             const roce = (f && f.roce_pct !== null && f.roce_pct !== undefined) ? f.roce_pct + "%" : "N/A";
@@ -5546,6 +5830,10 @@ const App = (function() {
                 c.rsi !== null && c.rsi !== undefined ? c.rsi.toFixed(1) : "N/A",
                 rsiClass,
                 rsiSignal5d,
+                `"${macdSig}"`,
+                `"${macdDate}"`,
+                `"${rsiSig}"`,
+                `"${rsiDate}"`,
                 c.adx !== null && c.adx !== undefined ? c.adx.toFixed(1) : "N/A",
                 trendStr,
                 c.plusDI !== null && c.plusDI !== undefined ? c.plusDI.toFixed(1) : "N/A",
@@ -5615,6 +5903,10 @@ const App = (function() {
                 drawdown1Y: c.drawdown,
                 change1D: c.pctChange,
                 return7D: c.pctChange7d,
+                macdSignal: (f && f.macd_signal) || c.macdSignal || 'Neutral',
+                macdCrossoverDate: (f && f.macd_crossover_date) || c.macdCrossoverDate || '',
+                rsiSignal: (f && f.rsi_signal) || c.rsiSignal || 'Neutral',
+                rsiCrossoverDate: (f && f.rsi_crossover_date) || c.rsiCrossoverDate || '',
                 candlesCount: stock.candles.length
             };
         });
