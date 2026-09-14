@@ -42,4 +42,5 @@ urlpatterns = [
     path('api/stock-fundamentals/', views.stock_fundamentals_view, name='stock_fundamentals'),
     path('api/admin/scan-fundamentals/', views.admin_scan_fundamentals_view, name='admin_scan_fundamentals'),
     path('api/admin/fundamentals-summary/', views.admin_fundamentals_summary_view, name='admin_fundamentals_summary'),
+    path('api/admin/update-stock-sector/', views.admin_update_stock_sector_view, name='admin_update_stock_sector'),
 ]

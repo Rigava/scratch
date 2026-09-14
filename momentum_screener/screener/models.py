@@ -159,6 +159,8 @@ class StockFundamental(models.Model):
     net_profit_cr = models.FloatField(null=True, blank=True)
     interest_coverage = models.FloatField(null=True, blank=True)
     net_margin_pct = models.FloatField(null=True, blank=True)
+    sector = models.CharField(max_length=60, default='', blank=True, db_index=True)
+    industry = models.CharField(max_length=80, default='', blank=True, db_index=True)
     peg_is_fallback = models.BooleanField(default=False)
     peg_note = models.CharField(max_length=300, blank=True, default='')
     score_breakdown_json = models.TextField(default='{}')

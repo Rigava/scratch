@@ -2040,3 +2040,179 @@ body.fullscreen-stats-active #admin-stats-table-container {
     overflow-y: auto;
 }
 
+/* --- Sector Taxonomy & Peer Comparison Styles --- */
+
+.sector-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(99, 102, 241, 0.12);
+    color: #818cf8;
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+}
+
+.industry-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(45, 212, 191, 0.1);
+    color: #2dd4bf;
+    border: 1px solid rgba(45, 212, 191, 0.25);
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 10px;
+    font-weight: 500;
+}
+
+.peer-comparison-container {
+    margin-top: 16px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: var(--border-radius-md);
+    padding: 14px;
+}
+
+.peer-comparison-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.peer-comparison-table-wrapper {
+    overflow-x: auto;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.peer-comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.5px;
+    white-space: nowrap;
+}
+
+.peer-comparison-table th {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-secondary);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.peer-comparison-table td {
+    padding: 7px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    color: var(--text-primary);
+}
+
+.peer-row-active {
+    background: rgba(99, 102, 241, 0.14) !important;
+    border-left: 3px solid #818cf8;
+}
+
+.peer-row-active td {
+    font-weight: 600;
+}
+
+.sector-median-row {
+    background: rgba(255, 255, 255, 0.03);
+    border-top: 2px solid rgba(255, 255, 255, 0.12);
+    font-weight: 700;
+    color: #facc15 !important;
+}
+
+.sector-median-row td {
+    color: #facc15 !important;
+    padding: 9px 10px;
+}
+
+.rank-pill-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 700;
+}
+
+.rank-pill-gold {
+    background: rgba(234, 179, 8, 0.2);
+    color: #facc15;
+    border: 1px solid rgba(234, 179, 8, 0.4);
+}
+
+.rank-pill-silver {
+    background: rgba(148, 163, 184, 0.2);
+    color: #cbd5e1;
+    border: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+.rank-pill-bronze {
+    background: rgba(217, 119, 6, 0.2);
+    color: #f97316;
+    border: 1px solid rgba(217, 119, 6, 0.4);
+}
+
+.rank-pill-default {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-secondary);
+}
+
+.btn-peer-view {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-peer-view:hover {
+    background: var(--accent-indigo);
+    color: #fff;
+    border-color: var(--accent-indigo);
+}
+
+.btn-edit-sector {
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    color: #818cf8;
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 10.5px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s ease;
+    font-weight: 600;
+}
+
+.btn-edit-sector:hover {
+    background: #6366f1;
+    color: #ffffff;
+    border-color: #6366f1;
+}
+
+.grid-filter-select {
+    transition: border-color 0.2s;
+}
+
+.grid-filter-select:focus {
+    border-color: var(--accent-indigo);
+}
+

@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 from django.utils import timezone
 from .models import StockFundamental
+from .sector_taxonomy import get_stock_taxonomy
 
 logger = logging.getLogger(__name__)
 
@@ -377,9 +378,13 @@ def fetch_and_calculate_fundamentals(ticker):
         "growth": growth_score
     }
 
+    tax = get_stock_taxonomy(ticker)
+
     result = {
         "ticker": ticker,
         "company_name": company_name,
+        "sector": tax.get("sector", "Diversified"),
+        "industry": tax.get("industry", "Diversified Commercial"),
         "market_cap_cr": current_mcap_cr,
         "magic_score": magic_score,
         "piotroski_score": piotroski,
@@ -400,10 +405,94 @@ def fetch_and_calculate_fundamentals(ticker):
     return result
 
 
+def compute_sector_peers_and_ranks(clean_ticker, sector):
+    """
+    Computes peer comparison metrics, sector medians, and active stock rankings
+    for all corporate stocks sharing the same sector in the TradeKriya universe.
+    """
+    if not sector:
+        return {"peers": [], "sector_medians": {}, "sector_ranks": {}}
+
+    peer_records = StockFundamental.objects.filter(sector=sector).exclude(ticker__in=INDEX_SYMBOLS)
+    peers = []
+    for p in peer_records:
+        peers.append({
+            "ticker": p.ticker,
+            "company_name": p.company_name,
+            "sector": p.sector,
+            "industry": p.industry,
+            "market_cap_cr": p.market_cap_cr,
+            "magic_score": p.magic_score,
+            "roce_pct": p.roce_pct,
+            "debt_equity": p.debt_equity,
+            "net_margin_pct": p.net_margin_pct,
+            "peg_ratio": p.peg_ratio,
+            "peg_is_fallback": p.peg_is_fallback,
+            "is_current": (p.ticker == clean_ticker)
+        })
+
+    # Sort peers by magic_score descending (None values last)
+    peers.sort(key=lambda x: (x["magic_score"] is not None, x["magic_score"] if x["magic_score"] is not None else -999), reverse=True)
+
+    def calc_median(val_list):
+        valid = [float(v) for v in val_list if v is not None]
+        if not valid:
+            return None
+        return round(float(np.median(valid)), 2)
+
+    sector_medians = {
+        "magic_score": calc_median([p["magic_score"] for p in peers]),
+        "roce_pct": calc_median([p["roce_pct"] for p in peers]),
+        "debt_equity": calc_median([p["debt_equity"] for p in peers]),
+        "net_margin_pct": calc_median([p["net_margin_pct"] for p in peers]),
+        "peg_ratio": calc_median([p["peg_ratio"] for p in peers]),
+        "total_peers": len(peers)
+    }
+
+    # Relative ranks within the sector
+    magic_valid = [p for p in peers if p["magic_score"] is not None]
+    magic_valid.sort(key=lambda x: x["magic_score"], reverse=True)
+    magic_rank = None
+    for idx, p in enumerate(magic_valid):
+        if p["ticker"] == clean_ticker:
+            magic_rank = idx + 1
+            break
+
+    roce_valid = [p for p in peers if p["roce_pct"] is not None]
+    roce_valid.sort(key=lambda x: x["roce_pct"], reverse=True)
+    roce_rank = None
+    for idx, p in enumerate(roce_valid):
+        if p["ticker"] == clean_ticker:
+            roce_rank = idx + 1
+            break
+
+    de_valid = [p for p in peers if p["debt_equity"] is not None]
+    de_valid.sort(key=lambda x: x["debt_equity"])  # lower debt is rank 1
+    de_rank = None
+    for idx, p in enumerate(de_valid):
+        if p["ticker"] == clean_ticker:
+            de_rank = idx + 1
+            break
+
+    sector_ranks = {
+        "magic_score_rank": magic_rank,
+        "roce_rank": roce_rank,
+        "debt_equity_rank": de_rank,
+        "total_peers": len(peers)
+    }
+
+    return {
+        "peers": peers,
+        "sector_medians": sector_medians,
+        "sector_ranks": sector_ranks
+    }
+
+
 def get_or_fetch_stock_fundamentals(ticker, force_refresh=False, max_age_days=30):
     """
     Retrieves fundamentals from database cache. If missing, stale (> max_age_days),
     or force_refresh is True, fetches fresh data from Yahoo Finance and updates cache.
+    Includes sector, granular sub-industry, and peer comparison data.
     """
     clean_ticker = ticker.strip().upper()
     
@@ -412,24 +501,38 @@ def get_or_fetch_stock_fundamentals(ticker, force_refresh=False, max_age_days=30
         return {
             "ticker": clean_ticker,
             "company_name": f"{clean_ticker} Index",
+            "sector": "Index Benchmark",
+            "industry": "Index Benchmark",
             "is_index": True,
             "magic_score": None,
             "message": "Market Index (No corporate balance sheet)"
         }
 
+    tax = get_stock_taxonomy(clean_ticker)
+
     # Check database cache
     cached = StockFundamental.objects.filter(ticker=clean_ticker).first()
     # Cache is considered incomplete if it was stored prior to net_margin_pct or peg_note support
     is_incomplete_cache = cached and (cached.net_margin_pct is None or (cached.peg_ratio is None and not cached.peg_note))
+    
     if cached and not force_refresh and not is_incomplete_cache:
+        # Ensure sector and industry are populated on cached row
+        if not cached.sector or not cached.industry:
+            cached.sector = cached.sector or tax.get("sector", "Diversified")
+            cached.industry = cached.industry or tax.get("industry", "Diversified Commercial")
+            cached.save(update_fields=["sector", "industry"])
+
         age = timezone.now() - cached.last_updated
         if age.days < max_age_days:
             try:
                 yearly_trends = json.loads(cached.yearly_trends_json)
                 breakdown = json.loads(cached.score_breakdown_json)
+                peer_info = compute_sector_peers_and_ranks(clean_ticker, cached.sector)
                 return {
                     "ticker": cached.ticker,
                     "company_name": cached.company_name,
+                    "sector": cached.sector,
+                    "industry": cached.industry,
                     "market_cap_cr": cached.market_cap_cr,
                     "magic_score": cached.magic_score,
                     "piotroski_score": cached.piotroski_score,
@@ -444,6 +547,9 @@ def get_or_fetch_stock_fundamentals(ticker, force_refresh=False, max_age_days=30
                     "interest_coverage": cached.interest_coverage,
                     "yearly_trends": yearly_trends,
                     "score_components": breakdown,
+                    "peers": peer_info["peers"],
+                    "sector_medians": peer_info["sector_medians"],
+                    "sector_ranks": peer_info["sector_ranks"],
                     "last_updated": cached.last_updated.isoformat(),
                     "cached": True
                 }
@@ -455,9 +561,14 @@ def get_or_fetch_stock_fundamentals(ticker, force_refresh=False, max_age_days=30
     if "error" in data:
         # If fetch fails but we had older cache, return older cache with warning
         if cached:
+            sector = cached.sector or tax.get("sector", "Diversified")
+            industry = cached.industry or tax.get("industry", "Diversified Commercial")
+            peer_info = compute_sector_peers_and_ranks(clean_ticker, sector)
             return {
                 "ticker": cached.ticker,
                 "company_name": cached.company_name,
+                "sector": sector,
+                "industry": industry,
                 "market_cap_cr": cached.market_cap_cr,
                 "magic_score": cached.magic_score,
                 "piotroski_score": cached.piotroski_score,
@@ -472,17 +583,25 @@ def get_or_fetch_stock_fundamentals(ticker, force_refresh=False, max_age_days=30
                 "interest_coverage": cached.interest_coverage,
                 "yearly_trends": json.loads(cached.yearly_trends_json),
                 "score_components": json.loads(cached.score_breakdown_json),
+                "peers": peer_info["peers"],
+                "sector_medians": peer_info["sector_medians"],
+                "sector_ranks": peer_info["sector_ranks"],
                 "last_updated": cached.last_updated.isoformat(),
                 "cached": True,
                 "warning": data["error"]
             }
         return data
 
+    sector_val = data.get("sector") or tax.get("sector", "Diversified")
+    industry_val = data.get("industry") or tax.get("industry", "Diversified Commercial")
+
     # Save to database
     StockFundamental.objects.update_or_create(
         ticker=clean_ticker,
         defaults={
             "company_name": data.get("company_name", ""),
+            "sector": sector_val,
+            "industry": industry_val,
             "market_cap_cr": data.get("market_cap_cr"),
             "magic_score": data.get("magic_score", 0),
             "piotroski_score": data.get("piotroski_score", 0),
@@ -500,6 +619,12 @@ def get_or_fetch_stock_fundamentals(ticker, force_refresh=False, max_age_days=30
         }
     )
 
+    peer_info = compute_sector_peers_and_ranks(clean_ticker, sector_val)
+    data["sector"] = sector_val
+    data["industry"] = industry_val
+    data["peers"] = peer_info["peers"]
+    data["sector_medians"] = peer_info["sector_medians"]
+    data["sector_ranks"] = peer_info["sector_ranks"]
     data["cached"] = False
     return data
 

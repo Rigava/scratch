@@ -385,9 +385,36 @@ def dashboard_view(request):
     has_gemini_cred = bool(os.environ.get('GEMINI_API_KEY'))
     developer_upi_id = os.environ.get('DEVELOPER_UPI_ID', 'arunj@okaxis').strip()
 
-    # Pass the list of pre-mapped symbols to the template so the UI dropdown can render them
+    # Pass the list of pre-mapped symbols and sector taxonomy to the template
+    from .sector_taxonomy import ALL_SECTORS, SECTOR_TAXONOMY, SECTOR_TO_INDUSTRIES
+    fund_map = {f.ticker: f for f in StockFundamental.objects.all()}
+    
+    # Aggregate all universe symbols across taxonomy, fundamentals, tokens, and offline dump
+    all_known_symbols = set(SECTOR_TAXONOMY.keys()) | set(fund_map.keys()) | set(SYMBOL_TO_TOKEN.keys())
+    dump_path = os.path.join(os.path.dirname(__file__), 'data', 'fo_historical_dump.json')
+    if os.path.exists(dump_path):
+        try:
+            with open(dump_path, 'r', encoding='utf-8') as f:
+                dump_data = json.load(f)
+                all_known_symbols |= set(dump_data.keys())
+        except Exception:
+            pass
+
+    taxonomy_map = {}
+    for sym in sorted(all_known_symbols):
+        f = fund_map.get(sym)
+        default_tax = SECTOR_TAXONOMY.get(sym, {})
+        sec = (f.sector if f and f.sector else default_tax.get('sector', 'Other'))
+        ind = (f.industry if f and f.industry else default_tax.get('industry', ''))
+        taxonomy_map[sym] = {'sector': sec, 'industry': ind}
+
+
     context = {
         'supported_symbols': sorted(list(SYMBOL_TO_TOKEN.keys())),
+        'all_sectors': ALL_SECTORS,
+        'sector_taxonomy_json': json.dumps(taxonomy_map),
+        'sector_to_industries_json': json.dumps(SECTOR_TO_INDUSTRIES),
+        'all_sectors_json': json.dumps(ALL_SECTORS),
         'has_zerodha_creds': has_zerodha_creds,
         'has_gemini_cred': has_gemini_cred,
         'user_status': user_status,
@@ -2802,6 +2829,8 @@ def admin_fundamentals_summary_view(request):
         data[r.ticker] = {
             'ticker': r.ticker,
             'company_name': r.company_name,
+            'sector': r.sector,
+            'industry': r.industry,
             'market_cap_cr': r.market_cap_cr,
             'magic_score': r.magic_score,
             'piotroski_score': r.piotroski_score,
@@ -2818,3 +2847,49 @@ def admin_fundamentals_summary_view(request):
         }
 
     return JsonResponse({'status': 'success', 'fundamentals': data})
+
+
+@csrf_exempt
+@login_required(login_url='screener:login')
+def admin_update_stock_sector_view(request):
+    """
+    Allows administrators to update or override Sector and Granular Sub-Industry
+    for any stock.
+    Strictly restricted to Administrators/Superusers.
+    """
+    if not (request.user.is_superuser or request.user.is_staff):
+        return JsonResponse({'status': 'error', 'message': 'Admin privileges required'}, status=403)
+
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Only POST method is allowed'}, status=405)
+
+    try:
+        payload = json.loads(request.body)
+    except Exception:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON body'}, status=400)
+
+    ticker = payload.get('ticker', '').strip().upper()
+    sector = payload.get('sector', '').strip()
+    industry = payload.get('industry', '').strip()
+
+    if not ticker:
+        return JsonResponse({'status': 'error', 'message': 'Ticker is required'}, status=400)
+    if not sector:
+        return JsonResponse({'status': 'error', 'message': 'Sector is required'}, status=400)
+
+    # Update or create record
+    obj, created = StockFundamental.objects.update_or_create(
+        ticker=ticker,
+        defaults={
+            'sector': sector,
+            'industry': industry,
+        }
+    )
+
+    return JsonResponse({
+        'status': 'success',
+        'message': f'Updated sector taxonomy for {ticker}',
+        'ticker': ticker,
+        'sector': obj.sector,
+        'industry': obj.industry
+    })

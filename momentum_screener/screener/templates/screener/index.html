@@ -564,6 +564,19 @@
                         </select>
                     </div>
 
+                    <!-- Sector Filter -->
+                    <div class="config-group" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 15px; margin-bottom: 15px;">
+                        <div class="config-label-row">
+                            <strong style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary);"><i class="fa-solid fa-layer-group"></i> Filter by Sector</strong>
+                        </div>
+                        <select id="sel-filter-sector" style="width: 100%; margin-top: 8px; background: var(--bg-input); border: 1px solid var(--border-input); border-radius: var(--border-radius-sm); padding: 8px 12px; color: var(--text-primary); font-family: var(--font-stack); font-size: 13px; outline: none; cursor: pointer; transition: all 0.2s;">
+                            <option value="all" selected>All Sectors</option>
+                            {% for sec in all_sectors %}
+                                <option value="{{ sec|safe }}">{{ sec }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
                     <!-- Rule 1: SMA 200 -->
                     <div class="config-group">
                         <div class="config-label-row">
@@ -832,6 +845,16 @@
                             <button type="button" class="universe-btn" id="btn-universe-fo" data-universe="fo">
                                 <i class="fa-solid fa-chart-pie" style="color: #f4a261;"></i> Nifty F&O
                             </button>
+                        </div>
+
+                        <!-- Quick Sector Filter Dropdown -->
+                        <div class="grid-sector-filter-container" style="display: flex; align-items: center; gap: 6px;">
+                            <select id="sel-grid-sector" class="grid-filter-select" style="background: var(--bg-input); border: 1px solid var(--border-input); border-radius: var(--border-radius-sm); padding: 7px 10px; color: var(--text-primary); font-family: var(--font-stack); font-size: 12px; outline: none; cursor: pointer; max-width: 170px;">
+                                <option value="all">All Sectors</option>
+                                {% for sec in all_sectors %}
+                                    <option value="{{ sec|safe }}">{{ sec }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                         
                         <!-- Zerodha Admin Scanning & Add Ticker Section (Only visible in Zerodha mode) -->
@@ -1385,6 +1408,15 @@
                                     </select>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 6px;">
+                                    <label for="sel-stats-sector" style="font-size: 10.5px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Sector:</label>
+                                    <select id="sel-stats-sector" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); border-radius: var(--border-radius-sm); padding: 5px 8px; font-size: 11.5px; outline: none; cursor: pointer; height: 28px; max-width: 170px;">
+                                        <option value="all" selected>All Sectors</option>
+                                        {% for sec in all_sectors %}
+                                            <option value="{{ sec|safe }}">{{ sec }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 6px;">
                                     <label for="sel-stats-status" style="font-size: 10.5px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Status:</label>
                                     <select id="sel-stats-status" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); border-radius: var(--border-radius-sm); padding: 5px 8px; font-size: 11.5px; outline: none; cursor: pointer; height: 28px;">
                                         <option value="all" selected>All Statuses</option>
@@ -1586,6 +1618,8 @@
                                     <tr>
                                         <th class="stats-th stats-col-ticker sortable" data-sort="ticker">Ticker <i class="fa-solid fa-sort"></i></th>
                                         <th class="stats-th sortable" data-sort="name">Company Name <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="sector">Sector <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th sortable" data-sort="industry">Sub-Industry <i class="fa-solid fa-sort"></i></th>
                                         <th class="stats-th sortable" data-sort="universe">Universe <i class="fa-solid fa-sort"></i></th>
                                         <th class="stats-th sortable" data-sort="magicScore" style="text-align: center; background: rgba(99, 102, 241, 0.1);">
                                             Magic Score <button type="button" class="btn-metric-help" onclick="window.showMetricHelpModal('magicScore'); event.stopPropagation();" title="Magic Score breakdown &amp; criteria"><i class="fa-solid fa-circle-question"></i></button> <i class="fa-solid fa-sort"></i>
@@ -1623,11 +1657,12 @@
                                         <th class="stats-th sortable" data-sort="high52w" style="text-align: right;">52W High <i class="fa-solid fa-sort"></i></th>
                                         <th class="stats-th sortable" data-sort="low52w" style="text-align: right;">52W Low <i class="fa-solid fa-sort"></i></th>
                                         <th class="stats-th sortable" data-sort="volume" style="text-align: right;">20D Avg Vol <i class="fa-solid fa-sort"></i></th>
+                                        <th class="stats-th" style="text-align: center; min-width: 70px;">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody id="admin-stats-tbody">
                                     <tr>
-                                        <td colspan="27" style="text-align: center; color: var(--text-secondary); font-size: 12px; padding: 25px;">
+                                        <td colspan="30" style="text-align: center; color: var(--text-secondary); font-size: 12px; padding: 25px;">
                                             Loading statistical data...
                                         </td>
                                     </tr>
@@ -2228,6 +2263,48 @@
         </div>
     </div>
 
+    <!-- Admin Edit Stock Sector & Sub-Industry Modal -->
+    <div id="admin-edit-sector-modal" class="modal-overlay hidden" style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 9999; padding: 15px;">
+        <div class="glass-card" style="width: 100%; max-width: 480px; padding: 22px; border-radius: var(--border-radius-md); border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 20px 40px rgba(0,0,0,0.5); background: var(--bg-card);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-pen-to-square" style="color: var(--accent-indigo);"></i> Edit Sector &amp; Sub-Industry
+                </h3>
+                <button type="button" id="btn-close-edit-sector-modal" style="background: transparent; border: none; color: var(--text-secondary); font-size: 18px; cursor: pointer; padding: 4px;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form id="admin-edit-sector-form">
+                <input type="hidden" id="edit-sector-ticker" value="">
+                <div style="margin-bottom: 14px;">
+                    <label style="display: block; font-size: 11px; text-transform: uppercase; color: var(--text-secondary); font-weight: 600; margin-bottom: 5px;">Stock Ticker</label>
+                    <div id="edit-sector-ticker-display" style="font-size: 14px; font-weight: 700; color: var(--text-primary); padding: 8px 12px; background: rgba(255,255,255,0.04); border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);"></div>
+                </div>
+                <div style="margin-bottom: 14px;">
+                    <label for="edit-sector-select" style="display: block; font-size: 11px; text-transform: uppercase; color: var(--text-secondary); font-weight: 600; margin-bottom: 5px;">Primary Broad Sector</label>
+                    <select id="edit-sector-select" style="width: 100%; padding: 9px 12px; background: var(--bg-input); border: 1px solid var(--border-input); border-radius: 6px; color: var(--text-primary); font-size: 13px; outline: none; cursor: pointer;">
+                        {% for sec in all_sectors %}
+                            <option value="{{ sec|safe }}">{{ sec }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="margin-bottom: 18px;">
+                    <label for="edit-industry-input" style="display: block; font-size: 11px; text-transform: uppercase; color: var(--text-secondary); font-weight: 600; margin-bottom: 5px;">Granular Sub-Industry</label>
+                    <input type="text" id="edit-industry-input" list="edit-industry-datalist" placeholder="e.g. Passenger Vehicles (4-Wheelers)" style="width: 100%; padding: 9px 12px; background: var(--bg-input); border: 1px solid var(--border-input); border-radius: 6px; color: var(--text-primary); font-size: 13px; outline: none; box-sizing: border-box;">
+                    <datalist id="edit-industry-datalist"></datalist>
+                    <span style="display: block; font-size: 10.5px; color: var(--text-muted); margin-top: 5px; line-height: 1.3;">Select from recommended sub-industries or type a custom granular classification.</span>
+                </div>
+                <div id="edit-sector-status-msg" style="display: none; padding: 8px 12px; border-radius: 6px; font-size: 11.5px; margin-bottom: 14px;"></div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" id="btn-cancel-edit-sector" class="secondary-btn" style="padding: 8px 16px; font-size: 12px; cursor: pointer;">Cancel</button>
+                    <button type="submit" id="btn-save-edit-sector" class="primary-btn" style="padding: 8px 18px; font-size: 12px; background: var(--accent-indigo); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                        <i class="fa-solid fa-check"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Django Template-to-JS Injections -->
     <script>
         // Mapping from Django context
@@ -2236,6 +2313,14 @@
         const USER_DAYS_LEFT = {{ days_left }};
         const PLAN_TIER = "{{ plan_tier }}";
         const HAS_USED_TRIAL = {% if has_used_trial %}true{% else %}false{% endif %};
+        
+        // Sector Taxonomy mappings for client-side filtering and editing
+        const STOCK_SECTORS = {{ sector_taxonomy_json|safe }};
+        const SECTOR_TO_INDUSTRIES = {{ sector_to_industries_json|safe }};
+        const ALL_SECTORS = {{ all_sectors_json|safe }};
+        window.STOCK_SECTORS = STOCK_SECTORS;
+        window.SECTOR_TO_INDUSTRIES = SECTOR_TO_INDUSTRIES;
+        window.ALL_SECTORS = ALL_SECTORS;
         
         // Credentials pre-configuration mappings for Superuser / environment bypasses
         const IS_SUPERUSER = {% if request.user.is_superuser or request.user.is_staff %}true{% else %}false{% endif %};

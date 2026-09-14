@@ -43,6 +43,7 @@ const App = (function() {
         activeTicker: null,       // Currently selected stock
         zerodhaAuthErrorAlerted: false, // Flag to prevent alert floods on API auth errors
         universeFilter: 'all',    // 'all', 'nifty50', or 'fo'
+        sectorFilter: 'all',      // 'all' or specific broad sector name
         filters: {
             status: 'all',
             sma: { enabled: true },
@@ -61,6 +62,22 @@ const App = (function() {
             direction: 'asc'
         }
     };
+
+    // Helper: Normalize sector names to prevent ampersand encoding mismatches (& vs &amp;)
+    function normalizeSector(sec) {
+        if (!sec) return '';
+        return sec.toString().replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim().toLowerCase();
+    }
+
+    // Helper: Update active sector filter and synchronize UI selectors
+    function setSectorFilter(val) {
+        state.sectorFilter = val || 'all';
+        const s1 = document.getElementById('sel-filter-sector');
+        const s2 = document.getElementById('sel-grid-sector');
+        if (s1 && s1.value !== state.sectorFilter) s1.value = state.sectorFilter;
+        if (s2 && s2.value !== state.sectorFilter) s2.value = state.sectorFilter;
+        renderScreenerGrid();
+    }
 
     // --- Mathematical Indicator Calculations ---
 
@@ -526,7 +543,16 @@ const App = (function() {
                 matchesUniverse = isFoStock;
             }
 
-            if (matchesSearch && matchesStatus && matchesPerf && matchesUniverse) {
+            // Sector Filter
+            if (!stock.sector || stock.sector === 'Other' || stock.sector === 'General') {
+                const tax = (window.STOCK_SECTORS && window.STOCK_SECTORS[stock.ticker]) || {};
+                stock.sector = tax.sector || stock.sector || 'Other';
+                stock.industry = tax.industry || stock.industry || '';
+            }
+            const activeSectorFilter = state.sectorFilter || document.getElementById('sel-grid-sector')?.value || document.getElementById('sel-filter-sector')?.value || 'all';
+            const matchesSector = (activeSectorFilter === 'all' || normalizeSector(stock.sector) === normalizeSector(activeSectorFilter));
+
+            if (matchesSearch && matchesStatus && matchesPerf && matchesUniverse && matchesSector) {
                 total++;
                 if (stock.status === 'Knife') {
                     knives++;
@@ -1180,8 +1206,29 @@ const App = (function() {
                     else { scoreTierClass = 'score-risk'; scoreTierLabel = '🔴 High Risk'; }
                 }
 
-                // Build Magic Score and Key Ratio Strip
+                // Sector and Granular Sub-Industry Header
+                const sectorName = data.sector || 'General';
+                const industryName = data.industry || 'General';
+                const ranks = data.sector_ranks || {};
+
                 let html = `
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <span class="sector-badge" title="Broad Sector">
+                                <i class="fa-solid fa-layer-group"></i> ${sectorName}
+                            </span>
+                            <span class="industry-badge" title="Granular Sub-Industry">
+                                <i class="fa-solid fa-tag"></i> ${industryName}
+                            </span>
+                        </div>
+                        ${ranks.magic_score_rank ? `
+                            <span class="rank-pill-badge rank-pill-gold" title="Magic Score Rank in Sector">
+                                <i class="fa-solid fa-trophy"></i> Sector Rank: #${ranks.magic_score_rank} / ${ranks.total_peers}
+                            </span>
+                        ` : ''}
+                    </div>
+
+                    <!-- Build Magic Score and Key Ratio Strip -->
                     <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 10px 14px; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
                         <div>
                             <div style="font-size: 10px; text-transform: uppercase; color: var(--text-secondary); font-weight: 600; letter-spacing: 0.5px;">
@@ -1276,7 +1323,131 @@ const App = (function() {
                     html += `<div style="text-align: center; padding: 15px; color: var(--text-muted); font-size: 11px;">Historical financial trend rows not available for this stock.</div>`;
                 }
 
+                // Build Sector Peer Comparison Table (Pro Analyst Feature)
+                const peers = data.peers || [];
+                const medians = data.sector_medians || {};
+
+                if (peers.length > 0) {
+                    html += `
+                        <div class="peer-comparison-container">
+                            <div class="peer-comparison-header">
+                                <div>
+                                    <h5 style="margin: 0; font-size: 12px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                                        <i class="fa-solid fa-users" style="color: var(--accent-indigo);"></i> Sector Peer Comparison (${sectorName})
+                                    </h5>
+                                    <div style="font-size: 10.5px; color: var(--text-secondary); margin-top: 2px;">
+                                        Comparing ${ticker} against ${peers.length} corporate constituents in ${sectorName}
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                                    ${ranks.magic_score_rank ? `
+                                        <span class="rank-pill-badge rank-pill-gold" title="Magic Score Rank">
+                                            <i class="fa-solid fa-trophy"></i> Score Rank: #${ranks.magic_score_rank} of ${ranks.total_peers}
+                                        </span>
+                                    ` : ''}
+                                    ${ranks.roce_rank ? `
+                                        <span class="rank-pill-badge rank-pill-silver" title="ROCE Rank">
+                                            <i class="fa-solid fa-chart-line"></i> ROCE Rank: #${ranks.roce_rank} of ${ranks.total_peers}
+                                        </span>
+                                    ` : ''}
+                                </div>
+                            </div>
+
+                            <div class="peer-comparison-table-wrapper">
+                                <table class="peer-comparison-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Ticker</th>
+                                            <th>Granular Sub-Industry</th>
+                                            <th style="text-align: center;">Magic Score</th>
+                                            <th style="text-align: right;">ROCE (%)</th>
+                                            <th style="text-align: right;">Debt / Eq</th>
+                                            <th style="text-align: right;">Net Margin (%)</th>
+                                            <th style="text-align: right;">PEG</th>
+                                            <th style="text-align: center;">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${peers.map(p => {
+                                            const isActive = p.ticker === ticker;
+                                            const pScore = p.magic_score !== null && p.magic_score !== undefined ? p.magic_score : 'N/A';
+                                            let pScoreClass = 'score-neutral';
+                                            if (pScore !== 'N/A') {
+                                                if (pScore >= 80) pScoreClass = 'score-elite';
+                                                else if (pScore >= 65) pScoreClass = 'score-strong';
+                                                else if (pScore >= 50) pScoreClass = 'score-neutral';
+                                                else pScoreClass = 'score-risk';
+                                            }
+                                            return `
+                                                <tr class="${isActive ? 'peer-row-active' : ''}">
+                                                    <td>
+                                                        <strong style="color: ${isActive ? '#818cf8' : 'var(--text-primary)'};">${p.ticker}</strong>
+                                                        ${isActive ? '<span style="font-size: 9px; margin-left: 4px; color: #818cf8; font-weight: 700;">(Active)</span>' : ''}
+                                                    </td>
+                                                    <td style="color: var(--text-secondary); font-size: 11px;">${p.industry || '-'}</td>
+                                                    <td style="text-align: center;">
+                                                        <span class="magic-score-pill ${pScoreClass}" style="font-size: 11px; padding: 2px 7px;">
+                                                            ${pScore}
+                                                        </span>
+                                                    </td>
+                                                    <td style="text-align: right; color: ${p.roce_pct >= 15 ? '#34d399' : (p.roce_pct < 8 ? '#f87171' : 'inherit')}; font-weight: 600;">
+                                                        ${p.roce_pct !== null && p.roce_pct !== undefined ? p.roce_pct + '%' : 'N/A'}
+                                                    </td>
+                                                    <td style="text-align: right; color: ${p.debt_equity <= 0.3 ? '#34d399' : (p.debt_equity > 1 ? '#f87171' : 'inherit')};">
+                                                        ${p.debt_equity !== null && p.debt_equity !== undefined ? p.debt_equity : 'N/A'}
+                                                    </td>
+                                                    <td style="text-align: right; color: ${p.net_margin_pct >= 15 ? '#34d399' : (p.net_margin_pct < 5 ? '#f87171' : 'inherit')};">
+                                                        ${p.net_margin_pct !== null && p.net_margin_pct !== undefined ? p.net_margin_pct + '%' : 'N/A'}
+                                                    </td>
+                                                    <td style="text-align: right; color: ${p.peg_ratio && p.peg_ratio <= 1.0 ? '#34d399' : 'inherit'};">
+                                                        ${p.peg_ratio ? p.peg_ratio : 'N/A'}
+                                                    </td>
+                                                    <td style="text-align: center;">
+                                                        ${!isActive ? `
+                                                            <button type="button" class="btn-peer-view" data-ticker="${p.ticker}">
+                                                                <i class="fa-solid fa-arrow-up-right-from-square"></i> View
+                                                            </button>
+                                                        ` : '<span style="font-size: 10px; color: var(--text-muted);">Current</span>'}
+                                                    </td>
+                                                </tr>
+                                            `;
+                                        }).join('')}
+                                        <!-- Sector Median Benchmark Row -->
+                                        <tr class="sector-median-row">
+                                            <td><i class="fa-solid fa-chart-pie" style="margin-right: 4px;"></i> Sector Median</td>
+                                            <td style="font-size: 10px; color: rgba(250, 204, 21, 0.8);">Benchmark Baseline</td>
+                                            <td style="text-align: center;">
+                                                <span style="background: rgba(250, 204, 21, 0.2); color: #facc15; border-radius: 4px; padding: 2px 7px; font-size: 11px;">
+                                                    ${medians.magic_score !== null && medians.magic_score !== undefined ? medians.magic_score : 'N/A'}
+                                                </span>
+                                            </td>
+                                            <td style="text-align: right;">${medians.roce_pct !== null && medians.roce_pct !== undefined ? medians.roce_pct + '%' : 'N/A'}</td>
+                                            <td style="text-align: right;">${medians.debt_equity !== null && medians.debt_equity !== undefined ? medians.debt_equity : 'N/A'}</td>
+                                            <td style="text-align: right;">${medians.net_margin_pct !== null && medians.net_margin_pct !== undefined ? medians.net_margin_pct + '%' : 'N/A'}</td>
+                                            <td style="text-align: right;">${medians.peg_ratio !== null && medians.peg_ratio !== undefined ? medians.peg_ratio : 'N/A'}</td>
+                                            <td style="text-align: center; font-size: 10px; color: var(--text-muted);">-</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                }
+
                 container.innerHTML = html;
+
+                // Wire up peer view button clicks
+                container.querySelectorAll('.btn-peer-view').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const peerSym = btn.getAttribute('data-ticker');
+                        if (peerSym && state.stocks[peerSym]) {
+                            openDetailDrawer(peerSym);
+                        } else if (peerSym) {
+                            loadDrawerFundamentals(peerSym);
+                        }
+                    });
+                });
             })
             .catch(err => {
                 container.innerHTML = `
@@ -1305,9 +1476,12 @@ const App = (function() {
                             close: c[4],
                             volume: c[5]
                         }));
+                        const tax = (window.STOCK_SECTORS && window.STOCK_SECTORS[symbol]) || {};
                         state.stocks[symbol] = {
                             ticker: symbol,
                             name: `${symbol} Equity`,
+                            sector: tax.sector || 'Other',
+                            industry: tax.industry || '',
                             candles: parsedCandles
                         };
                         processStockIndicators(state.stocks[symbol]);
@@ -1877,9 +2051,12 @@ const App = (function() {
                         close: c[4],
                         volume: c[5]
                     }));
+                    const tax = (window.STOCK_SECTORS && window.STOCK_SECTORS[symbol]) || {};
                     simulatedPool[symbol] = {
                         ticker: symbol,
                         name: `${symbol} Equity`,
+                        sector: tax.sector || 'Other',
+                        industry: tax.industry || '',
                         candles: parsedCandles
                     };
                 }
@@ -2528,6 +2705,9 @@ const App = (function() {
             if (selectPerf) selectPerf.value = "all";
             if (selFilterUniverse) selFilterUniverse.value = "all";
             setUniverseFilter("all");
+            setSectorFilter("all");
+            const selStatsSectorReset = document.getElementById('sel-stats-sector');
+            if (selStatsSectorReset) selStatsSectorReset.value = "all";
 
             document.getElementById('val-filter-rsi').innerText = '30';
             document.getElementById('val-filter-adx').innerText = '25';
@@ -3130,6 +3310,7 @@ const App = (function() {
 
         // Screener Statistics Page Filter & Export Bindings
         const selStatsUniverse = document.getElementById('sel-stats-universe');
+        const selStatsSector = document.getElementById('sel-stats-sector');
         const selStatsStatus = document.getElementById('sel-stats-status');
         const selStatsMomentum = document.getElementById('sel-stats-momentum');
         const txtStatsSearch = document.getElementById('txt-stats-search');
@@ -3138,6 +3319,7 @@ const App = (function() {
         const btnAdminScanFundamentals = document.getElementById('btn-admin-scan-fundamentals');
 
         if (selStatsUniverse) selStatsUniverse.addEventListener('change', renderAdminStatsDashboard);
+        if (selStatsSector) selStatsSector.addEventListener('change', renderAdminStatsDashboard);
         if (selStatsStatus) selStatsStatus.addEventListener('change', renderAdminStatsDashboard);
         if (selStatsMomentum) selStatsMomentum.addEventListener('change', renderAdminStatsDashboard);
         if (txtStatsSearch) txtStatsSearch.addEventListener('input', renderAdminStatsDashboard);
@@ -3187,6 +3369,20 @@ const App = (function() {
                 renderAdminStatsDashboard();
             });
         });
+
+        // Sector filter event listeners (Sidebar & Grid Controls synchronized)
+        const selFilterSector = document.getElementById('sel-filter-sector');
+        const selGridSector = document.getElementById('sel-grid-sector');
+        if (selFilterSector) {
+            selFilterSector.addEventListener('change', () => {
+                setSectorFilter(selFilterSector.value);
+            });
+        }
+        if (selGridSector) {
+            selGridSector.addEventListener('change', () => {
+                setSectorFilter(selGridSector.value);
+            });
+        }
 
         const btnFullscreenAdvanced = document.getElementById('btn-fullscreen-advanced');
         if (btnFullscreenAdvanced) {
@@ -4582,6 +4778,160 @@ const App = (function() {
         }
     }
 
+    // --- Admin Edit Sector & Granular Sub-Industry Logic ---
+
+    function closeAdminEditSectorModal() {
+        const modal = document.getElementById('admin-edit-sector-modal');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.classList.add('hidden');
+        }
+    }
+
+    function updateEditIndustryDatalist(selectedSector) {
+        const datalist = document.getElementById('edit-industry-datalist');
+        if (!datalist) return;
+        datalist.innerHTML = '';
+        const industries = (window.SECTOR_TO_INDUSTRIES && window.SECTOR_TO_INDUSTRIES[selectedSector]) || [];
+        industries.forEach(ind => {
+            const opt = document.createElement('option');
+            opt.value = ind;
+            datalist.appendChild(opt);
+        });
+    }
+
+    window.openAdminEditSectorModal = function(ticker) {
+        const modal = document.getElementById('admin-edit-sector-modal');
+        if (!modal) return;
+        const tickerInput = document.getElementById('edit-sector-ticker');
+        const tickerDisplay = document.getElementById('edit-sector-ticker-display');
+        const statusMsg = document.getElementById('edit-sector-status-msg');
+        const selSector = document.getElementById('edit-sector-select');
+        const inputIndustry = document.getElementById('edit-industry-input');
+
+        if (statusMsg) statusMsg.style.display = 'none';
+        if (tickerInput) tickerInput.value = ticker;
+        if (tickerDisplay) tickerDisplay.textContent = ticker;
+
+        const f = (state.fundamentals && state.fundamentals[ticker]) || null;
+        const tax = (window.STOCK_SECTORS && window.STOCK_SECTORS[ticker]) || {};
+        const curSector = (f && f.sector) || (state.stocks[ticker] && state.stocks[ticker].sector) || tax.sector || 'Automobile & Auto Components';
+        const curIndustry = (f && f.industry) || (state.stocks[ticker] && state.stocks[ticker].industry) || tax.industry || '';
+
+        if (selSector) {
+            selSector.value = curSector;
+            updateEditIndustryDatalist(curSector);
+        }
+        if (inputIndustry) {
+            inputIndustry.value = curIndustry;
+        }
+
+        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const btnClose = document.getElementById('btn-close-edit-sector-modal');
+        const btnCancel = document.getElementById('btn-cancel-edit-sector');
+        const modal = document.getElementById('admin-edit-sector-modal');
+        const selSector = document.getElementById('edit-sector-select');
+        const form = document.getElementById('admin-edit-sector-form');
+
+        if (btnClose) btnClose.addEventListener('click', closeAdminEditSectorModal);
+        if (btnCancel) btnCancel.addEventListener('click', closeAdminEditSectorModal);
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeAdminEditSectorModal();
+            });
+        }
+        if (selSector) {
+            selSector.addEventListener('change', () => {
+                updateEditIndustryDatalist(selSector.value);
+            });
+        }
+
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const ticker = document.getElementById('edit-sector-ticker')?.value;
+                const sector = selSector ? selSector.value : '';
+                const industry = document.getElementById('edit-industry-input')?.value.trim() || '';
+                const statusMsg = document.getElementById('edit-sector-status-msg');
+                const btnSave = document.getElementById('btn-save-edit-sector');
+
+                if (!ticker || !sector) {
+                    alert("Please specify a valid sector.");
+                    return;
+                }
+
+                if (btnSave) {
+                    btnSave.disabled = true;
+                    btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+                }
+
+                try {
+                    const resp = await fetch('/api/admin/update-stock-sector/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        body: JSON.stringify({ ticker, sector, industry })
+                    });
+                    const res = await resp.json();
+                    if (res.status === 'success') {
+                        // Update local mappings
+                        if (!window.STOCK_SECTORS) window.STOCK_SECTORS = {};
+                        window.STOCK_SECTORS[ticker] = { sector, industry };
+                        if (state.stocks[ticker]) {
+                            state.stocks[ticker].sector = sector;
+                            state.stocks[ticker].industry = industry;
+                        }
+                        if (state.fundamentals && state.fundamentals[ticker]) {
+                            state.fundamentals[ticker].sector = sector;
+                            state.fundamentals[ticker].industry = industry;
+                        }
+
+                        if (statusMsg) {
+                            statusMsg.style.display = 'block';
+                            statusMsg.style.background = 'rgba(16, 185, 129, 0.15)';
+                            statusMsg.style.color = '#34d399';
+                            statusMsg.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+                            statusMsg.innerHTML = `<i class="fa-solid fa-check"></i> ${res.message || 'Sector updated successfully!'}`;
+                        }
+
+                        setTimeout(() => {
+                            closeAdminEditSectorModal();
+                            renderAdminStatsDashboard();
+                            renderScreenerGrid();
+                        }, 600);
+                    } else {
+                        if (statusMsg) {
+                            statusMsg.style.display = 'block';
+                            statusMsg.style.background = 'rgba(239, 68, 68, 0.15)';
+                            statusMsg.style.color = '#f87171';
+                            statusMsg.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+                            statusMsg.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${res.message || 'Failed to update sector.'}`;
+                        }
+                    }
+                } catch (err) {
+                    if (statusMsg) {
+                        statusMsg.style.display = 'block';
+                        statusMsg.style.background = 'rgba(239, 68, 68, 0.15)';
+                        statusMsg.style.color = '#f87171';
+                        statusMsg.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+                        statusMsg.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Error: ${err.message}`;
+                    }
+                } finally {
+                    if (btnSave) {
+                        btnSave.disabled = false;
+                        btnSave.innerHTML = '<i class="fa-solid fa-check"></i> Save Changes';
+                    }
+                }
+            });
+        }
+    });
+
     // --- Admin Screener Statistics & Export Engine ---
 
     let adminStatsSortField = 'ticker';
@@ -4592,6 +4942,7 @@ const App = (function() {
         if (!stocks || stocks.length === 0) return;
 
         const selUniverse = document.getElementById('sel-stats-universe')?.value || 'all';
+        const selSector = document.getElementById('sel-stats-sector')?.value || 'all';
         const selStatus = document.getElementById('sel-stats-status')?.value || 'all';
         const selSignal = document.getElementById('sel-stats-momentum')?.value || 'all';
         const searchQuery = (document.getElementById('txt-stats-search')?.value || '').trim().toUpperCase();
@@ -4604,6 +4955,12 @@ const App = (function() {
             // Universe filter
             if (selUniverse === 'nifty50' && !isN50) return false;
             if (selUniverse === 'fo' && !isFo) return false;
+
+            // Sector filter
+            if (selSector !== 'all') {
+                const stockSector = (state.fundamentals && state.fundamentals[stock.ticker]?.sector) || stock.sector || (window.STOCK_SECTORS && window.STOCK_SECTORS[stock.ticker]?.sector) || '';
+                if (normalizeSector(stockSector) !== normalizeSector(selSector)) return false;
+            }
 
             // Status filter
             if (selStatus !== 'all' && stock.status !== selStatus) return false;
@@ -4732,6 +5089,18 @@ const App = (function() {
             switch (adminStatsSortField) {
                 case 'ticker': valA = a.ticker; valB = b.ticker; break;
                 case 'name': valA = a.name; valB = b.name; break;
+                case 'sector': {
+                    const secA = (a.sector || (window.STOCK_SECTORS && window.STOCK_SECTORS[a.ticker]?.sector) || '');
+                    const secB = (b.sector || (window.STOCK_SECTORS && window.STOCK_SECTORS[b.ticker]?.sector) || '');
+                    valA = secA.toLowerCase(); valB = secB.toLowerCase();
+                    break;
+                }
+                case 'industry': {
+                    const indA = (a.industry || (window.STOCK_SECTORS && window.STOCK_SECTORS[a.ticker]?.industry) || '');
+                    const indB = (b.industry || (window.STOCK_SECTORS && window.STOCK_SECTORS[b.ticker]?.industry) || '');
+                    valA = indA.toLowerCase(); valB = indB.toLowerCase();
+                    break;
+                }
                 case 'universe':
                     valA = MockDataEngine.NIFTY50_LIST.includes(a.ticker) ? 'NIFTY 50' : 'F&O';
                     valB = MockDataEngine.NIFTY50_LIST.includes(b.ticker) ? 'NIFTY 50' : 'F&O';
@@ -4937,9 +5306,15 @@ const App = (function() {
                 }
             }
 
+            const tax = (window.STOCK_SECTORS && window.STOCK_SECTORS[stock.ticker]) || {};
+            const stockSector = (f && f.sector) || stock.sector || tax.sector || 'Diversified';
+            const stockIndustry = (f && f.industry) || stock.industry || tax.industry || '-';
+
             tr.innerHTML = `
                 <td class="stats-col-ticker" style="padding: 8px 12px; font-weight: 700; color: var(--text-primary); white-space: nowrap;">${stock.ticker}</td>
                 <td style="padding: 8px 12px; color: var(--text-secondary); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${stock.name}</td>
+                <td style="padding: 8px 12px; white-space: nowrap;"><span class="sector-badge"><i class="fa-solid fa-layer-group"></i> ${stockSector}</span></td>
+                <td style="padding: 8px 12px; font-size: 11px; color: var(--text-secondary); max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${stockIndustry}">${stockIndustry}</td>
                 <td style="padding: 8px 12px; white-space: nowrap;">${universeBadge}</td>
                 <td style="padding: 8px 12px; text-align: center; white-space: nowrap;">${magicScorePill}</td>
                 <td style="padding: 8px 12px; text-align: right; white-space: nowrap;">${roceVal}</td>
@@ -4965,8 +5340,24 @@ const App = (function() {
                 <td style="padding: 8px 12px; text-align: right; color: var(--text-secondary); white-space: nowrap;">₹${max52w.toLocaleString(undefined, {maximumFractionDigits: 1})}</td>
                 <td style="padding: 8px 12px; text-align: right; color: var(--text-secondary); white-space: nowrap;">₹${min52w.toLocaleString(undefined, {maximumFractionDigits: 1})}</td>
                 <td style="padding: 8px 12px; text-align: right; color: var(--text-muted); white-space: nowrap;">${avgVol.toLocaleString()}</td>
+                <td style="padding: 8px 12px; text-align: center; white-space: nowrap;">
+                    <button type="button" class="btn-edit-sector" data-ticker="${stock.ticker}" title="Edit Sector &amp; Sub-Industry for ${stock.ticker}">
+                        <i class="fa-solid fa-pen"></i> Edit
+                    </button>
+                </td>
             `;
             tbody.appendChild(tr);
+
+            const editBtn = tr.querySelector('.btn-edit-sector');
+            if (editBtn) {
+                editBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const sym = editBtn.getAttribute('data-ticker');
+                    if (sym && typeof window.openAdminEditSectorModal === 'function') {
+                        window.openAdminEditSectorModal(sym);
+                    }
+                });
+            }
         });
 
         // 5. Update header sort indicators
@@ -4993,6 +5384,7 @@ const App = (function() {
         }
 
         const selUniverse = document.getElementById('sel-stats-universe')?.value || 'all';
+        const selSector = document.getElementById('sel-stats-sector')?.value || 'all';
         const selStatus = document.getElementById('sel-stats-status')?.value || 'all';
         const selSignal = document.getElementById('sel-stats-momentum')?.value || 'all';
 
@@ -5001,6 +5393,10 @@ const App = (function() {
             const isFo = MockDataEngine.FO_LIST.includes(stock.ticker);
             if (selUniverse === 'nifty50' && !isN50) return false;
             if (selUniverse === 'fo' && !isFo) return false;
+            if (selSector !== 'all') {
+                const stockSector = (state.fundamentals && state.fundamentals[stock.ticker]?.sector) || stock.sector || (window.STOCK_SECTORS && window.STOCK_SECTORS[stock.ticker]?.sector) || '';
+                if (normalizeSector(stockSector) !== normalizeSector(selSector)) return false;
+            }
             if (selStatus !== 'all' && stock.status !== selStatus) return false;
             if (selSignal === 'shift' && !stock.current.hasMomentumShift) return false;
             if (selSignal === 'magic-elite') {
@@ -5035,6 +5431,8 @@ const App = (function() {
         const headers = [
             "Ticker",
             "Company Name",
+            "Sector",
+            "Sub-Industry",
             "Universe",
             "Magic Score (0-100)",
             "Piotroski F-Score (0-9)",
@@ -5118,9 +5516,15 @@ const App = (function() {
             const pegNote = (f && f.peg_note) ? `"${f.peg_note.replace(/"/g, '""')}"` : "N/A";
             const ic = (f && f.interest_coverage !== null && f.interest_coverage !== undefined) ? f.interest_coverage + "x" : "N/A";
 
+            const tax = (window.STOCK_SECTORS && window.STOCK_SECTORS[stock.ticker]) || {};
+            const stockSector = (f && f.sector) || stock.sector || tax.sector || 'Diversified';
+            const stockIndustry = (f && f.industry) || stock.industry || tax.industry || '-';
+
             return [
                 stock.ticker,
                 `"${(stock.name || stock.ticker).replace(/"/g, '""')}"`,
+                `"${stockSector}"`,
+                `"${stockIndustry.replace(/"/g, '""')}"`,
                 universe,
                 magicScore,
                 piotroski,
@@ -5187,9 +5591,15 @@ const App = (function() {
             const c = stock.current;
             const ind = stock.indicators;
             const lastIdx = stock.candles.length - 1;
+            const f = (state.fundamentals && state.fundamentals[stock.ticker]) || null;
+            const tax = (window.STOCK_SECTORS && window.STOCK_SECTORS[stock.ticker]) || {};
+            const stockSector = (f && f.sector) || stock.sector || tax.sector || 'Diversified';
+            const stockIndustry = (f && f.industry) || stock.industry || tax.industry || '-';
             return {
                 ticker: stock.ticker,
                 name: stock.name,
+                sector: stockSector,
+                industry: stockIndustry,
                 universe: MockDataEngine.NIFTY50_LIST.includes(stock.ticker) ? 'NIFTY 50' : 'NIFTY F&O',
                 price: c.price,
                 status: stock.status,
@@ -5250,6 +5660,7 @@ const App = (function() {
         }
 
         const selUniverse = document.getElementById('sel-stats-universe')?.value || 'all';
+        const selSector = document.getElementById('sel-stats-sector')?.value || 'all';
         let tickers = [];
         if (selUniverse === 'nifty50') {
             tickers = [...MockDataEngine.NIFTY50_LIST];
@@ -5261,6 +5672,14 @@ const App = (function() {
 
         // Filter out indices (Nifty 50 Index, Bank, IT)
         tickers = tickers.filter(t => !['NIFTY 50', 'NIFTY BANK', 'NIFTY IT'].includes(t));
+
+        // Filter by Sector if specified
+        if (selSector !== 'all') {
+            tickers = tickers.filter(t => {
+                const sec = (state.fundamentals && state.fundamentals[t]?.sector) || (state.stocks[t]?.sector) || (window.STOCK_SECTORS && window.STOCK_SECTORS[t]?.sector) || '';
+                return normalizeSector(sec) === normalizeSector(selSector);
+            });
+        }
 
         if (tickers.length === 0) {
             alert("No corporate stocks available in the selected universe to scan.");
