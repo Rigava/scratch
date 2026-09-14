@@ -47,6 +47,25 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+# Security & Proxy Settings for PythonAnywhere & Production HTTPS
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://tradekriya.com',
+    'https://www.tradekriya.com',
+    'https://*.pythonanywhere.com',
+    'http://localhost',
+    'http://127.0.0.1',
+]
+
+# Cookie Security & CSRF
+CSRF_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_HTTPONLY = False
+
+# Custom CSRF Failure View
+CSRF_FAILURE_VIEW = 'screener.views.csrf_failure_view'
+
 
 # Application definition
 

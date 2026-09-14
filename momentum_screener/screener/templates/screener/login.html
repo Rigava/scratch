@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>TradeKriya - Sign In</title>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Yatra+One&display=swap" rel="stylesheet">
@@ -519,6 +522,47 @@
             const activeTheme = document.body.classList.contains('light-theme') ? 'dark' : 'light';
             localStorage.setItem('theme', activeTheme);
             applyTheme(activeTheme);
+        });
+
+        // CSRF Token synchronization & cache-recovery handlers
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function syncCsrfTokens() {
+            const tokenFromCookie = getCookie('csrftoken');
+            if (tokenFromCookie) {
+                document.querySelectorAll('input[name="csrfmiddlewaretoken"]').forEach(input => {
+                    input.value = tokenFromCookie;
+                });
+            }
+        }
+
+        // Reload fresh content if navigated back via browser bfcache
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted) {
+                window.location.reload();
+            } else {
+                syncCsrfTokens();
+            }
+        });
+
+        // Sync fresh cookie token immediately prior to submitting forms
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', () => {
+                syncCsrfTokens();
+            });
         });
     </script>
 </body>

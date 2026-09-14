@@ -6,7 +6,8 @@ from django.views.decorators.http import require_GET
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie
+from django.views.decorators.cache import never_cache
 from django.db import IntegrityError
 from django.utils import timezone
 from django.core.mail import send_mail
@@ -116,12 +117,14 @@ def get_instrument_token(symbol):
         
     return None
 
+@ensure_csrf_cookie
 def home_view(request):
     """
     Renders the public homepage.
     """
     return render(request, 'screener/home.html')
 
+@ensure_csrf_cookie
 def community_view(request):
     """
     Renders the public Community Use Cases & Mindset Blog page.
@@ -181,6 +184,7 @@ def community_view(request):
     }
     return render(request, 'screener/community.html', context)
 
+@ensure_csrf_cookie
 def community_post_detail(request, post_id):
     """
     Renders the mindset poll/article detail page for a single CommunityPost.
@@ -898,6 +902,9 @@ def generate_campaign_view(request):
 
 # --- Authentication Views ---
 
+@never_cache
+@ensure_csrf_cookie
+@csrf_protect
 def login_view(request):
     if request.user.is_authenticated or request.session.get('is_guest_user'):
         return redirect('screener:dashboard')
@@ -919,6 +926,9 @@ def login_view(request):
         tab = 'login'
     return render(request, 'screener/login.html', {'error': error_message, 'active_tab': tab})
 
+@never_cache
+@ensure_csrf_cookie
+@csrf_protect
 def signup_view(request):
     if request.user.is_authenticated or request.session.get('is_guest_user'):
         return redirect('screener:dashboard')
@@ -988,6 +998,13 @@ def guest_trial_view(request):
     request.session['is_guest_user'] = True
     request.session['scan_count'] = 0
     return redirect('screener:dashboard')
+
+def csrf_failure_view(request, reason=""):
+    """
+    Custom branded CSRF failure view that renders a graceful recovery page
+    instead of the default 403 Forbidden screen.
+    """
+    return render(request, 'screener/csrf_error.html', {'reason': reason}, status=403)
 
 # --- Trade Journal API endpoints ---
 
