@@ -167,6 +167,12 @@ class StockFundamental(models.Model):
     yearly_trends_json = models.TextField(default='[]')
     last_updated = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        verbose_name = "Stock Fundamental"
+        verbose_name_plural = "Stock Fundamentals"
+        ordering = ['-magic_score', 'ticker']
+
     def __str__(self):
         return f"{self.ticker} (Magic Score: {self.magic_score})"
+
 
