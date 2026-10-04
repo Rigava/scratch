@@ -816,10 +816,10 @@ def generate_campaign_view(request):
     5. The output must strictly follow the JSON schema provided.
     """
 
-    # Gemini API endpoints, using the active gemini-3.5-flash model
+    # Gemini API endpoints, using the active gemini-3.8-flash model
     endpoints = [
-        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={api_key}",
-        f"https://generativelanguage.googleapis.com/v1/models/gemini-3.5-flash:generateContent?key={api_key}",
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={api_key}",
+        f"https://generativelanguage.googleapis.com/v1/models/gemini-3.8-flash:generateContent?key={api_key}",
     ]
     
     headers = {
@@ -1430,7 +1430,7 @@ def fetch_google_news_rss(ticker_name):
 def analyze_stock_ai_view(request):
     """
     Evaluates a stock configuration using technical data, rsi backtesting results,
-    and live Google News headlines utilizing Gemini 3.5 Flash.
+    and live Google News headlines utilizing Gemini 3.8 Flash.
     """
     # Restrict to Pro plan or trial users
     is_allowed = False
@@ -1542,8 +1542,8 @@ def analyze_stock_ai_view(request):
     }
 
     endpoints = [
-        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={api_key}",
-        f"https://generativelanguage.googleapis.com/v1/models/gemini-3.5-flash:generateContent?key={api_key}",
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={api_key}",
+        f"https://generativelanguage.googleapis.com/v1/models/gemini-3.8-flash:generateContent?key={api_key}",
     ]
     
     headers = {'Content-Type': 'application/json'}
@@ -2555,8 +2555,8 @@ def generate_pm_brief_view(request):
         }
 
         endpoints = [
-            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={api_key}",
-            f"https://generativelanguage.googleapis.com/v1/models/gemini-3.5-flash:generateContent?key={api_key}",
+            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={api_key}",
+            f"https://generativelanguage.googleapis.com/v1/models/gemini-3.8-flash:generateContent?key={api_key}",
         ]
         
         headers = {'Content-Type': 'application/json'}

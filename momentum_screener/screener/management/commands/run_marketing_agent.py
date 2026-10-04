@@ -219,7 +219,7 @@ class Command(BaseCommand):
         }}
         """
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={api_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={api_key}"
         headers = {
             'Content-Type': 'application/json'
         }

@@ -22,8 +22,8 @@ def test_gemini_key():
     obfuscated = api_key[:6] + "..." + api_key[-4:] if len(api_key) > 10 else "invalid"
     print(f"\n🔑 Key Loaded: {obfuscated}")
     
-    # Endpoint to test gemini-2.5-flash
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={api_key}"
+    # Endpoint to test gemini-3.8-flash
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={api_key}"
     
     headers = {
         'Content-Type': 'application/json'
@@ -37,7 +37,7 @@ def test_gemini_key():
         }]
     }
 
-    print("📡 Sending diagnostics payload to gemini-2.5-flash endpoint...")
+    print("📡 Sending diagnostics payload to gemini-3.8-flash endpoint...")
     try:
         response = requests.post(url, headers=headers, json=body, timeout=12)
         
