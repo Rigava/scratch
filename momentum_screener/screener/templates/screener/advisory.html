@@ -909,8 +909,30 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                         <div>
                             <h3 style="font-size: 17px; margin: 0; color: var(--text-primary, #fff);">Dynamic Strategy Criteria Optimizer</h3>
-                            <p style="font-size: 12.5px; color: var(--text-secondary, #a8a29e); margin-top: 4px;">Adjust technical indicator thresholds in real-time. Changes instantly calibrate the AI screening engine.</p>
+                            <p style="font-size: 12.5px; color: var(--text-secondary, #a8a29e); margin-top: 4px;">Adjust technical indicator thresholds in real-time. Changes instantly calibrate the quantitative analysis, rule compliance checks, and AI screening engine.</p>
                         </div>
+                    </div>
+
+                    <!-- Live Stock Strategy Compliance Tester -->
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 14px 16px; margin-bottom: 24px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                            <span style="font-size: 13px; font-weight: 700; color: #fff;">
+                                <i class="fa-solid fa-flask" style="color: #38bdf8;"></i> Live Parameter Compliance Tester
+                            </span>
+                            <span style="font-size: 11px; color: var(--text-muted, #78716c);">Verify how your tuned parameters evaluate any stock in real-time</span>
+                        </div>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <input type="text" id="tester-ticker" class="form-input" placeholder="Ticker Symbol (e.g. TATASTEEL, INFY)" style="flex: 1; min-width: 180px; text-transform: uppercase;">
+                            <select id="tester-strategy" class="form-input" style="flex: 1.2; min-width: 220px;">
+                                {% for strat in strategies %}
+                                <option value="{{ strat.id }}">{{ strat.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" class="btn-act btn-act-publish" onclick="testStrategyCompliance()" style="padding: 8px 16px;">
+                                <i class="fa-solid fa-calculator"></i> Run Parameter Audit
+                            </button>
+                        </div>
+                        <div id="tester-result-box" style="display: none; margin-top: 14px;"></div>
                     </div>
 
                     <div class="tuner-grid">
@@ -938,6 +960,14 @@
                                     <option value="EMA" {% if strat.parameters.ma_type == 'EMA' %}selected{% endif %}>Exponential Moving Average (EMA)</option>
                                 </select>
                             </div>
+                            <div class="form-row">
+                                <label>Min Institutional Volume Multiple (x Avg)</label>
+                                <input type="number" step="0.05" class="form-input" id="input-vol-{{ strat.id }}" value="{{ strat.parameters.volume_multiple|default:1.25 }}">
+                            </div>
+                            <div class="form-row">
+                                <label>RSI Momentum Floor (Min RSI)</label>
+                                <input type="number" class="form-input" id="input-rsi-min-{{ strat.id }}" value="{{ strat.parameters.rsi_min|default:45 }}">
+                            </div>
                             <button type="button" class="btn-act btn-act-publish" style="width: 100%; margin-top: 8px; justify-content: center;" onclick="saveStrategyTuning({{ strat.id }}, 'golden_cross')">
                                 <i class="fa-solid fa-floppy-disk"></i> Save Tuned Parameters
                             </button>
@@ -949,7 +979,11 @@
                             </div>
                             <div class="form-row">
                                 <label>Breakout Threshold</label>
-                                <input type="number" class="form-input" id="input-rsi-thresh-{{ strat.id }}" value="{{ strat.parameters.rsi_threshold|default:65 }}">
+                                <input type="number" class="form-input" id="input-rsi-thresh-{{ strat.id }}" value="{{ strat.parameters.rsi_threshold|default:62 }}">
+                            </div>
+                            <div class="form-row">
+                                <label>Breakout Volume Multiple (x Avg)</label>
+                                <input type="number" step="0.05" class="form-input" id="input-rsi-vol-{{ strat.id }}" value="{{ strat.parameters.volume_multiple|default:1.5 }}">
                             </div>
                             <button type="button" class="btn-act btn-act-publish" style="width: 100%; margin-top: 8px; justify-content: center;" onclick="saveStrategyTuning({{ strat.id }}, 'rsi_breakout')">
                                 <i class="fa-solid fa-floppy-disk"></i> Save Tuned Parameters
@@ -1060,13 +1094,30 @@
 
                 <div class="form-row">
                     <label>Strategy Framework</label>
-                    <select name="strategy_id" class="form-input">
+                    <select name="strategy_id" id="manual-strategy-id" class="form-input">
                         {% for strat in strategies %}
                         <option value="{{ strat.id }}">{{ strat.name }}</option>
                         {% empty %}
                         <option value="" disabled selected>Default Framework (Golden Crossover)</option>
                         {% endfor %}
                     </select>
+                </div>
+
+                <!-- Live Strategy Compliance Preview in Manual Setup Modal -->
+                <div id="manual-audit-box" style="display: none; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span style="font-size: 11px; font-weight: 700; color: var(--text-secondary, #a8a29e); text-transform: uppercase;">
+                            <i class="fa-solid fa-microchip" style="color: #38bdf8;"></i> Live Parameter Compliance
+                        </span>
+                        <span id="manual-audit-score" class="strategy-audit-score score-high">--% Match</span>
+                    </div>
+                    <div id="manual-audit-list" class="audit-checklist"></div>
+                    <div id="manual-audit-summary" style="font-size: 11px; color: var(--text-secondary, #a8a29e); margin-top: 8px; line-height: 1.4;"></div>
+                    <div style="margin-top: 8px; text-align: right;">
+                        <button type="button" class="btn-act" onclick="autoFillManualLevelsFromAudit()" style="font-size: 11px; padding: 4px 10px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-fill Levels from CMP
+                        </button>
+                    </div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;" class="form-row">
