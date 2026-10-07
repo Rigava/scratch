@@ -461,13 +461,7 @@
                         <button type="button" class="btn-act" onclick="openManualCreateModal()" style="font-size: 12.5px; padding: 8px 14px; background: rgba(255, 255, 255, 0.06); border: 1px solid var(--border-color, rgba(255,255,255,0.15)); border-radius: 8px; color: var(--text-primary, #fff); cursor: pointer;">
                             <i class="fa-solid fa-plus" style="color: #34d399;"></i> Manual Trade Setup
                         </button>
-                        {% else %}
-                        <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.25); padding: 6px 12px; border-radius: 8px;">
-                            <span style="font-size: 11.5px; color: #fbbf24;">
-                                <i class="fa-solid fa-shield"></i> Read-Only Mode
-                            </span>
-                            <a href="/login/?next=/advisory/" style="font-size: 11px; font-weight: 600; color: #fff; background: var(--accent-indigo, #e9805d); padding: 3px 8px; border-radius: 4px; text-decoration: none;">Admin Login</a>
-                        </div>
+                        <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; color: #fbbf24; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.25); padding: 5px 10px; border-radius: 6px;"><i class="fa-solid fa-crown"></i> Admin Mode</span>
                         {% endif %}
                     </div>
                 </div>

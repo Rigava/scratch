@@ -2922,17 +2922,32 @@ def advisory_view(request):
     """
     Renders the Institutional Recommendation & Signal Desk.
     Provides Active Signals, Strategy Tuner Console, and Auditable Track Record.
+    Accessible exclusively to administrators.
     """
-    is_admin = bool(request.user.is_authenticated and (request.user.is_superuser or request.user.is_staff))
-    
-    # Check access for Pro features
-    has_pro_access = is_admin
-    if request.user.is_authenticated and not has_pro_access:
-        try:
-            profile = request.user.profile
-            has_pro_access = profile.plan_tier == 'pro' or (profile.plan_tier == 'standard' and profile.is_trial_active() and profile.days_remaining() > 0) or profile.is_premium
-        except Exception:
-            pass
+    if not request.user.is_authenticated:
+        return redirect(f"/login/?next={request.path}")
+    if not (request.user.is_superuser or request.user.is_staff):
+        return HttpResponseForbidden(
+            """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>403 - Admin Access Required | TradeKriya</title>
+</head>
+<body style="background:#0c0a09; color:#f5f5f4; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; padding:20px; box-sizing:border-box;">
+    <div style="text-align:center; padding:36px; background:#1c1917; border:1px solid rgba(255,255,255,0.1); border-radius:12px; max-width:440px; box-shadow:0 10px 25px rgba(0,0,0,0.5);">
+        <div style="font-size:42px; margin-bottom:12px;">🔒</div>
+        <h2 style="color:#f87171; margin-top:0; margin-bottom:12px; font-size:20px;">Access Restricted</h2>
+        <p style="color:#a8a29e; font-size:13.5px; line-height:1.6; margin-bottom:24px;">The Institutional Advisory & Signals Desk is an administrative module reserved exclusively for system administrators.</p>
+        <a href="/dashboard/" style="background:#e9805d; color:#fff; text-decoration:none; padding:10px 20px; border-radius:8px; font-size:13px; font-weight:600; display:inline-block;">Return to Dashboard</a>
+    </div>
+</body>
+</html>"""
+        )
+
+    is_admin = True
+    has_pro_access = True
 
     strategies = RecommendationStrategy.objects.all().order_by('-is_active', 'name')
     active_recs = TradeRecommendation.objects.filter(status__in=['pending', 'active', 'target_1_hit', 'target_2_hit']).order_by('-initiated_at', '-created_at')
