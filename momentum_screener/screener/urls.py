@@ -43,4 +43,11 @@ urlpatterns = [
     path('api/admin/scan-fundamentals/', views.admin_scan_fundamentals_view, name='admin_scan_fundamentals'),
     path('api/admin/fundamentals-summary/', views.admin_fundamentals_summary_view, name='admin_fundamentals_summary'),
     path('api/admin/update-stock-sector/', views.admin_update_stock_sector_view, name='admin_update_stock_sector'),
+
+    # Institutional Advisory & Signal Desk routes
+    path('advisory/', views.advisory_view, name='advisory'),
+    path('api/advisory/tune-strategy/', views.api_strategy_tune, name='api_strategy_tune'),
+    path('api/advisory/ai-generate/', views.api_ai_generate_recommendation, name='api_ai_generate_recommendation'),
+    path('api/advisory/recommendation/<int:rec_id>/action/', views.api_recommendation_status_action, name='api_recommendation_status_action'),
+    path('api/advisory/recommendation/create/', views.api_recommendation_manual_create, name='api_recommendation_manual_create'),
 ]

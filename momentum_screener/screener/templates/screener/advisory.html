@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradeKriya - Institutional Advisory & Signals Desk</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Yatra+One&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'screener/styles.css' %}?v=3.8">
+<style>
+    .advisory-main {
+        background-color: var(--bg-primary, #0c0a09);
+        color: var(--text-primary, #f5f5f4);
+        font-family: var(--font-stack, 'Outfit', sans-serif);
+        min-height: 100vh;
+        position: relative;
+    }
+    .advisory-hero {
+        background: linear-gradient(135deg, rgba(26, 23, 20, 0.95), rgba(18, 16, 14, 0.98));
+        border: 1px solid var(--border-color, rgba(255,255,255,0.08));
+        border-radius: var(--border-radius, 12px);
+        padding: 26px;
+        margin-bottom: 24px;
+        position: relative;
+        overflow: hidden;
+    }
+    .advisory-hero::before {
+        content: '';
+        position: absolute;
+        top: -60px;
+        right: -60px;
+        width: 280px;
+        height: 280px;
+        background: radial-gradient(circle, rgba(233, 128, 93, 0.14) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    .hero-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 22px;
+    }
+    .brand-title-wrap {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+    .brand-badge-img {
+        width: 46px;
+        height: 46px;
+        border-radius: 8px;
+        border: 1px solid rgba(233, 128, 93, 0.3);
+        box-shadow: 0 4px 12px rgba(233, 128, 93, 0.2);
+    }
+    .advisory-title {
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0;
+        color: var(--text-primary, #fff);
+        letter-spacing: -0.5px;
+    }
+    .advisory-subtitle {
+        font-size: 13px;
+        color: var(--text-secondary, #a8a29e);
+        margin-top: 4px;
+    }
+    
+    /* Verified Track Record KPI Strip */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 14px;
+    }
+    .kpi-card {
+        background: rgba(0, 0, 0, 0.35);
+        border: 1px solid var(--border-color, rgba(255,255,255,0.06));
+        border-radius: 8px;
+        padding: 14px 16px;
+        position: relative;
+    }
+    .kpi-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: var(--text-muted, #78716c);
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+    .kpi-value {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--text-primary, #fff);
+    }
+    .kpi-value.green { color: #34d399; }
+    .kpi-value.blue { color: #38bdf8; }
+    .kpi-value.orange { color: #f4a261; }
+
+    /* Navigation Tabs */
+    .advisory-tabs {
+        display: flex;
+        gap: 8px;
+        border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));
+        margin-bottom: 22px;
+        overflow-x: auto;
+    }
+    .advisory-tab-btn {
+        background: transparent;
+        border: none;
+        border-bottom: 2px solid transparent;
+        padding: 12px 18px;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: var(--text-secondary, #a8a29e);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+    }
+    .advisory-tab-btn:hover {
+        color: var(--text-primary, #fff);
+    }
+    .advisory-tab-btn.active {
+        color: var(--accent-indigo, #e9805d);
+        border-bottom-color: var(--accent-indigo, #e9805d);
+    }
+
+    /* Recommendation Cards */
+    .signals-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+        gap: 20px;
+    }
+    .rec-card {
+        background: var(--bg-card, #191614);
+        border: 1px solid var(--border-color, rgba(255,255,255,0.08));
+        border-radius: var(--border-radius, 12px);
+        padding: 20px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+        transition: transform 0.2s ease, border-color 0.2s ease;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .rec-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(233, 128, 93, 0.4);
+    }
+    .rec-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 14px;
+    }
+    .ticker-block {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .rec-ticker {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--text-primary, #fff);
+    }
+    .badge-direction {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 4px;
+        text-transform: uppercase;
+    }
+    .badge-buy { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-sell { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    .badge-status {
+        font-size: 11px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .status-active { background: rgba(6, 182, 212, 0.15); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.3); }
+    .status-target1 { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .status-profit { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .status-sl { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .status-draft { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+
+    .strategy-tag {
+        font-size: 11.5px;
+        color: var(--accent-indigo, #e9805d);
+        background: rgba(233, 128, 93, 0.08);
+        border: 1px solid rgba(233, 128, 93, 0.2);
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 4px;
+        margin-bottom: 12px;
+        font-weight: 500;
+    }
+
+    .levels-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px 14px;
+        background: rgba(0, 0, 0, 0.25);
+        padding: 12px 14px;
+        border-radius: 8px;
+        margin-bottom: 14px;
+        font-size: 12.5px;
+    }
+    .level-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .level-label { color: var(--text-muted, #a8a29e); font-size: 11.5px; }
+    .level-val { font-weight: 600; color: var(--text-primary, #fff); }
+
+    .chart-preview-box {
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 14px;
+        cursor: pointer;
+        border: 1px solid var(--border-color, rgba(255,255,255,0.08));
+    }
+    .chart-preview-img {
+        width: 100%;
+        height: 160px;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.3s ease;
+    }
+    .chart-preview-box:hover .chart-preview-img {
+        transform: scale(1.03);
+    }
+    .chart-overlay-badge {
+        position: absolute;
+        bottom: 8px;
+        right: 8px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        font-size: 11px;
+        padding: 4px 9px;
+        border-radius: 4px;
+        backdrop-filter: blur(4px);
+    }
+
+    .thesis-box {
+        font-size: 12.5px;
+        color: var(--text-secondary, #d6d3d1);
+        line-height: 1.5;
+        background: rgba(255, 255, 255, 0.02);
+        padding: 10px 12px;
+        border-radius: 6px;
+        border-left: 2px solid var(--accent-indigo, #e9805d);
+        margin-bottom: 14px;
+    }
+
+    /* Admin Action Buttons */
+    .admin-actions-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding-top: 14px;
+        border-top: 1px solid var(--border-color, rgba(255,255,255,0.08));
+        margin-top: auto;
+    }
+    .btn-act {
+        font-size: 11.5px;
+        font-weight: 600;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        border: 1px solid transparent;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: var(--text-primary, #fff);
+        transition: background 0.2s, transform 0.1s;
+    }
+    .btn-act:hover { filter: brightness(1.1); }
+    .btn-act-publish { background: #10b981; color: white; border: none; }
+    .btn-act-trail { background: rgba(6, 182, 212, 0.2); color: #22d3ee; border-color: rgba(6, 182, 212, 0.4); }
+    .btn-act-close { background: rgba(16, 185, 129, 0.2); color: #34d399; border-color: rgba(16, 185, 129, 0.4); }
+    .btn-act-sl { background: rgba(239, 68, 68, 0.2); color: #f87171; border-color: rgba(239, 68, 68, 0.4); }
+    .btn-act-cancel { background: rgba(148, 163, 184, 0.2); color: #94a3b8; border-color: rgba(148, 163, 184, 0.4); }
+
+    /* Strategy Tuner Console */
+    .tuner-card {
+        background: var(--bg-card, #191614);
+        border: 1px solid var(--border-color, rgba(255,255,255,0.08));
+        border-radius: var(--border-radius, 12px);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+    .tuner-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+    }
+    .param-box {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--border-color, rgba(255,255,255,0.08));
+        border-radius: 8px;
+        padding: 16px;
+    }
+    .param-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text-primary, #fff);
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+    }
+    .form-row {
+        margin-bottom: 12px;
+    }
+    .form-row label {
+        display: block;
+        font-size: 11.5px;
+        color: var(--text-secondary, #a8a29e);
+        margin-bottom: 4px;
+    }
+    .form-input {
+        width: 100%;
+        background: #12100e;
+        border: 1px solid var(--border-color, rgba(255,255,255,0.15));
+        border-radius: 6px;
+        padding: 8px 10px;
+        color: white;
+        font-family: inherit;
+        font-size: 13px;
+        box-sizing: border-box;
+    }
+
+    /* Accuracy Table */
+    .accuracy-table-wrap {
+        background: var(--bg-card, #191614);
+        border: 1px solid var(--border-color, rgba(255,255,255,0.08));
+        border-radius: var(--border-radius, 12px);
+        overflow-x: auto;
+    }
+    .acc-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        text-align: left;
+    }
+    .acc-table th {
+        background: rgba(0, 0, 0, 0.4);
+        padding: 12px 16px;
+        color: var(--text-muted, #78716c);
+        font-size: 11px;
+        text-transform: uppercase;
+        font-weight: 600;
+        border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));
+    }
+    .acc-table td {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));
+        color: var(--text-primary, #fff);
+    }
+    .acc-table tr:hover {
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Modal Overlay and Lightbox */
+    .lightbox-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        z-index: 1000000;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+    .lightbox-modal.active {
+        display: flex !important;
+    }
+    .lightbox-content {
+        max-width: 90vw;
+        max-height: 90vh;
+        border-radius: 12px;
+        border: 1px solid rgba(234, 224, 213, 0.2);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+    }
+</style>
+</head>
+<body class="advisory-main">
+    <div class="advisory-wrapper">
+        <!-- Top Navbar -->
+        <header class="nav-container" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 36px; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08)); background: rgba(18, 16, 14, 0.75); backdrop-filter: blur(10px);">
+            <a href="/" class="logo-section" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text-primary, #fff);">
+                <i class="fa-solid fa-shield-halved" style="font-size: 22px; color: var(--accent-indigo, #e9805d);"></i>
+                <h1 style="font-family: 'Yatra One', cursive; font-size: 22px; margin: 0; color: var(--text-primary, #fff);">TradeKriya</h1>
+            </a>
+            
+            <nav class="nav-links" style="display: flex; align-items: center; gap: 20px;">
+                <a href="/" class="nav-link" style="color: var(--text-secondary, #a8a29e); text-decoration: none; font-size: 13px; font-weight: 500;">Home</a>
+                <a href="/dashboard/" class="nav-link" style="color: var(--text-secondary, #a8a29e); text-decoration: none; font-size: 13px; font-weight: 500;">Dashboard</a>
+                <a href="/advisory/" class="nav-link active" style="color: var(--accent-indigo, #e9805d); text-decoration: none; font-size: 13px; font-weight: 600;"><i class="fa-solid fa-crosshairs" style="margin-right: 4px;"></i> Advisory Desk</a>
+                <a href="/community/" class="nav-link" style="color: var(--text-secondary, #a8a29e); text-decoration: none; font-size: 13px; font-weight: 500;">Use Cases</a>
+            </nav>
+
+            <div class="nav-actions" style="display: flex; align-items: center; gap: 14px;">
+                <button id="btn-theme-toggle" title="Toggle Light/Dark Theme" style="background: transparent; border: none; color: var(--text-secondary, #a8a29e); cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; outline: none; padding: 4px;"><i class="fa-solid fa-sun"></i></button>
+
+                {% if request.user.is_authenticated %}
+                    <span style="font-size: 12px; color: var(--text-secondary, #a8a29e); font-weight: 500;">
+                        Hi, <strong style="color: var(--text-primary, #fff);">{{ request.user.username }}</strong>
+                        {% if is_admin %}<span style="color: #fbbf24; font-size: 11px; margin-left: 4px;"><i class="fa-solid fa-crown"></i> Admin</span>{% endif %}
+                    </span>
+                    <a href="/dashboard/" class="nav-btn signup-btn" style="background: var(--accent-indigo, #e9805d); color: white; padding: 6px 14px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600;">Dashboard</a>
+                    <a href="/logout/" style="color: var(--text-muted, #78716c); text-decoration: none; font-size: 12px; margin-left: 6px;">Logout</a>
+                {% else %}
+                    <a href="/login/?next=/advisory/" class="nav-btn login-btn" style="color: var(--text-primary, #fff); border: 1px solid var(--border-color, rgba(255,255,255,0.1)); padding: 6px 14px; border-radius: 6px; text-decoration: none; font-size: 12px;">Login</a>
+                    <a href="/login/?tab=signup" class="nav-btn signup-btn" style="background: var(--accent-indigo, #e9805d); color: white; padding: 6px 14px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600;">Get Started</a>
+                {% endif %}
+            </div>
+        </header>
+
+        <main class="advisory-page-container" style="max-width: 1320px; margin: 0 auto; padding: 24px 20px;">
+    
+            <!-- Hero / Header Section -->
+            <div class="advisory-hero">
+                <div class="hero-header-row">
+                    <div class="brand-title-wrap">
+                        <img src="{% static 'screener/images/brand_badge.png' %}" alt="TradeKriya Insignia" class="brand-badge-img">
+                        <div>
+                            <h1 class="advisory-title">Institutional Advisory & Signals Desk</h1>
+                            <div class="advisory-subtitle">High-conviction swing recommendations backed by dynamic moving averages & Gemini 3.8 Flash</div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <button type="button" class="btn-act" onclick="openAdvisoryGuideModal()" style="font-size: 12.5px; padding: 8px 14px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 8px; color: var(--text-primary, #fff); cursor: pointer;">
+                            <i class="fa-solid fa-circle-question" style="color: #38bdf8;"></i> How it Works
+                        </button>
+                        
+                        {% if is_admin %}
+                        <button type="button" class="btn-act btn-act-publish" onclick="openAiGeneratorModal()" style="font-size: 12.5px; padding: 8px 14px; background: linear-gradient(135deg, var(--accent-indigo, #e9805d), #d86a47); border: none; border-radius: 8px; color: white; cursor: pointer; box-shadow: 0 4px 14px rgba(233, 128, 93, 0.3);">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> AI Proposal Generator
+                        </button>
+                        <button type="button" class="btn-act" onclick="openManualCreateModal()" style="font-size: 12.5px; padding: 8px 14px; background: rgba(255, 255, 255, 0.06); border: 1px solid var(--border-color, rgba(255,255,255,0.15)); border-radius: 8px; color: var(--text-primary, #fff); cursor: pointer;">
+                            <i class="fa-solid fa-plus" style="color: #34d399;"></i> Manual Trade Setup
+                        </button>
+                        {% else %}
+                        <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.25); padding: 6px 12px; border-radius: 8px;">
+                            <span style="font-size: 11.5px; color: #fbbf24;">
+                                <i class="fa-solid fa-shield"></i> Read-Only Mode
+                            </span>
+                            <a href="/login/?next=/advisory/" style="font-size: 11px; font-weight: 600; color: #fff; background: var(--accent-indigo, #e9805d); padding: 3px 8px; border-radius: 4px; text-decoration: none;">Admin Login</a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Verified Track Record KPI Strip -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Win Rate</div>
+                        <div class="kpi-value green">{{ stats.win_rate }}%</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Profit Factor</div>
+                        <div class="kpi-value blue">{{ stats.profit_factor }}x</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Avg Winner</div>
+                        <div class="kpi-value green">+{{ stats.avg_gain }}%</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Avg Loss (SL)</div>
+                        <div class="kpi-value orange">{{ stats.avg_loss }}%</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Closed Trades</div>
+                        <div class="kpi-value">{{ stats.total_closed }}</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Active Signals</div>
+                        <div class="kpi-value blue">{{ stats.active_count }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sub-navigation Tabs -->
+            <div class="advisory-tabs">
+                <button type="button" class="advisory-tab-btn active" data-tab="active" onclick="switchAdvisoryTab('active', event)">
+                    <i class="fa-solid fa-bolt"></i> Active Recommendations ({{ active_recs.count }})
+                </button>
+                <button type="button" class="advisory-tab-btn" data-tab="track-record" onclick="switchAdvisoryTab('track-record', event)">
+                    <i class="fa-solid fa-chart-line"></i> Verified Track Record ({{ closed_recs.count }})
+                </button>
+                {% if is_admin %}
+                <button type="button" class="advisory-tab-btn" data-tab="drafts" onclick="switchAdvisoryTab('drafts', event)">
+                    <i class="fa-solid fa-clipboard-list"></i> AI Drafts & Queue ({{ draft_recs.count }})
+                </button>
+                <button type="button" class="advisory-tab-btn" data-tab="tuner" onclick="switchAdvisoryTab('tuner', event)">
+                    <i class="fa-solid fa-sliders"></i> Strategy Criteria Tuner
+                </button>
+                {% endif %}
+            </div>
+
+            <!-- TAB 1: Active Recommendations -->
+            <div id="tab-active-section">
+                {% if active_recs %}
+                <div class="signals-container">
+                    {% for rec in active_recs %}
+                    <div class="rec-card">
+                        <div>
+                            <div class="rec-header">
+                                <div>
+                                    <div class="ticker-block">
+                                        <span class="rec-ticker">{{ rec.ticker }}</span>
+                                        <span class="badge-direction badge-buy">{{ rec.direction }}</span>
+                                    </div>
+                                    <div style="font-size: 12px; color: var(--text-secondary, #a8a29e); margin-top: 2px;">{{ rec.company_name }}</div>
+                                </div>
+                                <span class="badge-status {% if rec.status == 'target_1_hit' %}status-target1{% else %}status-active{% endif %}">
+                                    <i class="fa-solid {% if rec.status == 'target_1_hit' %}fa-bullseye{% else %}fa-circle-play{% endif %}"></i> 
+                                    {{ rec.get_status_display }}
+                                </span>
+                            </div>
+
+                            <div class="strategy-tag">
+                                <i class="fa-solid fa-cubes"></i> {{ rec.strategy.name }}
+                            </div>
+
+                            <div class="levels-grid">
+                                <div class="level-item">
+                                    <span class="level-label">Entry Range:</span>
+                                    <span class="level-val">₹{{ rec.entry_price_min }} - {{ rec.entry_price_max }}</span>
+                                </div>
+                                <div class="level-item">
+                                    <span class="level-label">Target 1:</span>
+                                    <span class="level-val" style="color: #38bdf8;">₹{{ rec.target_1 }}</span>
+                                </div>
+                                <div class="level-item">
+                                    <span class="level-label">Stop Loss:</span>
+                                    <span class="level-val" style="color: #ef4444;">₹{{ rec.stop_loss }}</span>
+                                </div>
+                                <div class="level-item">
+                                    <span class="level-label">Target 2:</span>
+                                    <span class="level-val" style="color: #c084fc;">{% if rec.target_2 %}₹{{ rec.target_2 }}{% else %}-{% endif %}</span>
+                                </div>
+                                <div class="level-item">
+                                    <span class="level-label">Risk/Reward:</span>
+                                    <span class="level-val">{{ rec.risk_reward_ratio }}</span>
+                                </div>
+                                <div class="level-item">
+                                    <span class="level-label">Trailing SL:</span>
+                                    <span class="level-val" style="color: #10b981;">{% if rec.trailing_stop_loss %}₹{{ rec.trailing_stop_loss }}{% else %}At Entry{% endif %}</span>
+                                </div>
+                            </div>
+
+                            {% if rec.chart_image %}
+                            <div class="chart-preview-box" onclick="showLightbox('{{ rec.chart_image.url }}')">
+                                <img src="{{ rec.chart_image.url }}" alt="{{ rec.ticker }} Chart" class="chart-preview-img">
+                                <span class="chart-overlay-badge"><i class="fa-solid fa-magnifying-glass-plus"></i> View Full Chart</span>
+                            </div>
+                            {% endif %}
+
+                            {% if rec.thesis_summary %}
+                            <div class="thesis-box">
+                                <strong>Institutional Rationale:</strong> {{ rec.thesis_summary }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Admin Action Controls -->
+                        {% if is_admin %}
+                        <div class="admin-actions-row">
+                            <button type="button" class="btn-act btn-act-trail" onclick="handleStatusAction({{ rec.id }}, 'trail_sl')">
+                                <i class="fa-solid fa-arrows-up-to-line"></i> Trail SL to Cost
+                            </button>
+                            <button type="button" class="btn-act btn-act-close" onclick="handleStatusAction({{ rec.id }}, 'close_profit')">
+                                <i class="fa-solid fa-check"></i> Close in Profit
+                            </button>
+                            <button type="button" class="btn-act btn-act-sl" onclick="handleStatusAction({{ rec.id }}, 'close_sl')">
+                                <i class="fa-solid fa-ban"></i> Hit SL
+                            </button>
+                            <button type="button" class="btn-act btn-act-cancel" onclick="handleStatusAction({{ rec.id }}, 'cancel')">
+                                <i class="fa-solid fa-xmark"></i> Cancel
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div style="text-align: center; padding: 60px 20px; background: var(--bg-card, #191614); border-radius: var(--border-radius, 12px); border: 1px solid var(--border-color, rgba(255,255,255,0.08));">
+                    <div style="font-size: 36px; color: var(--text-muted, #78716c); margin-bottom: 12px;"><i class="fa-solid fa-radar"></i></div>
+                    <h3 style="font-size: 17px; margin-bottom: 6px;">No Active Trades In Progress</h3>
+                    <p style="font-size: 13px; color: var(--text-secondary, #a8a29e); max-width: 450px; margin: 0 auto 16px;">Our AI scanner and research team evaluate setups against strict 45/195 SMA and momentum rules. New recommendations will appear here automatically.</p>
+                    {% if is_admin %}
+                    <button type="button" class="btn-act btn-act-publish" onclick="openAiGeneratorModal()" style="font-size: 13px; padding: 8px 16px; margin: 0 auto; display: inline-flex;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Propose Trades with Gemini 3.8 Flash
+                    </button>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- TAB 2: Verified Track Record & Historical Accuracy -->
+            <div id="tab-track-record-section" style="display: none;">
+                <div class="accuracy-table-wrap">
+                    <table class="acc-table">
+                        <thead>
+                            <tr>
+                                <th>Date Closed</th>
+                                <th>Ticker</th>
+                                <th>Strategy</th>
+                                <th>Entry Range</th>
+                                <th>Exit Price</th>
+                                <th>Outcome</th>
+                                <th>Realized Gain / Loss</th>
+                                <th>Holding Days</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rec in closed_recs %}
+                            <tr>
+                                <td style="color: var(--text-muted, #78716c);">{{ rec.closed_at|date:"M d, Y"|default:"Recent" }}</td>
+                                <td><strong>{{ rec.ticker }}</strong> <span style="font-size: 10px; color: #a8a29e;">{{ rec.direction }}</span></td>
+                                <td><span class="strategy-tag" style="margin: 0;">{{ rec.strategy.name }}</span></td>
+                                <td>₹{{ rec.entry_price_min }}</td>
+                                <td><strong>₹{{ rec.exit_price|default:rec.target_1 }}</strong></td>
+                                <td>
+                                    {% if rec.status == 'completed_profit' or rec.is_winning_trade %}
+                                        <span class="badge-status status-profit"><i class="fa-solid fa-circle-check"></i> Target Hit (Win)</span>
+                                    {% elif rec.status == 'sl_hit' %}
+                                        <span class="badge-status status-sl"><i class="fa-solid fa-circle-xmark"></i> SL Triggered</span>
+                                    {% else %}
+                                        <span class="badge-status" style="background: rgba(148, 163, 184, 0.2); color: #94a3b8;">Cancelled</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if rec.realized_gain_loss_pct >= 0 %}
+                                        <strong style="color: #34d399;">+{{ rec.realized_gain_loss_pct }}%</strong>
+                                    {% elif rec.realized_gain_loss_pct < 0 %}
+                                        <strong style="color: #f87171;">{{ rec.realized_gain_loss_pct }}%</strong>
+                                    {% else %}
+                                        <span style="color: var(--text-muted, #78716c);">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ rec.holding_days }} Days</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-muted, #78716c);">
+                                    <i class="fa-solid fa-chart-line" style="font-size: 24px; margin-bottom: 8px; display: block;"></i>
+                                    No closed recommendations in the ledger yet. Completed trades will automatically log accuracy statistics here.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 3: Admin Review Queue / AI Drafts -->
+            {% if is_admin %}
+            <div id="tab-drafts-section" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div>
+                        <h3 style="font-size: 16px; margin: 0;">AI Generated Draft Proposals (Pending Admin Review)</h3>
+                        <p style="font-size: 12px; color: var(--text-secondary, #a8a29e); margin: 2px 0 0 0;">These setups are generated by Gemini 3.8 Flash. They are not visible to users until approved and published.</p>
+                    </div>
+                    <button type="button" class="btn-act btn-act-publish" onclick="openAiGeneratorModal()">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Run AI Generator
+                    </button>
+                </div>
+
+                {% if draft_recs %}
+                <div class="signals-container">
+                    {% for rec in draft_recs %}
+                    <div class="rec-card" style="border-color: rgba(168, 85, 247, 0.35);">
+                        <div>
+                            <div class="rec-header">
+                                <div>
+                                    <div class="ticker-block">
+                                        <span class="rec-ticker">{{ rec.ticker }}</span>
+                                        <span class="badge-direction badge-buy">{{ rec.direction }}</span>
+                                    </div>
+                                    <div style="font-size: 12px; color: var(--text-secondary, #a8a29e); margin-top: 2px;">{{ rec.company_name }}</div>
+                                </div>
+                                <span class="badge-status status-draft">
+                                    <i class="fa-solid fa-robot"></i> AI Score: {{ rec.ai_conviction_score }}/100
+                                </span>
+                            </div>
+
+                            <div class="strategy-tag">
+                                <i class="fa-solid fa-cubes"></i> {{ rec.strategy.name }}
+                            </div>
+
+                            <div class="levels-grid">
+                                <div class="level-item">
+                                    <span class="level-label">Entry Range:</span>
+                                    <span class="level-val">₹{{ rec.entry_price_min }} - {{ rec.entry_price_max }}</span>
+                                </div>
+                                <div class="level-item">
+                                    <span class="level-label">Target 1:</span>
+                                    <span class="level-val" style="color: #38bdf8;">₹{{ rec.target_1 }}</span>
+                                </div>
+                                <div class="level-item">
+                                    <span class="level-label">Stop Loss:</span>
+                                    <span class="level-val" style="color: #ef4444;">₹{{ rec.stop_loss }}</span>
+                                </div>
+                                <div class="level-item">
+                                    <span class="level-label">Target 2:</span>
+                                    <span class="level-val" style="color: #c084fc;">{% if rec.target_2 %}₹{{ rec.target_2 }}{% else %}-{% endif %}</span>
+                                </div>
+                            </div>
+
+                            {% if rec.chart_image %}
+                            <div class="chart-preview-box" onclick="showLightbox('{{ rec.chart_image.url }}')">
+                                <img src="{{ rec.chart_image.url }}" alt="{{ rec.ticker }} Chart" class="chart-preview-img">
+                                <span class="chart-overlay-badge"><i class="fa-solid fa-magnifying-glass-plus"></i> View Chart</span>
+                            </div>
+                            {% endif %}
+
+                            {% if rec.thesis_summary %}
+                            <div class="thesis-box">
+                                <strong>AI Thesis:</strong> {{ rec.thesis_summary }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="admin-actions-row">
+                            <button type="button" class="btn-act btn-act-publish" style="flex: 1;" onclick="handleStatusAction({{ rec.id }}, 'publish')">
+                                <i class="fa-solid fa-paper-plane"></i> Publish to Active Desk
+                            </button>
+                            <button type="button" class="btn-act btn-act-cancel" onclick="handleStatusAction({{ rec.id }}, 'cancel')">
+                                <i class="fa-solid fa-trash"></i> Discard
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div style="text-align: center; padding: 40px; background: var(--bg-card, #191614); border-radius: var(--border-radius, 12px); border: 1px dashed var(--border-color, rgba(255,255,255,0.1));">
+                    <p style="color: var(--text-muted, #78716c); margin-bottom: 12px;">Draft queue is empty. Click "Run AI Generator" to screen and propose trade setups.</p>
+                    <button type="button" class="btn-act btn-act-publish" onclick="openAiGeneratorModal()">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Run AI Generator
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- TAB 4: Strategy Criteria Tuner Console -->
+            <div id="tab-tuner-section" style="display: none;">
+                <div class="tuner-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <div>
+                            <h3 style="font-size: 17px; margin: 0; color: var(--text-primary, #fff);">Dynamic Strategy Criteria Optimizer</h3>
+                            <p style="font-size: 12.5px; color: var(--text-secondary, #a8a29e); margin-top: 4px;">Adjust technical indicator thresholds in real-time. Changes instantly calibrate the AI screening engine.</p>
+                        </div>
+                    </div>
+
+                    <div class="tuner-grid">
+                        {% for strat in strategies %}
+                        <div class="param-box">
+                            <div class="param-title">
+                                <span>{{ strat.name }}</span>
+                                <span style="font-size: 11px; color: #34d399;">Win: {{ strat.win_rate }}%</span>
+                            </div>
+                            <p style="font-size: 11.5px; color: var(--text-muted, #78716c); margin-bottom: 14px;">{{ strat.description }}</p>
+
+                            {% if strat.category == 'golden_cross' %}
+                            <div class="form-row">
+                                <label>Fast Moving Average (Periods)</label>
+                                <input type="number" class="form-input" id="input-fast-{{ strat.id }}" value="{{ strat.parameters.fast_ma|default:45 }}">
+                            </div>
+                            <div class="form-row">
+                                <label>Slow Moving Average (Periods)</label>
+                                <input type="number" class="form-input" id="input-slow-{{ strat.id }}" value="{{ strat.parameters.slow_ma|default:195 }}">
+                            </div>
+                            <div class="form-row">
+                                <label>MA Calculation Type</label>
+                                <select class="form-input" id="input-type-{{ strat.id }}">
+                                    <option value="SMA" {% if strat.parameters.ma_type == 'SMA' %}selected{% endif %}>Simple Moving Average (SMA)</option>
+                                    <option value="EMA" {% if strat.parameters.ma_type == 'EMA' %}selected{% endif %}>Exponential Moving Average (EMA)</option>
+                                </select>
+                            </div>
+                            <button type="button" class="btn-act btn-act-publish" style="width: 100%; margin-top: 8px; justify-content: center;" onclick="saveStrategyTuning({{ strat.id }}, 'golden_cross')">
+                                <i class="fa-solid fa-floppy-disk"></i> Save Tuned Parameters
+                            </button>
+
+                            {% elif strat.category == 'rsi_breakout' %}
+                            <div class="form-row">
+                                <label>RSI Length</label>
+                                <input type="number" class="form-input" id="input-rsi-len-{{ strat.id }}" value="{{ strat.parameters.rsi_length|default:14 }}">
+                            </div>
+                            <div class="form-row">
+                                <label>Breakout Threshold</label>
+                                <input type="number" class="form-input" id="input-rsi-thresh-{{ strat.id }}" value="{{ strat.parameters.rsi_threshold|default:65 }}">
+                            </div>
+                            <button type="button" class="btn-act btn-act-publish" style="width: 100%; margin-top: 8px; justify-content: center;" onclick="saveStrategyTuning({{ strat.id }}, 'rsi_breakout')">
+                                <i class="fa-solid fa-floppy-disk"></i> Save Tuned Parameters
+                            </button>
+
+                            {% elif strat.category == 'macd_cross' %}
+                            <div class="form-row">
+                                <label>Fast / Slow / Signal Periods</label>
+                                <div style="display: flex; gap: 6px;">
+                                    <input type="number" class="form-input" id="input-macd-fast-{{ strat.id }}" value="{{ strat.parameters.fast_period|default:8 }}" placeholder="Fast">
+                                    <input type="number" class="form-input" id="input-macd-slow-{{ strat.id }}" value="{{ strat.parameters.slow_period|default:21 }}" placeholder="Slow">
+                                    <input type="number" class="form-input" id="input-macd-sig-{{ strat.id }}" value="{{ strat.parameters.signal_period|default:5 }}" placeholder="Sig">
+                                </div>
+                            </div>
+                            <button type="button" class="btn-act btn-act-publish" style="width: 100%; margin-top: 8px; justify-content: center;" onclick="saveStrategyTuning({{ strat.id }}, 'macd_cross')">
+                                <i class="fa-solid fa-floppy-disk"></i> Save Tuned Parameters
+                            </button>
+                            {% else %}
+                            <button type="button" class="btn-act btn-act-publish" style="width: 100%; margin-top: 8px; justify-content: center;" onclick="saveStrategyTuning({{ strat.id }}, 'generic')">
+                                <i class="fa-solid fa-floppy-disk"></i> Save Tuned Parameters
+                            </button>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </main>
+
+        <!-- Footer -->
+        <footer style="border-top: 1px solid var(--border-color, rgba(255,255,255,0.08)); padding: 30px 40px; margin-top: 60px; text-align: center; font-size: 12px; color: var(--text-muted, #78716c);">
+            <div style="margin-bottom: 8px;">TradeKriya Institutional Advisory Desk &bull; High Conviction Research &bull; Powered by Gemini 3.8 Flash</div>
+            <div>&copy; 2026 TradeKriya. All rights reserved. For educational and analytical purposes only.</div>
+        </footer>
+    </div>
+
+    <!-- Fullscreen Lightbox Modal -->
+    <div id="chart-lightbox" class="lightbox-modal" onclick="closeLightbox()">
+        <img id="lightbox-img" src="" alt="Enlarged Chart" class="lightbox-content">
+    </div>
+
+    <!-- Modal: AI Proposal Generator -->
+    <div id="ai-generator-modal" class="lightbox-modal">
+        <div style="background: var(--bg-card, #191614); border: 1px solid var(--border-color, rgba(255,255,255,0.15)); border-radius: 12px; width: 100%; max-width: 440px; padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.85);" onclick="event.stopPropagation();">
+            <h3 style="font-size: 18px; margin: 0 0 6px 0; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--accent-indigo, #e9805d);"></i> AI Proposal Generator
+            </h3>
+            <p style="font-size: 12.5px; color: var(--text-secondary, #a8a29e); margin-bottom: 16px;">
+                Select a stock ticker and strategy framework. Gemini 3.8 Flash will evaluate technicals, news catalysts, and render an annotated mplfinance chart.
+            </p>
+
+            <div class="form-row">
+                <label>Stock Ticker Symbol (NSE)</label>
+                <input type="text" id="ai-gen-ticker" class="form-input" placeholder="e.g. TATASTEEL, RELIANCE, INFY" style="text-transform: uppercase;">
+            </div>
+
+            <div class="form-row">
+                <label>Strategy Framework</label>
+                <select id="ai-gen-strategy" class="form-input">
+                    {% for strat in strategies %}
+                    <option value="{{ strat.id }}">{{ strat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn-act btn-act-publish" id="btn-run-ai-gen" onclick="executeAiGeneration()" style="flex: 1; padding: 10px; justify-content: center;">
+                    <i class="fa-solid fa-bolt"></i> Generate Setup
+                </button>
+                <button type="button" class="btn-act" onclick="closeAiGeneratorModal()" style="padding: 10px 14px; background: rgba(255,255,255,0.05);">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Manual Recommendation Create -->
+    <div id="manual-create-modal" class="lightbox-modal">
+        <div style="background: var(--bg-card, #191614); border: 1px solid var(--border-color, rgba(255,255,255,0.15)); border-radius: 12px; width: 100%; max-width: 500px; padding: 24px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.85);" onclick="event.stopPropagation();">
+            <h3 style="font-size: 18px; margin: 0 0 6px 0; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-plus" style="color: var(--accent-indigo, #e9805d);"></i> Manual Recommendation Setup
+            </h3>
+            <p style="font-size: 12px; color: var(--text-secondary, #a8a29e); margin-bottom: 16px;">Publish an institutional trade setup with custom targets, stop loss, and chart upload.</p>
+
+            <form id="form-manual-trade" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px;" class="form-row">
+                    <div>
+                        <label>Stock Ticker</label>
+                        <input type="text" name="ticker" class="form-input" placeholder="e.g. INFY" required style="text-transform: uppercase;">
+                    </div>
+                    <div>
+                        <label>Direction</label>
+                        <select name="direction" class="form-input">
+                            <option value="BUY">BUY</option>
+                            <option value="SELL">SELL</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <label>Strategy Framework</label>
+                    <select name="strategy_id" class="form-input">
+                        {% for strat in strategies %}
+                        <option value="{{ strat.id }}">{{ strat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;" class="form-row">
+                    <div>
+                        <label>Entry Min (₹)</label>
+                        <input type="number" step="0.05" name="entry_price_min" class="form-input" placeholder="152.00" required>
+                    </div>
+                    <div>
+                        <label>Entry Max (₹)</label>
+                        <input type="number" step="0.05" name="entry_price_max" class="form-input" placeholder="154.00" required>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;" class="form-row">
+                    <div>
+                        <label>Target 1 (₹)</label>
+                        <input type="number" step="0.05" name="target_1" class="form-input" placeholder="162.00" required>
+                    </div>
+                    <div>
+                        <label>Target 2 (₹)</label>
+                        <input type="number" step="0.05" name="target_2" class="form-input" placeholder="171.00">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;" class="form-row">
+                    <div>
+                        <label>Stop Loss (₹)</label>
+                        <input type="number" step="0.05" name="stop_loss" class="form-input" placeholder="147.00" required>
+                    </div>
+                    <div>
+                        <label>Risk/Reward Ratio</label>
+                        <input type="text" name="risk_reward_ratio" class="form-input" value="1:2.8">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <label>Chart Screenshot (Optional - auto-generated with badge if left empty)</label>
+                    <input type="file" name="chart_image" class="form-input" accept="image/*">
+                </div>
+
+                <div class="form-row">
+                    <label>Institutional Thesis / Notes</label>
+                    <textarea name="thesis_summary" class="form-input" rows="3" placeholder="Explain technical setup and volume footprint..."></textarea>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn-act btn-act-publish" style="flex: 1; padding: 10px; justify-content: center;">
+                        <i class="fa-solid fa-paper-plane"></i> Publish Live Call
+                    </button>
+                    <button type="button" class="btn-act" onclick="closeManualCreateModal()" style="padding: 10px 14px; background: rgba(255,255,255,0.05);">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Advisory Desk Guide -->
+    <div id="guide-modal" class="lightbox-modal">
+        <div style="background: var(--bg-card, #191614); border: 1px solid var(--border-color, rgba(255,255,255,0.15)); border-radius: 12px; width: 100%; max-width: 580px; padding: 26px; max-height: 88vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.85);" onclick="event.stopPropagation();">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="font-size: 18px; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-shield-halved" style="color: var(--accent-indigo, #e9805d);"></i> TradeKriya Advisory Desk Guide
+                </h3>
+                <button type="button" onclick="closeAdvisoryGuideModal()" style="background: transparent; border: none; color: var(--text-muted, #78716c); font-size: 18px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div style="font-size: 13px; line-height: 1.6; color: var(--text-secondary, #d6d3d1);">
+                <h4 style="color: var(--text-primary, #fff); margin: 14px 0 6px 0; font-size: 14px;"><i class="fa-solid fa-wand-magic-sparkles" style="color: #e9805d;"></i> 1. How to Create Trade Recommendations</h4>
+                <p style="margin-bottom: 10px;">Admins have two ways to generate institutional recommendations:</p>
+                <ul style="padding-left: 20px; margin-bottom: 14px;">
+                    <li style="margin-bottom: 6px;"><strong>Autonomous AI Proposal (Gemini 3.8 Flash)</strong>: Click <em>"AI Proposal Generator"</em>, enter a stock symbol (e.g. <code>TATASTEEL</code>, <code>RELIANCE</code>), and choose a strategy. Gemini evaluates the price chart, fetches Google News RSS, drafts a thesis, renders an <code>mplfinance</code> chart with the TradeKriya badge, and puts the setup in <em>"AI Drafts & Queue"</em> for review.</li>
+                    <li><strong>Manual Trade Setup</strong>: Click <em>"Manual Trade Setup"</em>, specify your exact entry range, targets, and stop-loss. An annotated chart will be auto-generated or you can attach your own screenshot.</li>
+                </ul>
+
+                <h4 style="color: var(--text-primary, #fff); margin: 14px 0 6px 0; font-size: 14px;"><i class="fa-solid fa-diagram-project" style="color: #38bdf8;"></i> 2. Trade Lifecycle & Risk Management</h4>
+                <ul style="padding-left: 20px; margin-bottom: 14px;">
+                    <li style="margin-bottom: 6px;"><strong>Draft</strong>: Review pending. Visible only to research admins.</li>
+                    <li style="margin-bottom: 6px;"><strong>Active</strong>: Published live to subscribers.</li>
+                    <li style="margin-bottom: 6px;"><strong>Target 1 Hit</strong>: Partial profit booked. Admin trails stop loss to entry price (Risk-Free).</li>
+                    <li style="margin-bottom: 6px;"><strong>Closed in Profit</strong>: Target reached. Gains are recorded in the client-facing track record ledger.</li>
+                    <li><strong>Stop Loss Hit</strong>: Position closed at stop loss. Auditable record logged.</li>
+                </ul>
+
+                <h4 style="color: var(--text-primary, #fff); margin: 14px 0 6px 0; font-size: 14px;"><i class="fa-solid fa-sliders" style="color: #34d399;"></i> 3. Dynamic Strategy Tuner</h4>
+                <p>Admins can dynamically calibrate traditional moving averages (e.g., fine-tuning 50/200 SMA to 45/195 SMA for Indian equities) or RSI bands in the <em>"Strategy Criteria Tuner"</em> tab.</p>
+            </div>
+
+            <div style="margin-top: 20px; text-align: right;">
+                <button type="button" class="btn-act btn-act-publish" onclick="closeAdvisoryGuideModal()" style="padding: 8px 16px;">Got It</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core Script -->
+    <script>
+        // Tab switching
+        function switchAdvisoryTab(tabName, ev) {
+            document.querySelectorAll('.advisory-tab-btn').forEach(b => b.classList.remove('active'));
+            const activeSection = document.getElementById('tab-active-section');
+            const trackSection = document.getElementById('tab-track-record-section');
+            const drafts = document.getElementById('tab-drafts-section');
+            const tuner = document.getElementById('tab-tuner-section');
+
+            if (activeSection) activeSection.style.display = 'none';
+            if (trackSection) trackSection.style.display = 'none';
+            if (drafts) drafts.style.display = 'none';
+            if (tuner) tuner.style.display = 'none';
+
+            const btn = (ev && ev.currentTarget) ? ev.currentTarget : document.querySelector(`.advisory-tab-btn[data-tab="${tabName}"]`);
+            if (btn) btn.classList.add('active');
+
+            if (tabName === 'active' && activeSection) {
+                activeSection.style.display = 'block';
+            } else if (tabName === 'track-record' && trackSection) {
+                trackSection.style.display = 'block';
+            } else if (tabName === 'drafts' && drafts) {
+                drafts.style.display = 'block';
+            } else if (tabName === 'tuner' && tuner) {
+                tuner.style.display = 'block';
+            }
+        }
+
+        // Lightbox for chart preview
+        function showLightbox(imgUrl) {
+            const modal = document.getElementById('chart-lightbox');
+            const img = document.getElementById('lightbox-img');
+            if (img && modal) {
+                img.src = imgUrl;
+                modal.classList.add('active');
+            }
+        }
+        function closeLightbox() {
+            const modal = document.getElementById('chart-lightbox');
+            if (modal) modal.classList.remove('active');
+        }
+
+        // Modals
+        function openAiGeneratorModal() {
+            const modal = document.getElementById('ai-generator-modal');
+            if (modal) modal.classList.add('active');
+        }
+        function closeAiGeneratorModal() {
+            const modal = document.getElementById('ai-generator-modal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        function openManualCreateModal() {
+            const modal = document.getElementById('manual-create-modal');
+            if (modal) modal.classList.add('active');
+        }
+        function closeManualCreateModal() {
+            const modal = document.getElementById('manual-create-modal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        function openAdvisoryGuideModal() {
+            const modal = document.getElementById('guide-modal');
+            if (modal) modal.classList.add('active');
+        }
+        function closeAdvisoryGuideModal() {
+            const modal = document.getElementById('guide-modal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        // Backdrop click dismissal for all modals
+        document.querySelectorAll('.lightbox-modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                }
+            });
+        });
+
+        // CSRF helper
+        function getCsrf() {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, 10) === 'csrftoken=') {
+                        cookieValue = decodeURIComponent(cookie.substring(10));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // AI Generation execution
+        async function executeAiGeneration() {
+            const tickerInput = document.getElementById('ai-gen-ticker');
+            const stratSelect = document.getElementById('ai-gen-strategy');
+            const btn = document.getElementById('btn-run-ai-gen');
+
+            if (!tickerInput || !tickerInput.value.trim()) {
+                alert('Please enter a valid stock ticker symbol (e.g. TATASTEEL, RELIANCE).');
+                return;
+            }
+
+            const ticker = tickerInput.value.trim().toUpperCase();
+            const stratId = stratSelect ? stratSelect.value : null;
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating with Gemini 3.8 Flash...';
+            }
+
+            try {
+                const res = await fetch('/api/advisory/ai-generate/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrf()
+                    },
+                    body: JSON.stringify({ ticker: ticker, strategy_id: stratId })
+                });
+                const data = await res.json();
+                if (data.status === 'success' || data.success) {
+                    alert(`Trade proposal generated for ${ticker}! Saved to AI Drafts & Queue.`);
+                    window.location.reload();
+                } else {
+                    alert(data.message || 'Generation failed');
+                }
+            } catch (e) {
+                alert('Error generating setup: ' + e.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Generate Setup';
+                }
+            }
+        }
+
+        // Save dynamic strategy tuning
+        async function saveStrategyTuning(stratId, category) {
+            let params = {};
+            if (category === 'golden_cross') {
+                const fastEl = document.getElementById(`input-fast-${stratId}`);
+                const slowEl = document.getElementById(`input-slow-${stratId}`);
+                const typeEl = document.getElementById(`input-type-${stratId}`);
+                params = {
+                    fast_ma: fastEl ? parseInt(fastEl.value) : 45,
+                    slow_ma: slowEl ? parseInt(slowEl.value) : 195,
+                    ma_type: typeEl ? typeEl.value : 'SMA'
+                };
+            } else if (category === 'rsi_breakout') {
+                const lenEl = document.getElementById(`input-rsi-len-${stratId}`);
+                const threshEl = document.getElementById(`input-rsi-thresh-${stratId}`);
+                params = {
+                    rsi_length: lenEl ? parseInt(lenEl.value) : 14,
+                    rsi_threshold: threshEl ? parseInt(threshEl.value) : 65
+                };
+            } else if (category === 'macd_cross') {
+                const fastEl = document.getElementById(`input-macd-fast-${stratId}`);
+                const slowEl = document.getElementById(`input-macd-slow-${stratId}`);
+                const sigEl = document.getElementById(`input-macd-sig-${stratId}`);
+                params = {
+                    fast_period: fastEl ? parseInt(fastEl.value) : 8,
+                    slow_period: slowEl ? parseInt(slowEl.value) : 21,
+                    signal_period: sigEl ? parseInt(sigEl.value) : 5
+                };
+            }
+
+            try {
+                const res = await fetch('/api/advisory/tune-strategy/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrf()
+                    },
+                    body: JSON.stringify({ strategy_id: stratId, parameters: params })
+                });
+                const data = await res.json();
+                if (data.status === 'success' || data.success) {
+                    alert('Tuned criteria saved successfully!');
+                } else {
+                    alert(data.message || 'Failed to update');
+                }
+            } catch (e) {
+                alert('Error updating criteria: ' + e.message);
+            }
+        }
+
+        // Status transition action handler
+        async function handleStatusAction(recId, action) {
+            let promptMsg = '';
+            let extraData = {};
+            if (action === 'publish') promptMsg = 'Publish this recommendation live to all subscribers?';
+            else if (action === 'trail_sl') promptMsg = 'Trail Stop Loss to Entry price (Risk-Free)?';
+            else if (action === 'close_profit') promptMsg = 'Close this trade and record profit in accuracy ledger?';
+            else if (action === 'close_sl') promptMsg = 'Mark Stop Loss as triggered and close trade?';
+            else if (action === 'cancel') promptMsg = 'Cancel this trade setup?';
+
+            if (!confirm(promptMsg)) return;
+
+            try {
+                const res = await fetch(`/api/advisory/recommendation/${recId}/action/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrf()
+                    },
+                    body: JSON.stringify({ action: action, ...extraData })
+                });
+                const data = await res.json();
+                if (data.status === 'success' || data.success) {
+                    window.location.reload();
+                } else {
+                    alert(data.message || 'Action failed');
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        // Manual Trade form submission
+        const formManualTrade = document.getElementById('form-manual-trade');
+        if (formManualTrade) {
+            formManualTrade.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const submitBtn = this.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Publishing...';
+                }
+                const formData = new FormData(this);
+                try {
+                    const res = await fetch('/api/advisory/recommendation/create/', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': getCsrf()
+                        },
+                        body: formData
+                    });
+                    const data = await res.json();
+                    if (data.status === 'success' || data.success) {
+                        alert('Recommendation published successfully!');
+                        window.location.reload();
+                    } else {
+                        alert(data.message || 'Error creating trade');
+                    }
+                } catch (err) {
+                    alert('Error: ' + err.message);
+                } finally {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Publish Live Call';
+                    }
+                }
+            });
+        }
+
+        // Theme Sync
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-theme');
+            }
+        })();
+        const themeToggle = document.getElementById('btn-theme-toggle');
+        if (themeToggle) {
+            function updateToggleIcon() {
+                const isLight = document.body.classList.contains('light-theme');
+                themeToggle.innerHTML = isLight ? '<i class="fa-solid fa-moon"></i>' : '<i class="fa-solid fa-sun"></i>';
+            }
+            updateToggleIcon();
+            themeToggle.addEventListener('click', () => {
+                const activeTheme = document.body.classList.contains('light-theme') ? 'dark' : 'light';
+                localStorage.setItem('theme', activeTheme);
+                if (activeTheme === 'light') {
+                    document.body.classList.add('light-theme');
+                } else {
+                    document.body.classList.remove('light-theme');
+                }
+                updateToggleIcon();
+            });
+        }
+    </script>
+</body>
+</html>

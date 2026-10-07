@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 import datetime
+import json
 
 class UserProfile(models.Model):
     PLAN_TIERS = (
@@ -181,5 +182,136 @@ class StockFundamental(models.Model):
 
     def __str__(self):
         return f"{self.ticker} (Magic Score: {self.magic_score})"
+
+
+class RecommendationStrategy(models.Model):
+    CATEGORY_CHOICES = [
+        ('golden_cross', 'Moving Average Crossover'),
+        ('rsi_breakout', 'RSI Momentum Breakout'),
+        ('macd_cross', 'MACD Velocity Crossover'),
+        ('volatility_squeeze', 'Volatility Squeeze Breakout'),
+        ('pullback', 'Trend Pullback & Re-test'),
+    ]
+
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(max_length=100, unique=True)
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='golden_cross')
+    description = models.TextField(blank=True, default='')
+    is_active = models.BooleanField(default=True)
+    parameters_json = models.TextField(default='{}', help_text="e.g. {'fast_ma': 45, 'slow_ma': 195, 'ma_type': 'SMA'}")
+
+    @property
+    def parameters(self):
+        try:
+            return json.loads(self.parameters_json or '{}')
+        except Exception:
+            return {}
+
+    @parameters.setter
+    def parameters(self, val):
+        if isinstance(val, dict):
+            self.parameters_json = json.dumps(val)
+        else:
+            self.parameters_json = str(val)
+
+    total_signals = models.IntegerField(default=0)
+    win_rate = models.FloatField(default=0.0)
+    avg_return_pct = models.FloatField(default=0.0)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Recommendation Strategy"
+        verbose_name_plural = "Recommendation Strategies"
+        ordering = ['-is_active', 'name']
+
+    def __str__(self):
+        return f"{self.name} ({self.get_category_display()})"
+
+
+class TradeRecommendation(models.Model):
+    DIRECTION_CHOICES = [('BUY', 'Buy / Long'), ('SELL', 'Sell / Short')]
+    STATUS_CHOICES = [
+        ('draft', 'Draft (Review Pending)'),
+        ('pending', 'Pending Entry (Wait for Entry Range)'),
+        ('active', 'Active (In Progress)'),
+        ('target_1_hit', 'Target 1 Reached (Partial Profit Booked)'),
+        ('target_2_hit', 'Target 2 Reached (Holding Runners)'),
+        ('completed_profit', 'Closed in Profit'),
+        ('sl_hit', 'Stop Loss Hit (Closed)'),
+        ('cancelled', 'Cancelled / Invalidated'),
+    ]
+
+    ticker = models.CharField(max_length=25, db_index=True)
+    company_name = models.CharField(max_length=150, blank=True, default='')
+    strategy = models.ForeignKey(RecommendationStrategy, on_delete=models.CASCADE, related_name='recommendations')
+    direction = models.CharField(max_length=10, choices=DIRECTION_CHOICES, default='BUY')
+
+    # Price Milestones & Risk Management
+    entry_price_min = models.DecimalField(max_digits=10, decimal_places=2)
+    entry_price_max = models.DecimalField(max_digits=10, decimal_places=2)
+    entry_price_triggered = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+
+    target_1 = models.DecimalField(max_digits=10, decimal_places=2)
+    target_2 = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    target_3 = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+
+    stop_loss = models.DecimalField(max_digits=10, decimal_places=2)
+    trailing_stop_loss = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+
+    # Risk/Reward & Capital Allocation Rules
+    risk_reward_ratio = models.CharField(max_length=20, default="1:2.5")
+    recommended_allocation_pct = models.FloatField(default=5.0)
+    max_risk_pct = models.FloatField(default=1.5)
+
+    # Lifecycle & Timestamps
+    status = models.CharField(max_length=25, choices=STATUS_CHOICES, default='draft', db_index=True)
+    initiated_at = models.DateTimeField(null=True, blank=True)
+    closed_at = models.DateTimeField(null=True, blank=True)
+    holding_days = models.IntegerField(default=0)
+
+    # Financial Outcome Tracking (Accuracy Ledger)
+    exit_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    realized_gain_loss_pct = models.FloatField(null=True, blank=True)
+    is_winning_trade = models.BooleanField(null=True, blank=True)
+
+    # Content & Media
+    thesis_summary = models.TextField(blank=True, default='')
+    chart_image = models.ImageField(upload_to='trade_charts/%Y/%m/', null=True, blank=True)
+    ai_conviction_score = models.IntegerField(default=85)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Trade Recommendation"
+        verbose_name_plural = "Trade Recommendations"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.direction} {self.ticker} [{self.get_status_display()}]"
+
+    @property
+    def is_open(self):
+        return self.status in ['pending', 'active', 'target_1_hit', 'target_2_hit']
+
+
+class TradeUpdateLog(models.Model):
+    recommendation = models.ForeignKey(TradeRecommendation, on_delete=models.CASCADE, related_name='update_logs')
+    old_status = models.CharField(max_length=25, blank=True, default='')
+    new_status = models.CharField(max_length=25)
+    trigger_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    notes = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Trade Update Log"
+        verbose_name_plural = "Trade Update Logs"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.recommendation.ticker}: {self.old_status} -> {self.new_status}"
+
 
 

@@ -212,3 +212,169 @@ class StockFundamentalAdmin(admin.ModelAdmin):
     formatted_market_cap.short_description = 'Mkt Cap'
     formatted_market_cap.admin_order_field = 'market_cap_cr'
 
+
+from .models import RecommendationStrategy, TradeRecommendation, TradeUpdateLog
+
+@admin.register(RecommendationStrategy)
+class RecommendationStrategyAdmin(admin.ModelAdmin):
+    list_display = ('name', 'category', 'get_fast_slow_ma', 'total_signals', 'win_rate_display', 'is_active', 'updated_at')
+    list_filter = ('category', 'is_active')
+    search_fields = ('name', 'slug', 'description')
+    prepopulated_fields = {'slug': ('name',)}
+
+    def get_fast_slow_ma(self, obj):
+        p = obj.parameters
+        if 'fast_ma' in p and 'slow_ma' in p:
+            return f"{p.get('fast_ma')}/{p.get('slow_ma')} {p.get('ma_type', 'SMA')}"
+        elif 'rsi_threshold' in p:
+            return f"RSI > {p.get('rsi_threshold')}"
+        elif 'fast_period' in p:
+            return f"MACD {p.get('fast_period')}/{p.get('slow_period')}/{p.get('signal_period')}"
+        return "-"
+    get_fast_slow_ma.short_description = 'Parameters'
+
+    def win_rate_display(self, obj):
+        color = '#10b981' if (obj.win_rate or 0) >= 60 else '#f59e0b'
+        val = f"{obj.win_rate or 0:.1f}%"
+        return format_html('<span style="color: {}; font-weight: bold;">{}</span>', color, val)
+    win_rate_display.short_description = 'Win Rate'
+
+
+@admin.register(TradeRecommendation)
+class TradeRecommendationAdmin(admin.ModelAdmin):
+    list_display = (
+        'ticker',
+        'strategy',
+        'direction_badge',
+        'colored_status',
+        'entry_range',
+        'target_1',
+        'stop_loss',
+        'trailing_stop_loss',
+        'outcome_display',
+        'holding_days',
+        'initiated_at',
+        'created_at'
+    )
+    list_filter = ('status', 'strategy', 'direction', 'is_winning_trade', 'created_at')
+    search_fields = ('ticker', 'company_name', 'thesis_summary')
+    readonly_fields = ('holding_days', 'realized_gain_loss_pct', 'is_winning_trade', 'created_at', 'updated_at')
+    actions = ['mark_active', 'mark_target_1_hit', 'mark_completed_profit', 'mark_sl_hit', 'mark_cancelled']
+
+    def direction_badge(self, obj):
+        bg = '#10b981' if obj.direction == 'BUY' else '#ef4444'
+        return format_html('<span style="background: {}; color: #fff; padding: 2px 7px; border-radius: 4px; font-weight: bold; font-size: 11px;">{}</span>', bg, obj.direction)
+    direction_badge.short_description = 'Dir'
+
+    def colored_status(self, obj):
+        colors = {
+            'draft': ('#64748b', '#f1f5f9'),
+            'pending': ('#f59e0b', '#fffbeb'),
+            'active': ('#3b82f6', '#eff6ff'),
+            'target_1_hit': ('#06b6d4', '#ecfeff'),
+            'target_2_hit': ('#8b5cf6', '#f5f3ff'),
+            'completed_profit': ('#10b981', '#f0fdf4'),
+            'sl_hit': ('#ef4444', '#fef2f2'),
+            'cancelled': ('#94a3b8', '#f8fafc'),
+        }
+        bg, text_color = colors.get(obj.status, ('#64748b', '#ffffff'))
+        return format_html('<span style="background: {}; color: #fff; padding: 3px 8px; border-radius: 6px; font-weight: 600; font-size: 11px;">{}</span>', bg, obj.get_status_display())
+    colored_status.short_description = 'Status'
+
+    def entry_range(self, obj):
+        return f"Rs. {obj.entry_price_min} - {obj.entry_price_max}"
+    entry_range.short_description = 'Entry Range'
+
+    def outcome_display(self, obj):
+        if obj.realized_gain_loss_pct is not None:
+            color = '#10b981' if obj.realized_gain_loss_pct > 0 else '#ef4444'
+            prefix = '+' if obj.realized_gain_loss_pct > 0 else ''
+            val = f"{prefix}{obj.realized_gain_loss_pct:.2f}%"
+            return format_html('<span style="color: {}; font-weight: bold;">{}</span>', color, val)
+        return "-"
+    outcome_display.short_description = 'Realized P&L'
+
+    # Admin actions
+    def mark_active(self, request, queryset):
+        from django.utils import timezone
+        now = timezone.now()
+        updated = queryset.update(status='active', initiated_at=now)
+        for obj in queryset:
+            TradeUpdateLog.objects.create(recommendation=obj, old_status='pending', new_status='active', notes='Marked active via admin bulk action')
+        self.message_user(request, f"{updated} recommendations marked as ACTIVE.")
+    mark_active.short_description = "Status -> Active (Triggered)"
+
+    def mark_target_1_hit(self, request, queryset):
+        for obj in queryset:
+            old = obj.status
+            obj.status = 'target_1_hit'
+            obj.trailing_stop_loss = obj.entry_price_min
+            obj.save()
+            TradeUpdateLog.objects.create(recommendation=obj, old_status=old, new_status='target_1_hit', trigger_price=obj.target_1, notes='Target 1 Hit. Trailing SL moved to entry.')
+        self.message_user(request, f"{queryset.count()} recommendations updated to TARGET 1 HIT.")
+    mark_target_1_hit.short_description = "Status -> Target 1 Hit (Trail SL to Cost)"
+
+    def mark_completed_profit(self, request, queryset):
+        from django.utils import timezone
+        now = timezone.now()
+        for obj in queryset:
+            old = obj.status
+            obj.status = 'completed_profit'
+            obj.closed_at = now
+            obj.is_winning_trade = True
+            if obj.target_2:
+                obj.exit_price = obj.target_2
+            elif obj.target_1:
+                obj.exit_price = obj.target_1
+            if obj.entry_price_min and obj.exit_price:
+                gain_pct = ((float(obj.exit_price) - float(obj.entry_price_min)) / float(obj.entry_price_min)) * 100
+                obj.realized_gain_loss_pct = round(gain_pct, 2)
+            if obj.initiated_at:
+                obj.holding_days = max(1, (now - obj.initiated_at).days)
+            obj.save()
+            TradeUpdateLog.objects.create(recommendation=obj, old_status=old, new_status='completed_profit', trigger_price=obj.exit_price, notes='Trade marked closed in profit.')
+        self.message_user(request, f"{queryset.count()} recommendations marked as COMPLETED (PROFIT).")
+    mark_completed_profit.short_description = "Status -> Completed (Profit Booked)"
+
+    def mark_sl_hit(self, request, queryset):
+        from django.utils import timezone
+        now = timezone.now()
+        for obj in queryset:
+            old = obj.status
+            obj.status = 'sl_hit'
+            obj.closed_at = now
+            obj.is_winning_trade = False
+            effective_sl = obj.trailing_stop_loss or obj.stop_loss
+            obj.exit_price = effective_sl
+            if obj.entry_price_min and effective_sl:
+                loss_pct = ((float(effective_sl) - float(obj.entry_price_min)) / float(obj.entry_price_min)) * 100
+                obj.realized_gain_loss_pct = round(loss_pct, 2)
+                obj.is_winning_trade = loss_pct > 0  # If trailing SL was above entry
+            if obj.initiated_at:
+                obj.holding_days = max(1, (now - obj.initiated_at).days)
+            obj.save()
+            TradeUpdateLog.objects.create(recommendation=obj, old_status=old, new_status='sl_hit', trigger_price=effective_sl, notes='Stop Loss Triggered.')
+        self.message_user(request, f"{queryset.count()} recommendations marked as STOP LOSS HIT.")
+    mark_sl_hit.short_description = "Status -> Stop Loss Triggered (Closed)"
+
+    def mark_cancelled(self, request, queryset):
+        for obj in queryset:
+            old = obj.status
+            obj.status = 'cancelled'
+            obj.save()
+            TradeUpdateLog.objects.create(recommendation=obj, old_status=old, new_status='cancelled', notes='Trade cancelled / setup invalidated prior to entry.')
+        self.message_user(request, f"{queryset.count()} recommendations marked as CANCELLED.")
+    mark_cancelled.short_description = "Status -> Cancelled (Invalidated)"
+
+
+@admin.register(TradeUpdateLog)
+class TradeUpdateLogAdmin(admin.ModelAdmin):
+    list_display = ('recommendation', 'old_status', 'new_status', 'trigger_price', 'created_at', 'notes_snippet')
+    list_filter = ('new_status', 'created_at')
+    search_fields = ('recommendation__ticker', 'notes')
+
+    def notes_snippet(self, obj):
+        return (obj.notes[:60] + '...') if len(obj.notes) > 60 else obj.notes
+    notes_snippet.short_description = 'Notes'
+
+

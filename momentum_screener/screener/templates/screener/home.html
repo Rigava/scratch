@@ -807,6 +807,7 @@
             <a href="#how-it-works" class="nav-link">How it Works</a>
             <a href="#features" class="nav-link">Features</a>
             <a href="{% url 'screener:community' %}" class="nav-link">Use Cases</a>
+            <a href="{% url 'screener:advisory' %}" class="nav-link"><i class="fa-solid fa-bullhorn" style="color: var(--accent-indigo); margin-right: 4px;"></i> Advisory</a>
             <a href="#pricing" class="nav-link">Pricing</a>
         </div>
 
@@ -1090,6 +1091,7 @@
             <div class="footer-links">
                 <a href="#how-it-works">How it Works</a>
                 <a href="#features">Features</a>
+                <a href="{% url 'screener:advisory' %}">Advisory & Signals</a>
                 <a href="#pricing">Pricing</a>
                 {% if not request.user.is_authenticated and not request.session.is_guest_user %}
                     <a href="{% url 'screener:login' %}">Sign In</a>

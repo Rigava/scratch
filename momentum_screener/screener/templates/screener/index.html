@@ -449,6 +449,7 @@
                     <a href="{% url 'screener:logout' %}" style="color: var(--text-secondary); text-decoration: none; font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='var(--text-secondary)'"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
                 </div>
                 <div class="header-actions-row" style="display: flex; gap: 8px;">
+                    <a href="{% url 'screener:advisory' %}" class="guide-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: rgba(233, 128, 93, 0.15); border: 1px solid rgba(233, 128, 93, 0.4); color: #f4a261;"><i class="fa-solid fa-crosshairs"></i> <span>Advisory Desk</span></a>
                     <a href="{% url 'screener:community' %}" class="guide-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-bullhorn"></i> <span>Use Cases</span></a>
                     <button id="btn-open-guide" class="guide-btn" style="display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-circle-info"></i> <span>How it Works</span></button>
                     {% if request.user.is_superuser or request.user.is_staff %}

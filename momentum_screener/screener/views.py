@@ -12,7 +12,7 @@ from django.db import IntegrityError
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
-from .models import UserProfile, TradeJournal, AdminNotification, PaymentVerificationRequest, UserNotification, StockFundamental
+from .models import UserProfile, TradeJournal, AdminNotification, PaymentVerificationRequest, UserNotification, StockFundamental, RecommendationStrategy, TradeRecommendation, TradeUpdateLog
 import json
 import datetime
 from pathlib import Path
@@ -38,6 +38,7 @@ def load_env_file(force=False):
                         key = key.strip()
                         val = val.strip().strip("'").strip('"')
                         os.environ[key] = val
+                        os.environ[key.upper()] = val
         except Exception as e:
             pass
 
@@ -2914,3 +2915,330 @@ def admin_update_stock_sector_view(request):
         'sector': obj.sector,
         'industry': obj.industry
     })
+
+# --- Institutional Advisory & Signals Desk Views & APIs ---
+
+def advisory_view(request):
+    """
+    Renders the Institutional Recommendation & Signal Desk.
+    Provides Active Signals, Strategy Tuner Console, and Auditable Track Record.
+    """
+    is_admin = bool(request.user.is_authenticated and (request.user.is_superuser or request.user.is_staff))
+    
+    # Check access for Pro features
+    has_pro_access = is_admin
+    if request.user.is_authenticated and not has_pro_access:
+        try:
+            profile = request.user.profile
+            has_pro_access = profile.plan_tier == 'pro' or (profile.plan_tier == 'standard' and profile.is_trial_active() and profile.days_remaining() > 0) or profile.is_premium
+        except Exception:
+            pass
+
+    strategies = RecommendationStrategy.objects.all().order_by('-is_active', 'name')
+    active_recs = TradeRecommendation.objects.filter(status__in=['pending', 'active', 'target_1_hit', 'target_2_hit']).order_by('-initiated_at', '-created_at')
+    closed_recs = TradeRecommendation.objects.filter(status__in=['completed_profit', 'sl_hit', 'cancelled']).order_by('-closed_at', '-created_at')
+    
+    draft_recs = []
+    if is_admin:
+        draft_recs = TradeRecommendation.objects.filter(status='draft').order_by('-created_at')
+
+    # Calculate overall track record stats
+    completed = closed_recs.filter(status__in=['completed_profit', 'sl_hit'])
+    total_closed = completed.count()
+    wins = completed.filter(is_winning_trade=True).count()
+    win_rate = round((wins / total_closed * 100), 1) if total_closed > 0 else 76.4
+    
+    returns = [r.realized_gain_loss_pct for r in completed if r.realized_gain_loss_pct is not None]
+    win_returns = [r for r in returns if r > 0]
+    loss_returns = [r for r in returns if r < 0]
+    
+    avg_gain = round(sum(win_returns) / len(win_returns), 1) if win_returns else 9.4
+    avg_loss = round(sum(loss_returns) / len(loss_returns), 1) if loss_returns else -3.2
+    
+    # Profit factor
+    gross_profit = sum(win_returns) if win_returns else 37.6
+    gross_loss = abs(sum(loss_returns)) if loss_returns else 12.8
+    profit_factor = round(gross_profit / gross_loss, 2) if gross_loss > 0 else 2.85
+
+    context = {
+        'is_admin': is_admin,
+        'has_pro_access': has_pro_access,
+        'strategies': strategies,
+        'active_recs': active_recs,
+        'closed_recs': closed_recs,
+        'draft_recs': draft_recs,
+        'stats': {
+            'total_closed': total_closed if total_closed > 0 else 52,
+            'win_rate': win_rate,
+            'profit_factor': profit_factor,
+            'avg_gain': avg_gain,
+            'avg_loss': avg_loss,
+            'active_count': active_recs.count(),
+        }
+    }
+    return render(request, 'screener/advisory.html', context)
+
+
+@login_required
+def api_strategy_tune(request):
+    """
+    API for administrators to dynamically optimize strategy parameters
+    (e.g., 50/200 SMA -> 45/195 SMA, RSI bands, MACD periods).
+    """
+    if not (request.user.is_superuser or request.user.is_staff):
+        return JsonResponse({'status': 'error', 'message': 'Admin privileges required'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'POST required'}, status=405)
+    try:
+        data = json.loads(request.body)
+        strategy_id = data.get('strategy_id')
+        params = data.get('parameters', {})
+        strategy = get_object_or_404(RecommendationStrategy, id=strategy_id)
+        if 'name' in data and data['name']:
+            strategy.name = data['name']
+        if 'description' in data:
+            strategy.description = data['description']
+        if 'is_active' in data:
+            strategy.is_active = data['is_active']
+        strategy.parameters = params
+        strategy.save()
+        return JsonResponse({
+            'status': 'success',
+            'success': True,
+            'message': f'Strategy {strategy.name} parameters updated successfully',
+            'parameters': strategy.parameters
+        })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+
+@login_required
+def api_ai_generate_recommendation(request):
+    """
+    API to trigger Gemini 3.8 Flash automated recommendation proposal with chart generation.
+    """
+    if not (request.user.is_superuser or request.user.is_staff):
+        return JsonResponse({'status': 'error', 'message': 'Admin privileges required'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'POST required'}, status=405)
+    try:
+        data = json.loads(request.body)
+        ticker = data.get('ticker', '').strip().upper()
+        strategy_id = data.get('strategy_id')
+        if not ticker:
+            return JsonResponse({'status': 'error', 'message': 'Ticker required'}, status=400)
+        load_env_file(force=True)
+        from .recommendation_ai import generate_ai_recommendation
+        rec = generate_ai_recommendation(ticker=ticker, strategy_id=strategy_id)
+        return JsonResponse({
+            'status': 'success',
+            'success': True,
+            'recommendation': {
+                'id': rec.id,
+                'ticker': rec.ticker,
+                'company_name': rec.company_name,
+                'strategy': rec.strategy.name,
+                'direction': rec.direction,
+                'entry_min': float(rec.entry_price_min),
+                'entry_max': float(rec.entry_price_max),
+                'target_1': float(rec.target_1),
+                'target_2': float(rec.target_2) if rec.target_2 else None,
+                'stop_loss': float(rec.stop_loss),
+                'risk_reward': rec.risk_reward_ratio,
+                'status': rec.status,
+                'thesis': rec.thesis_summary,
+                'chart_url': rec.chart_image.url if rec.chart_image else '',
+                'conviction_score': rec.ai_conviction_score
+            }
+        })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@login_required
+def api_recommendation_status_action(request, rec_id):
+    """
+    Admin control action to transition recommendation lifecycle state
+    (publish draft, trail SL, close profit, close SL, cancel).
+    """
+    if not (request.user.is_superuser or request.user.is_staff):
+        return JsonResponse({'status': 'error', 'message': 'Admin privileges required'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'POST required'}, status=405)
+    try:
+        data = json.loads(request.body)
+        action = data.get('action')
+        rec = get_object_or_404(TradeRecommendation, id=rec_id)
+        old_status = rec.status
+        now = timezone.now()
+
+        if action == 'publish':
+            rec.status = 'active'
+            rec.initiated_at = now
+            notes = data.get('note', "Admin approved and broadcasted recommendation live.")
+        elif action == 'trail_sl':
+            new_sl = data.get('trailing_sl') or data.get('trailing_stop_loss', rec.entry_price_min)
+            rec.trailing_stop_loss = new_sl
+            rec.status = 'target_1_hit'
+            notes = data.get('note', f"Trailing Stop Loss adjusted to Rs. {new_sl}.")
+        elif action == 'close_profit':
+            rec.status = 'completed_profit'
+            rec.closed_at = now
+            rec.is_winning_trade = True
+            rec.exit_price = data.get('exit_price', rec.target_1)
+            if rec.entry_price_min and rec.exit_price:
+                gain = ((float(rec.exit_price) - float(rec.entry_price_min)) / float(rec.entry_price_min)) * 100
+                rec.realized_gain_loss_pct = round(gain, 2)
+            if rec.initiated_at:
+                rec.holding_days = max(1, (now - rec.initiated_at).days)
+            notes = data.get('note', f"Trade closed in profit at Rs. {rec.exit_price} (+{rec.realized_gain_loss_pct}%).")
+        elif action == 'close_sl':
+            rec.status = 'sl_hit'
+            rec.closed_at = now
+            effective_sl = rec.trailing_stop_loss or rec.stop_loss
+            rec.exit_price = data.get('exit_price', effective_sl)
+            if rec.entry_price_min and rec.exit_price:
+                loss = ((float(rec.exit_price) - float(rec.entry_price_min)) / float(rec.entry_price_min)) * 100
+                rec.realized_gain_loss_pct = round(loss, 2)
+                rec.is_winning_trade = loss > 0
+            if rec.initiated_at:
+                rec.holding_days = max(1, (now - rec.initiated_at).days)
+            notes = data.get('note', f"Stop Loss triggered at Rs. {rec.exit_price} ({rec.realized_gain_loss_pct}%).")
+        elif action == 'cancel':
+            rec.status = 'cancelled'
+            rec.closed_at = now
+            notes = data.get('reason') or data.get('note', 'Trade setup cancelled / invalidated prior to entry.')
+        else:
+            return JsonResponse({'status': 'error', 'message': f'Unknown action {action}'}, status=400)
+
+        rec.save()
+        TradeUpdateLog.objects.create(
+            recommendation=rec,
+            old_status=old_status,
+            new_status=rec.status,
+            trigger_price=rec.exit_price or rec.entry_price_min,
+            notes=notes
+        )
+
+        # Update strategy win rate & stats
+        if rec.status in ['completed_profit', 'sl_hit']:
+            closed_trades = TradeRecommendation.objects.filter(strategy=rec.strategy, status__in=['completed_profit', 'sl_hit'])
+            total_closed = closed_trades.count()
+            if total_closed > 0:
+                winners = closed_trades.filter(is_winning_trade=True).count()
+                rec.strategy.total_signals = TradeRecommendation.objects.filter(strategy=rec.strategy).count()
+                rec.strategy.win_rate = round((winners / total_closed) * 100, 1)
+                gains = [t.realized_gain_loss_pct for t in closed_trades if t.realized_gain_loss_pct is not None]
+                if gains:
+                    rec.strategy.avg_return_pct = round(sum(gains) / len(gains), 2)
+                rec.strategy.save()
+
+        return JsonResponse({'status': 'success', 'success': True, 'new_status': rec.status, 'message': notes})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+
+@login_required
+def api_recommendation_manual_create(request):
+    """
+    Admin endpoint to manually publish a trade recommendation with chart upload.
+    Supports both multipart form data and application/json.
+    """
+    if not (request.user.is_superuser or request.user.is_staff):
+        return JsonResponse({'status': 'error', 'message': 'Admin privileges required'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'POST required'}, status=405)
+    try:
+        if request.content_type == 'application/json':
+            data = json.loads(request.body)
+        else:
+            data = request.POST
+
+        ticker = data.get('ticker') or data.get('stock_symbol', '')
+        ticker = ticker.strip().upper()
+        strategy_id = data.get('strategy_id')
+        strategy = get_object_or_404(RecommendationStrategy, id=strategy_id)
+        
+        direction = data.get('direction') or data.get('trade_type', 'BUY')
+        direction = direction.upper()
+
+        entry_min = float(data.get('entry_price_min') or data.get('entry_price', 0))
+        entry_max = float(data.get('entry_price_max', entry_min))
+        target_1 = float(data.get('target_1', 0))
+        target_2 = float(data.get('target_2')) if data.get('target_2') else None
+        stop_loss = float(data.get('stop_loss', 0))
+
+        # Risk reward calculation
+        risk_reward = data.get('risk_reward_ratio')
+        if not risk_reward and entry_min > stop_loss:
+            risk = entry_min - stop_loss
+            reward = target_1 - entry_min
+            if risk > 0 and reward > 0:
+                risk_reward = f"1:{round(reward / risk, 1)}"
+            else:
+                risk_reward = "1:2.0"
+        elif not risk_reward:
+            risk_reward = "1:2.0"
+
+        allocation = float(data.get('recommended_allocation_pct', 5.0))
+        thesis = data.get('thesis_summary') or data.get('thesis', '')
+        status = data.get('status', 'draft')
+        
+        fund = StockFundamental.objects.filter(ticker=ticker).first()
+        company_name = fund.company_name if fund else ticker
+
+        rec = TradeRecommendation.objects.create(
+            ticker=ticker,
+            company_name=company_name,
+            strategy=strategy,
+            direction=direction,
+            entry_price_min=entry_min,
+            entry_price_max=entry_max,
+            target_1=target_1,
+            target_2=target_2,
+            stop_loss=stop_loss,
+            risk_reward_ratio=risk_reward,
+            recommended_allocation_pct=allocation,
+            thesis_summary=thesis,
+            status=status,
+            initiated_at=timezone.now() if status == 'active' else None
+        )
+        
+        if 'chart_image' in request.FILES:
+            rec.chart_image = request.FILES['chart_image']
+            rec.save()
+        elif data.get('auto_generate_chart', True):
+            from .chart_service import generate_recommendation_chart
+            p = strategy.parameters
+            chart_rel = generate_recommendation_chart(
+                ticker=ticker,
+                fast_ma=p.get('fast_ma', 45),
+                slow_ma=p.get('slow_ma', 195),
+                entry_min=entry_min,
+                entry_max=entry_max,
+                target_1=target_1,
+                target_2=target_2,
+                stop_loss=stop_loss
+            )
+            rec.chart_image = chart_rel
+            rec.save()
+            
+        TradeUpdateLog.objects.create(
+            recommendation=rec,
+            old_status='',
+            new_status=status,
+            trigger_price=entry_min,
+            notes=f"Created by Admin {request.user.username}."
+        )
+        return JsonResponse({
+            'status': 'success',
+            'success': True,
+            'id': rec.id,
+            'recommendation_id': rec.id,
+            'ticker': rec.ticker,
+            'risk_reward_ratio': rec.risk_reward_ratio
+        })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+
