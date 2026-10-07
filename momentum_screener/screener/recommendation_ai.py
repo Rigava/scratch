@@ -147,6 +147,9 @@ def generate_ai_recommendation(ticker, strategy_id=None, api_key=None):
         api_key = os.environ.get('GEMINI_API_KEY') or os.environ.get('Gemini_API_KEY')
     
     # 1. Fetch Strategy
+    from .strategy_service import ensure_default_strategies
+    ensure_default_strategies()
+
     strategy = None
     if strategy_id:
         try:
@@ -154,7 +157,7 @@ def generate_ai_recommendation(ticker, strategy_id=None, api_key=None):
         except RecommendationStrategy.DoesNotExist:
             pass
     if not strategy:
-        strategy = RecommendationStrategy.objects.filter(is_active=True).first()
+        strategy = RecommendationStrategy.objects.filter(is_active=True).first() or RecommendationStrategy.objects.first()
     
     params = strategy.parameters if strategy else {'fast_ma': 45, 'slow_ma': 195}
     fast_ma_period = int(params.get('fast_ma', 45))
@@ -173,23 +176,40 @@ def generate_ai_recommendation(ticker, strategy_id=None, api_key=None):
     dist_52w = tech['dist_52w']
     candles = tech['candles']
 
-    # 3. Get Fundamental data
+    # 3. Perform Quantitative Strategy Parameters Compliance Audit
+    from .strategy_service import evaluate_strategy_compliance
+    strategy_audit = evaluate_strategy_compliance(ticker, strategy)
+    audit_checks = strategy_audit.get('criteria_checks', [])
+    audit_summary_lines = "\n".join([
+        f"- {chk['param']}: Target '{chk['target']}' | Actual: {chk['actual']} -> Status: {chk['status']}"
+        for chk in audit_checks
+    ]) if audit_checks else "- Baseline moving average validation active."
+
+    # 4. Get Fundamental data
     company_name = ticker
     fund_obj = StockFundamental.objects.filter(ticker=ticker).first()
     if fund_obj and fund_obj.company_name:
         company_name = fund_obj.company_name
         
-    # 4. Fetch News Headlines
+    # 5. Fetch News Headlines
     from .views import fetch_google_news_rss
     news_items = fetch_google_news_rss(company_name or ticker)
     news_summary = "\n".join([f"- {n.get('title')} ({n.get('source')})" for n in news_items[:5]]) if news_items else "No major headline disruptions."
 
-    # 5. Formulate precise prompt with REAL technicals and current price
+    # 6. Formulate precise prompt with REAL technicals, tuned parameters and rule compliance
     prompt_text = f"""
 You are an institutional Portfolio Manager and Quantitative Research Director.
 Generate a structured swing trading recommendation setup for the Indian stock:
 Ticker: {ticker} ({company_name})
 Current Market Price (CMP): Rs.{cmp:,.2f}
+
+Strategy Framework: {strategy.name if strategy else "Institutional Framework"}
+Category: {strategy.category if strategy else "golden_cross"}
+Tuned Parameter Configuration: {json.dumps(params)}
+
+Quantitative Strategy Parameter Audit & Compliance Checklist:
+{audit_summary_lines}
+Overall Strategy Match Score: {strategy_audit.get('match_score', 80)}% ({strategy_audit.get('status', 'EVALUATED')})
 
 Real Technical Metrics:
 - {fast_ma_period} SMA (Fast MA): Rs.{fast_ma_val:,.2f} ({'Price is trading above Fast MA' if cmp >= fast_ma_val else 'Price is retesting Fast MA from below'})
@@ -198,8 +218,6 @@ Real Technical Metrics:
 - 14-Day RSI: {rsi_val:.1f}
 - Volume vs 20-Day Average: {vol_multiple:.2f}x
 - 52-Week Range: Low Rs.{low_52w:,.2f} | High Rs.{high_52w:,.2f} (Stock is {dist_52w:.1f}% below peak)
-Strategy Framework: {strategy.name if strategy else "45/195 Moving Average Crossover"}
-Strategy Parameters: {json.dumps(params)}
 
 Recent News & Sentiment Catalysts:
 {news_summary}
@@ -214,8 +232,8 @@ CRITICAL RULES:
    - Target 1: 5.5% to 7.5% above entry (approx Rs.{round(cmp * 1.065, 2)}).
    - Target 2: 11% to 15% above entry (approx Rs.{round(cmp * 1.135, 2)}).
    - Risk-to-Reward ratio MUST be 1:2.0 or higher.
-4. Conviction Score (0-100): Score based on moving average confluence, RSI position, and volume multiple.
-5. Thesis: Write an original, stock-specific institutional rationale (2-3 sentences). You MUST explicitly cite {ticker}'s actual CMP (Rs.{cmp:,.2f}), the interaction with the {fast_ma_period} SMA (Rs.{fast_ma_val:,.2f}), RSI ({rsi_val:.1f}), and volume expansion ({vol_multiple:.2f}x). Do NOT use generic templated boilerplate.
+4. Conviction Score (0-100): Score based directly on compliance with the tuned strategy parameters (Audit Match Score is {strategy_audit.get('match_score', 80)}%).
+5. Thesis: Write an original, stock-specific institutional rationale (2-3 sentences). You MUST explicitly cite {ticker}'s actual CMP (Rs.{cmp:,.2f}) and evaluate it against the strategy's tuned parameters ({', '.join([f'{k}={v}' for k,v in params.items()])}). Explicitly cite the rule audit status (e.g. moving averages, RSI breakout, volume multiple). Do NOT use generic templated boilerplate.
 
 Return response strictly matching the JSON schema.
 """
@@ -284,14 +302,11 @@ Return response strictly matching the JSON schema.
         reward = target_1 - cmp
         rr_calc = round(reward / risk, 1) if risk > 0 else 2.6
         
-        # Dynamic Conviction Scoring based on real indicator confluence
-        conviction = 76
-        if cmp >= fast_ma_val: conviction += 6
-        if cmp >= slow_ma_val: conviction += 7
-        if 48 <= rsi_val <= 68: conviction += 5
-        if vol_multiple >= 1.2: conviction += 4
-        conviction = min(95, max(65, conviction))
+        # Dynamic Conviction Scoring based on strategy compliance match score
+        audit_score = strategy_audit.get('match_score', 80)
+        conviction = min(96, max(60, audit_score))
 
+        audit_summary = strategy_audit.get('analysis_summary', '')
         above_or_test = "trading above" if cmp >= fast_ma_val else "testing dynamic support near"
         ai_data = {
             "direction": "BUY",
@@ -304,9 +319,9 @@ Return response strictly matching the JSON schema.
             "recommended_allocation_pct": 5.0,
             "conviction_score": conviction,
             "thesis": (
-                f"{ticker} ({company_name}) closed at ₹{cmp:,.2f}, currently {above_or_test} "
-                f"its {fast_ma_period}-day SMA (₹{fast_ma_val:,.2f}) with 14-day RSI holding constructive at {rsi_val:.1f}. "
-                f"Volume expansion ({vol_multiple:.2f}x average) confirms institutional accumulation with an asymmetric target at ₹{target_1:,.2f}."
+                f"{ticker} ({company_name}) closed at ₹{cmp:,.2f}. {audit_summary} "
+                f"Tuned strategy criteria ({strategy.name if strategy else 'Strategy'}) reflect {strategy_audit.get('status', 'High Confluence')} "
+                f"with an asymmetric 1:{rr_calc} risk/reward profile targeting ₹{target_1:,.2f}."
             )
         }
 
@@ -323,7 +338,7 @@ Return response strictly matching the JSON schema.
         stop_loss=ai_data['stop_loss']
     )
 
-    # 8. Save TradeRecommendation as DRAFT
+    # 8. Save TradeRecommendation as DRAFT with full Strategy Parameter Audit
     rec = TradeRecommendation.objects.create(
         ticker=ticker,
         company_name=company_name,
@@ -339,7 +354,8 @@ Return response strictly matching the JSON schema.
         status='draft',
         thesis_summary=ai_data.get('thesis', ''),
         chart_image=chart_rel_path,
-        ai_conviction_score=ai_data.get('conviction_score', 85)
+        ai_conviction_score=ai_data.get('conviction_score', 85),
+        strategy_audit_json=json.dumps(strategy_audit)
     )
 
     # Log initial draft creation

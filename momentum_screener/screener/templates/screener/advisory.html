@@ -266,6 +266,104 @@
         margin-bottom: 14px;
     }
 
+    /* Strategy Parameter Compliance Audit Block */
+    .strategy-audit-box {
+        background: rgba(255, 255, 255, 0.025);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        padding: 10px 12px;
+        margin-bottom: 14px;
+    }
+    .strategy-audit-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .strategy-audit-title {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-secondary, #a8a29e);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .strategy-audit-score {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 4px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .score-high { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .score-mid { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .score-low { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    .audit-checklist {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    .audit-check-item {
+        display: grid;
+        grid-template-columns: 1.4fr 1.1fr 1.1fr auto;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        padding: 5px 8px;
+        background: rgba(0, 0, 0, 0.25);
+        border-radius: 4px;
+        border-left: 2px solid transparent;
+    }
+    .audit-check-item.status-pass, .audit-check-item.status-bullish, .audit-check-item.status-squeeze {
+        border-left-color: #10b981;
+    }
+    .audit-check-item.status-watchlist, .audit-check-item.status-near, .audit-check-item.status-expanding, .audit-check-item.status-moderate {
+        border-left-color: #f59e0b;
+    }
+    .audit-check-item.status-caution, .audit-check-item.status-pullback, .audit-check-item.status-below, .audit-check-item.status-oversold, .audit-check-item.status-bearish, .audit-check-item.status-contracting {
+        border-left-color: #ef4444;
+    }
+    @media (max-width: 640px) {
+        .audit-check-item {
+            grid-template-columns: 1fr;
+            gap: 2px;
+        }
+    }
+    .audit-param-name {
+        color: var(--text-primary, #fff);
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .audit-target-val {
+        color: var(--text-muted, #78716c);
+        font-size: 10.5px;
+    }
+    .audit-actual-val {
+        color: var(--text-secondary, #d6d3d1);
+        font-size: 10.5px;
+    }
+    .audit-status-tag {
+        font-size: 9.5px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 3px;
+        text-align: center;
+        white-space: nowrap;
+    }
+    .tag-pass, .tag-bullish, .tag-squeeze { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .tag-watchlist, .tag-near, .tag-expanding, .tag-moderate { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    .tag-caution, .tag-pullback, .tag-below, .tag-oversold, .tag-bearish, .tag-contracting { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+    .tag-stable, .tag-neutral { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
+
     /* Admin Action Buttons */
     .admin-actions-row {
         display: flex;
@@ -470,19 +568,19 @@
                 <div class="kpi-grid">
                     <div class="kpi-card">
                         <div class="kpi-label">Win Rate</div>
-                        <div class="kpi-value green">{{ stats.win_rate }}%</div>
+                        <div class="kpi-value green">{% if stats.total_closed > 0 %}{{ stats.win_rate }}%{% else %}&mdash;{% endif %}</div>
                     </div>
                     <div class="kpi-card">
                         <div class="kpi-label">Profit Factor</div>
-                        <div class="kpi-value blue">{{ stats.profit_factor }}x</div>
+                        <div class="kpi-value blue">{% if stats.total_closed > 0 and stats.profit_factor %}{{ stats.profit_factor }}x{% else %}&mdash;{% endif %}</div>
                     </div>
                     <div class="kpi-card">
                         <div class="kpi-label">Avg Winner</div>
-                        <div class="kpi-value green">+{{ stats.avg_gain }}%</div>
+                        <div class="kpi-value green">{% if stats.win_count > 0 %}+{{ stats.avg_gain }}%{% else %}&mdash;{% endif %}</div>
                     </div>
                     <div class="kpi-card">
                         <div class="kpi-label">Avg Loss (SL)</div>
-                        <div class="kpi-value orange">{{ stats.avg_loss }}%</div>
+                        <div class="kpi-value orange">{% if stats.loss_count > 0 %}{{ stats.avg_loss }}%{% else %}&mdash;{% endif %}</div>
                     </div>
                     <div class="kpi-card">
                         <div class="kpi-label">Closed Trades</div>
@@ -569,6 +667,29 @@
                             <div class="chart-preview-box" onclick="showLightbox('{{ rec.chart_image.url }}')">
                                 <img src="{{ rec.chart_image.url }}" alt="{{ rec.ticker }} Chart" class="chart-preview-img">
                                 <span class="chart-overlay-badge"><i class="fa-solid fa-magnifying-glass-plus"></i> View Full Chart</span>
+                            </div>
+                            {% endif %}
+
+                            {% if rec.strategy_audit and rec.strategy_audit.criteria_checks %}
+                            <div class="strategy-audit-box">
+                                <div class="strategy-audit-header">
+                                    <span class="strategy-audit-title">
+                                        <i class="fa-solid fa-microchip" style="color: var(--accent-indigo, #e9805d);"></i> Parameter Rule Compliance
+                                    </span>
+                                    <span class="strategy-audit-score {% if rec.strategy_audit.match_score >= 75 %}score-high{% elif rec.strategy_audit.match_score >= 50 %}score-mid{% else %}score-low{% endif %}">
+                                        <i class="fa-solid fa-chart-pie"></i> {{ rec.strategy_audit.match_score }}% Match
+                                    </span>
+                                </div>
+                                <div class="audit-checklist">
+                                    {% for chk in rec.strategy_audit.criteria_checks %}
+                                    <div class="audit-check-item status-{{ chk.status|lower }}">
+                                        <span class="audit-param-name">{{ chk.param }}</span>
+                                        <span class="audit-target-val">Target: {{ chk.target }}</span>
+                                        <span class="audit-actual-val">Actual: <strong>{{ chk.actual }}</strong></span>
+                                        <span class="audit-status-tag tag-{{ chk.status|lower }}">{{ chk.status }}</span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
                             </div>
                             {% endif %}
 
@@ -731,6 +852,29 @@
                             </div>
                             {% endif %}
 
+                            {% if rec.strategy_audit and rec.strategy_audit.criteria_checks %}
+                            <div class="strategy-audit-box">
+                                <div class="strategy-audit-header">
+                                    <span class="strategy-audit-title">
+                                        <i class="fa-solid fa-microchip" style="color: var(--accent-indigo, #e9805d);"></i> Parameter Rule Compliance
+                                    </span>
+                                    <span class="strategy-audit-score {% if rec.strategy_audit.match_score >= 75 %}score-high{% elif rec.strategy_audit.match_score >= 50 %}score-mid{% else %}score-low{% endif %}">
+                                        <i class="fa-solid fa-chart-pie"></i> {{ rec.strategy_audit.match_score }}% Match
+                                    </span>
+                                </div>
+                                <div class="audit-checklist">
+                                    {% for chk in rec.strategy_audit.criteria_checks %}
+                                    <div class="audit-check-item status-{{ chk.status|lower }}">
+                                        <span class="audit-param-name">{{ chk.param }}</span>
+                                        <span class="audit-target-val">Target: {{ chk.target }}</span>
+                                        <span class="audit-actual-val">Actual: <strong>{{ chk.actual }}</strong></span>
+                                        <span class="audit-status-tag tag-{{ chk.status|lower }}">{{ chk.status }}</span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
                             {% if rec.thesis_summary %}
                             <div class="thesis-box">
                                 <strong>AI Thesis:</strong> {{ rec.thesis_summary }}
@@ -828,6 +972,12 @@
                                 <i class="fa-solid fa-floppy-disk"></i> Save Tuned Parameters
                             </button>
                             {% endif %}
+                        {% empty %}
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 40px; background: rgba(255,255,255,0.02); border-radius: 8px; border: 1px dashed rgba(255,255,255,0.1);">
+                            <p style="color: var(--text-muted, #78716c); margin: 0 0 10px 0;">No strategy frameworks loaded yet.</p>
+                            <button type="button" class="btn-act btn-act-publish" onclick="window.location.reload()" style="margin: 0 auto;">
+                                <i class="fa-solid fa-arrows-rotate"></i> Reload & Initialize Strategies
+                            </button>
                         </div>
                         {% endfor %}
                     </div>
@@ -869,6 +1019,8 @@
                 <select id="ai-gen-strategy" class="form-input">
                     {% for strat in strategies %}
                     <option value="{{ strat.id }}">{{ strat.name }}</option>
+                    {% empty %}
+                    <option value="" disabled selected>Default Framework (Golden Crossover)</option>
                     {% endfor %}
                 </select>
             </div>
@@ -911,6 +1063,8 @@
                     <select name="strategy_id" class="form-input">
                         {% for strat in strategies %}
                         <option value="{{ strat.id }}">{{ strat.name }}</option>
+                        {% empty %}
+                        <option value="" disabled selected>Default Framework (Golden Crossover)</option>
                         {% endfor %}
                     </select>
                 </div>

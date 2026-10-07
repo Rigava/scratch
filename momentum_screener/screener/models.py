@@ -280,6 +280,21 @@ class TradeRecommendation(models.Model):
     thesis_summary = models.TextField(blank=True, default='')
     chart_image = models.ImageField(upload_to='trade_charts/%Y/%m/', null=True, blank=True)
     ai_conviction_score = models.IntegerField(default=85)
+    strategy_audit_json = models.TextField(blank=True, default='{}')
+
+    @property
+    def strategy_audit(self):
+        try:
+            data = json.loads(self.strategy_audit_json or '{}')
+            if data and data.get('criteria_checks'):
+                return data
+        except Exception:
+            pass
+        try:
+            from .strategy_service import evaluate_strategy_compliance
+            return evaluate_strategy_compliance(self.ticker, self.strategy)
+        except Exception:
+            return {}
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

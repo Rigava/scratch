@@ -2949,6 +2949,9 @@ def advisory_view(request):
     is_admin = True
     has_pro_access = True
 
+    from .strategy_service import ensure_default_strategies
+    ensure_default_strategies()
+
     strategies = RecommendationStrategy.objects.all().order_by('-is_active', 'name')
     active_recs = TradeRecommendation.objects.filter(status__in=['pending', 'active', 'target_1_hit', 'target_2_hit']).order_by('-initiated_at', '-created_at')
     closed_recs = TradeRecommendation.objects.filter(status__in=['completed_profit', 'sl_hit', 'cancelled']).order_by('-closed_at', '-created_at')
@@ -2957,23 +2960,43 @@ def advisory_view(request):
     if is_admin:
         draft_recs = TradeRecommendation.objects.filter(status='draft').order_by('-created_at')
 
-    # Calculate overall track record stats
+    # Calculate overall track record stats strictly from actual closed recommendations
     completed = closed_recs.filter(status__in=['completed_profit', 'sl_hit'])
     total_closed = completed.count()
     wins = completed.filter(is_winning_trade=True).count()
-    win_rate = round((wins / total_closed * 100), 1) if total_closed > 0 else 76.4
+    win_rate = round((wins / total_closed * 100), 1) if total_closed > 0 else 0.0
     
     returns = [r.realized_gain_loss_pct for r in completed if r.realized_gain_loss_pct is not None]
     win_returns = [r for r in returns if r > 0]
     loss_returns = [r for r in returns if r < 0]
     
-    avg_gain = round(sum(win_returns) / len(win_returns), 1) if win_returns else 9.4
-    avg_loss = round(sum(loss_returns) / len(loss_returns), 1) if loss_returns else -3.2
+    avg_gain = round(sum(win_returns) / len(win_returns), 1) if win_returns else 0.0
+    avg_loss = round(sum(loss_returns) / len(loss_returns), 1) if loss_returns else 0.0
     
-    # Profit factor
-    gross_profit = sum(win_returns) if win_returns else 37.6
-    gross_loss = abs(sum(loss_returns)) if loss_returns else 12.8
-    profit_factor = round(gross_profit / gross_loss, 2) if gross_loss > 0 else 2.85
+    # Profit factor calculation
+    gross_profit = sum(win_returns) if win_returns else 0.0
+    gross_loss = abs(sum(loss_returns)) if loss_returns else 0.0
+    if gross_loss > 0:
+        profit_factor = round(gross_profit / gross_loss, 2)
+    elif gross_profit > 0:
+        profit_factor = round(gross_profit, 2)
+    else:
+        profit_factor = 0.0
+
+    # Dynamically sync strategy win rate & signal count strictly with actual recommendations
+    for s in strategies:
+        s_recs = TradeRecommendation.objects.filter(strategy=s)
+        s_closed = s_recs.filter(status__in=['completed_profit', 'sl_hit'])
+        s_total = s_closed.count()
+        if s_total > 0:
+            s_wins = s_closed.filter(is_winning_trade=True).count()
+            s.win_rate = round((s_wins / s_total) * 100, 1)
+            s_gains = [t.realized_gain_loss_pct for t in s_closed if t.realized_gain_loss_pct is not None]
+            s.avg_return_pct = round(sum(s_gains) / len(s_gains), 1) if s_gains else 0.0
+        else:
+            s.win_rate = 0.0
+            s.avg_return_pct = 0.0
+        s.total_signals = s_recs.count()
 
     context = {
         'is_admin': is_admin,
@@ -2983,11 +3006,13 @@ def advisory_view(request):
         'closed_recs': closed_recs,
         'draft_recs': draft_recs,
         'stats': {
-            'total_closed': total_closed if total_closed > 0 else 52,
+            'total_closed': total_closed,
             'win_rate': win_rate,
             'profit_factor': profit_factor,
             'avg_gain': avg_gain,
             'avg_loss': avg_loss,
+            'win_count': len(win_returns),
+            'loss_count': len(loss_returns),
             'active_count': active_recs.count(),
         }
     }
@@ -3015,7 +3040,9 @@ def api_strategy_tune(request):
             strategy.description = data['description']
         if 'is_active' in data:
             strategy.is_active = data['is_active']
-        strategy.parameters = params
+        existing_params = strategy.parameters or {}
+        existing_params.update(params)
+        strategy.parameters = existing_params
         strategy.save()
         return JsonResponse({
             'status': 'success',
@@ -3171,8 +3198,20 @@ def api_recommendation_manual_create(request):
 
         ticker = data.get('ticker') or data.get('stock_symbol', '')
         ticker = ticker.strip().upper()
+        from .strategy_service import ensure_default_strategies
+        ensure_default_strategies()
+
         strategy_id = data.get('strategy_id')
-        strategy = get_object_or_404(RecommendationStrategy, id=strategy_id)
+        strategy = None
+        if strategy_id:
+            try:
+                strategy = RecommendationStrategy.objects.filter(id=int(strategy_id)).first()
+            except (ValueError, TypeError):
+                strategy = None
+        if not strategy:
+            strategy = RecommendationStrategy.objects.filter(is_active=True).first() or RecommendationStrategy.objects.first()
+        if not strategy:
+            return JsonResponse({'status': 'error', 'message': 'No recommendation strategy framework found. Please create one in Strategy Framework & Indicator Tuner.'}, status=400)
         
         direction = data.get('direction') or data.get('trade_type', 'BUY')
         direction = direction.upper()
@@ -3202,6 +3241,9 @@ def api_recommendation_manual_create(request):
         fund = StockFundamental.objects.filter(ticker=ticker).first()
         company_name = fund.company_name if fund else ticker
 
+        from .strategy_service import evaluate_strategy_compliance
+        audit = evaluate_strategy_compliance(ticker, strategy)
+
         rec = TradeRecommendation.objects.create(
             ticker=ticker,
             company_name=company_name,
@@ -3216,6 +3258,7 @@ def api_recommendation_manual_create(request):
             recommended_allocation_pct=allocation,
             thesis_summary=thesis,
             status=status,
+            strategy_audit_json=json.dumps(audit),
             initiated_at=timezone.now() if status == 'active' else None
         )
         
@@ -3251,9 +3294,35 @@ def api_recommendation_manual_create(request):
             'id': rec.id,
             'recommendation_id': rec.id,
             'ticker': rec.ticker,
-            'risk_reward_ratio': rec.risk_reward_ratio
+            'risk_reward_ratio': rec.risk_reward_ratio,
+            'audit': audit
         })
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+
+@login_required
+def api_advisory_audit_stock(request):
+    """
+    Returns real-time quantitative parameter compliance audit for a given ticker and strategy ID.
+    Used by the Manual Trade Setup modal and Strategy Framework tuner.
+    """
+    if not (request.user.is_superuser or request.user.is_staff):
+        return JsonResponse({'status': 'error', 'message': 'Admin privileges required'}, status=403)
+    ticker = request.GET.get('ticker', '').strip().upper()
+    strategy_id = request.GET.get('strategy_id')
+    from .strategy_service import evaluate_strategy_compliance, ensure_default_strategies
+    ensure_default_strategies()
+    strategy = None
+    if strategy_id:
+        try:
+            strategy = RecommendationStrategy.objects.filter(id=int(strategy_id)).first()
+        except Exception:
+            strategy = None
+    if not strategy:
+        strategy = RecommendationStrategy.objects.filter(is_active=True).first() or RecommendationStrategy.objects.first()
+    
+    audit = evaluate_strategy_compliance(ticker, strategy)
+    return JsonResponse({'status': 'success', 'audit': audit})
 
 
