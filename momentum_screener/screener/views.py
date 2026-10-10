@@ -2141,9 +2141,11 @@ def admin_run_marketing_agent_view(request):
         output_logs = out.getvalue()
         
         if "[ERROR]" in output_logs:
+            error_lines = [l.replace('[ERROR]', '').strip() for l in output_logs.splitlines() if "[ERROR]" in l]
+            error_msg = error_lines[0] if error_lines else 'Marketing agent run completed with errors.'
             return JsonResponse({
                 'status': 'error',
-                'message': 'Marketing agent run completed with errors.',
+                'message': error_msg,
                 'logs': output_logs
             }, status=500)
             

@@ -1358,17 +1358,23 @@
                 const fastEl = document.getElementById(`input-fast-${stratId}`);
                 const slowEl = document.getElementById(`input-slow-${stratId}`);
                 const typeEl = document.getElementById(`input-type-${stratId}`);
+                const volEl = document.getElementById(`input-vol-${stratId}`);
+                const rsiMinEl = document.getElementById(`input-rsi-min-${stratId}`);
                 params = {
                     fast_ma: fastEl ? parseInt(fastEl.value) : 45,
                     slow_ma: slowEl ? parseInt(slowEl.value) : 195,
-                    ma_type: typeEl ? typeEl.value : 'SMA'
+                    ma_type: typeEl ? typeEl.value : 'SMA',
+                    volume_multiple: volEl ? parseFloat(volEl.value) : 1.25,
+                    rsi_min: rsiMinEl ? parseFloat(rsiMinEl.value) : 45
                 };
             } else if (category === 'rsi_breakout') {
                 const lenEl = document.getElementById(`input-rsi-len-${stratId}`);
                 const threshEl = document.getElementById(`input-rsi-thresh-${stratId}`);
+                const volEl = document.getElementById(`input-rsi-vol-${stratId}`);
                 params = {
                     rsi_length: lenEl ? parseInt(lenEl.value) : 14,
-                    rsi_threshold: threshEl ? parseInt(threshEl.value) : 65
+                    rsi_threshold: threshEl ? parseInt(threshEl.value) : 62,
+                    volume_multiple: volEl ? parseFloat(volEl.value) : 1.5
                 };
             } else if (category === 'macd_cross') {
                 const fastEl = document.getElementById(`input-macd-fast-${stratId}`);
@@ -1392,7 +1398,8 @@
                 });
                 const data = await res.json();
                 if (data.status === 'success' || data.success) {
-                    alert('Tuned criteria saved successfully!');
+                    alert('Tuned criteria saved successfully! All quantitative audits and AI screeners now reflect these parameters.');
+                    window.location.reload();
                 } else {
                     alert(data.message || 'Failed to update');
                 }
@@ -1400,6 +1407,158 @@
                 alert('Error updating criteria: ' + e.message);
             }
         }
+
+        // Live Strategy Parameter Audit Simulator in Tuner Tab
+        async function testStrategyCompliance() {
+            const tickerInput = document.getElementById('tester-ticker');
+            const stratSelect = document.getElementById('tester-strategy');
+            const resultBox = document.getElementById('tester-result-box');
+            if (!tickerInput || !tickerInput.value.trim()) {
+                alert('Please enter a stock ticker (e.g. TATASTEEL, INFY)');
+                return;
+            }
+            const ticker = tickerInput.value.trim().toUpperCase();
+            const stratId = stratSelect ? stratSelect.value : '';
+            if (resultBox) {
+                resultBox.style.display = 'block';
+                resultBox.innerHTML = '<div style="font-size: 12px; color: var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin"></i> Calculating parameter compliance metrics...</div>';
+            }
+            try {
+                const res = await fetch(`/api/advisory/audit-stock/?ticker=${encodeURIComponent(ticker)}&strategy_id=${stratId}`);
+                const data = await res.json();
+                if (data.status === 'success' && data.audit) {
+                    const a = data.audit;
+                    let badgeClass = a.match_score >= 75 ? 'score-high' : (a.match_score >= 50 ? 'score-mid' : 'score-low');
+                    let checksHtml = (a.criteria_checks || []).map(c => `
+                        <div class="audit-check-item status-${(c.status||'').toLowerCase()}">
+                            <span class="audit-param-name">${c.param}</span>
+                            <span class="audit-target-val">Target: ${c.target}</span>
+                            <span class="audit-actual-val">Actual: <strong>${c.actual}</strong></span>
+                            <span class="audit-status-tag tag-${(c.status||'').toLowerCase()}">${c.status}</span>
+                        </div>
+                    `).join('');
+                    resultBox.innerHTML = `
+                        <div class="strategy-audit-box" style="margin-bottom: 0;">
+                            <div class="strategy-audit-header">
+                                <span class="strategy-audit-title"><i class="fa-solid fa-calculator"></i> Parameter Audit: ${a.ticker} (₹${(a.cmp || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})})</span>
+                                <span class="strategy-audit-score ${badgeClass}"><i class="fa-solid fa-chart-pie"></i> ${a.match_score}% Match (${a.status})</span>
+                            </div>
+                            <div class="audit-checklist">${checksHtml}</div>
+                            <div style="font-size: 11.5px; color: var(--text-secondary, #d6d3d1); margin-top: 8px; line-height: 1.4;">${a.analysis_summary || ''}</div>
+                        </div>
+                    `;
+                } else {
+                    resultBox.innerHTML = `<div style="color: #ef4444; font-size: 12px;">${data.message || 'Error evaluating compliance'}</div>`;
+                }
+            } catch (err) {
+                resultBox.innerHTML = `<div style="color: #ef4444; font-size: 12px;">Failed to fetch audit: ${err.message}</div>`;
+            }
+        }
+
+        // Live Parameter Compliance Helper in Manual Trade Setup Modal
+        let lastManualAudit = null;
+        let manualAuditTimeout = null;
+
+        function triggerManualAuditLookup() {
+            clearTimeout(manualAuditTimeout);
+            manualAuditTimeout = setTimeout(async () => {
+                const tickerInput = document.querySelector('#form-manual-trade input[name="ticker"]');
+                const stratSelect = document.getElementById('manual-strategy-id');
+                const auditBox = document.getElementById('manual-audit-box');
+                const scoreBadge = document.getElementById('manual-audit-score');
+                const listEl = document.getElementById('manual-audit-list');
+                const summaryEl = document.getElementById('manual-audit-summary');
+
+                if (!tickerInput || !tickerInput.value.trim() || tickerInput.value.trim().length < 2) {
+                    if (auditBox) auditBox.style.display = 'none';
+                    lastManualAudit = null;
+                    return;
+                }
+
+                const ticker = tickerInput.value.trim().toUpperCase();
+                const stratId = stratSelect ? stratSelect.value : '';
+
+                if (auditBox) auditBox.style.display = 'block';
+                if (summaryEl) summaryEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking strategy parameter compliance...';
+
+                try {
+                    const res = await fetch(`/api/advisory/audit-stock/?ticker=${encodeURIComponent(ticker)}&strategy_id=${stratId}`);
+                    const data = await res.json();
+                    if (data.status === 'success' && data.audit) {
+                        lastManualAudit = data.audit;
+                        const a = data.audit;
+                        let badgeClass = a.match_score >= 75 ? 'score-high' : (a.match_score >= 50 ? 'score-mid' : 'score-low');
+                        if (scoreBadge) {
+                            scoreBadge.className = `strategy-audit-score ${badgeClass}`;
+                            scoreBadge.textContent = `${a.match_score}% Match (${a.status})`;
+                        }
+                        if (listEl) {
+                            listEl.innerHTML = (a.criteria_checks || []).map(c => `
+                                <div class="audit-check-item status-${(c.status||'').toLowerCase()}">
+                                    <span class="audit-param-name">${c.param}</span>
+                                    <span class="audit-target-val">Target: ${c.target}</span>
+                                    <span class="audit-actual-val">Actual: <strong>${c.actual}</strong></span>
+                                    <span class="audit-status-tag tag-${(c.status||'').toLowerCase()}">${c.status}</span>
+                                </div>
+                            `).join('');
+                        }
+                        if (summaryEl) {
+                            summaryEl.innerHTML = `<strong>CMP: ₹${(a.cmp || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</strong> &bull; ${a.analysis_summary || ''}`;
+                        }
+                    } else {
+                        if (summaryEl) summaryEl.textContent = data.message || 'Audit not available.';
+                    }
+                } catch (err) {
+                    if (summaryEl) summaryEl.textContent = 'Could not load compliance: ' + err.message;
+                }
+            }, 350);
+        }
+
+        function autoFillManualLevelsFromAudit() {
+            if (!lastManualAudit || !lastManualAudit.cmp) {
+                alert('Please enter a valid stock ticker symbol first.');
+                return;
+            }
+            const cmp = parseFloat(lastManualAudit.cmp);
+            const entryMin = (cmp * 0.995).toFixed(2);
+            const entryMax = (cmp * 1.012).toFixed(2);
+            const target1 = (cmp * 1.065).toFixed(2);
+            const target2 = (cmp * 1.135).toFixed(2);
+            const stopLoss = (cmp * 0.962).toFixed(2);
+
+            const form = document.getElementById('form-manual-trade');
+            if (form) {
+                const elMin = form.querySelector('input[name="entry_price_min"]');
+                const elMax = form.querySelector('input[name="entry_price_max"]');
+                const elT1 = form.querySelector('input[name="target_1"]');
+                const elT2 = form.querySelector('input[name="target_2"]');
+                const elSL = form.querySelector('input[name="stop_loss"]');
+                const elRR = form.querySelector('input[name="risk_reward_ratio"]');
+                const elThesis = form.querySelector('textarea[name="thesis_summary"]');
+
+                if (elMin) elMin.value = entryMin;
+                if (elMax) elMax.value = entryMax;
+                if (elT1) elT1.value = target1;
+                if (elT2) elT2.value = target2;
+                if (elSL) elSL.value = stopLoss;
+                if (elRR) elRR.value = "1:2.8";
+                if (elThesis && !elThesis.value.trim() && lastManualAudit.analysis_summary) {
+                    elThesis.value = `${lastManualAudit.ticker} at ₹${cmp.toFixed(2)}. ${lastManualAudit.analysis_summary} Framework criteria: ${lastManualAudit.status}.`;
+                }
+            }
+        }
+
+        // Attach listeners for manual trade form ticker input
+        document.addEventListener('DOMContentLoaded', () => {
+            const manualTickerInput = document.querySelector('#form-manual-trade input[name="ticker"]');
+            const manualStratSelect = document.getElementById('manual-strategy-id');
+            if (manualTickerInput) {
+                manualTickerInput.addEventListener('input', triggerManualAuditLookup);
+            }
+            if (manualStratSelect) {
+                manualStratSelect.addEventListener('change', triggerManualAuditLookup);
+            }
+        });
 
         // Status transition action handler
         async function handleStatusAction(recId, action) {
