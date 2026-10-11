@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TradeKriya - Falling Knife Screener</title>
+    <title>TradeKriya - {% if request.user.is_superuser or request.user.is_staff %}Falling Knife Screener{% else %}Strategy & Backtest Desk{% endif %}</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -420,7 +420,11 @@
                 <div class="logo-icon"><i class="fa-solid fa-shield-halved"></i></div>
                 <div class="logo-text">
                     <h1 style="font-family: 'Yatra One', cursive; font-size: 20px; letter-spacing: 0.5px;">TradeKriya</h1>
+                    {% if request.user.is_superuser or request.user.is_staff %}
                     <span>Quantitative & Momentum Screener</span>
+                    {% else %}
+                    <span>Quantitative Strategy & Backtest Desk</span>
+                    {% endif %}
                 </div>
             </div>
             <div class="header-actions">
@@ -457,7 +461,9 @@
                     {% if request.user.is_superuser or request.user.is_staff %}
                     <button id="btn-toggle-credentials" class="guide-btn" style="display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-gears"></i> <span>API Setup</span></button>
                     {% endif %}
+                    {% if request.user.is_superuser or request.user.is_staff %}
                     <button id="btn-toggle-filters" class="guide-btn" style="display: none; align-items: center; gap: 6px;"><i class="fa-solid fa-sliders"></i> <span>Filters</span></button>
+                    {% endif %}
                 </div>
                 <div class="data-source-selector" style="position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
@@ -511,9 +517,10 @@
         </div>
         {% endif %}
 
-        <main class="dashboard-layout">
+        <main class="dashboard-layout" {% if not request.user.is_superuser and not request.user.is_staff %}style="grid-template-columns: 1fr; display: block;"{% endif %}>
             
-            <!-- Left Panel: Filter & Screener Configurations -->
+            <!-- Left Panel: Filter & Screener Configurations (Admin / Superuser Only) -->
+            {% if request.user.is_superuser or request.user.is_staff %}
             <aside class="sidebar-config glass-card">
                 <!-- Mobile Sidebar Close Header -->
                 <div class="sidebar-mobile-header" style="display: none; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;">
@@ -745,7 +752,7 @@
                             <label for="txt-kinematics-symbol" style="font-size: 10px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Symbol (Optional)</label>
                             <input type="text" id="txt-kinematics-symbol" placeholder="e.g. BHEL or TCS" style="width: 100%; font-size: 11px; padding: 8px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: var(--text-primary); border-radius: var(--border-radius-sm); box-sizing: border-box; outline: none;">
                         </div>
-                        <button id="btn-admin-kinematics-agent" class="primary-btn" style="width: 100%; font-size: 11px; padding: 10px; margin: 0; background: linear-gradient(135deg, #0284c7, #2563eb); border: none; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; border-radius: var(--border-radius-sm); color: #fff; font-weight: 600; margin-bottom: 8px;">
+                        <button type="button" id="btn-admin-kinematics-agent" onclick="window.runKinematicsAgent(event)" class="primary-btn" style="width: 100%; font-size: 11px; padding: 10px; margin: 0; background: linear-gradient(135deg, #0284c7, #2563eb); border: none; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; border-radius: var(--border-radius-sm); color: #fff; font-weight: 600; margin-bottom: 8px;">
                             <i class="fa-solid fa-feather-pointed"></i> Run Kinematic Agent
                         </button>
                         <div id="admin-kinematics-status" style="margin-top: 8px; font-size: 11px; color: var(--text-secondary); text-align: center; font-weight: 500;"></div>
@@ -770,15 +777,18 @@
                     </div>
                 </div>
             </aside>
+            {% endif %}
 
             <!-- Center Panel: Screener Grid & Stats -->
             <section class="screener-results">
                 <!-- Navigation Tabs -->
                 <div class="view-tabs" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 10px; font-family: var(--font-stack);">
+                    {% if request.user.is_superuser or request.user.is_staff %}
                     <button id="btn-tab-screener" class="tab-btn active" style="background: rgba(255,255,255,0.05); border: none; color: var(--text-primary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
                         <i class="fa-solid fa-list-check"></i> Screener Grid
                     </button>
-                    <button id="btn-tab-backtest" class="tab-btn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
+                    {% endif %}
+                    <button id="btn-tab-backtest" class="tab-btn {% if not request.user.is_superuser and not request.user.is_staff %}active{% endif %}" style="background: {% if not request.user.is_superuser and not request.user.is_staff %}rgba(255,255,255,0.05){% else %}transparent{% endif %}; border: none; color: {% if not request.user.is_superuser and not request.user.is_staff %}var(--text-primary){% else %}var(--text-secondary){% endif %}; font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
                         <i class="fa-solid fa-calculator"></i> RSI Strategy & Backtest
                     </button>
                     <button id="btn-tab-journal" class="tab-btn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
@@ -816,7 +826,8 @@
                 </div>
                 {% endif %}
 
-                <!-- Stats Overview -->
+                {% if request.user.is_superuser or request.user.is_staff %}
+                <!-- Stats Overview (Admin Only) -->
                 <div id="screener-stats-bar" class="stats-bar">
                     <div class="stat-card glass-card">
                         <div class="stat-icon blue"><i class="fa-solid fa-eye"></i></div>
@@ -944,6 +955,7 @@
                         </table>
                     </div>
                 </div>
+                {% endif %}
 
                 <!-- Recent Use Cases & Insights Section -->
                 {% if recent_use_cases %}
@@ -986,7 +998,7 @@
                 {% endif %}
 
                 <!-- Backtest View Card -->
-                <div id="backtest-view-card" class="screener-grid-card glass-card hidden" style="margin-top: 0;">
+                <div id="backtest-view-card" class="screener-grid-card glass-card {% if request.user.is_superuser or request.user.is_staff %}hidden{% endif %}" style="margin-top: 0;">
                     <!-- Shortlist / Recent Signals Category -->
                     <div style="margin-bottom: 25px; padding: 16px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-md);">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
@@ -2466,7 +2478,8 @@
             }
         });
     </script>
-    <!-- 3-Day Kinematics Audit Modal -->
+    {% if request.user.is_superuser or request.user.is_staff %}
+    <!-- 3-Day Kinematics Audit Modal (Admin Only) -->
     <div id="kinematics-audit-modal" class="kinematics-modal-backdrop" style="display: none; position: fixed; inset: 0; z-index: 99999;">
         <div class="kinematics-modal-card">
             <button id="btn-close-kinematics-modal" style="position: absolute; top: 16px; right: 16px; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 16px;">
@@ -2519,6 +2532,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
 
     <!-- Kinematic Agent Article Preview Modal -->
     <div id="kinematic-article-modal" class="kinematics-modal-backdrop" style="display: none; position: fixed; inset: 0; z-index: 100020;">
@@ -2536,7 +2550,7 @@
                         </div>
                     </div>
                 </div>
-                <button id="btn-close-kinematic-article-modal" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 18px; padding: 4px 8px;">
+                <button id="btn-close-kinematic-article-modal" onclick="window.closeKinematicArticleModal()" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 18px; padding: 4px 8px;">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -2545,7 +2559,7 @@
                 <span style="font-size: 11.5px; color: var(--text-secondary);">
                     <i class="fa-brands fa-linkedin" style="color: #0a66c2; margin-right: 4px;"></i> Ready for LinkedIn Thought-Leadership & Community Post
                 </span>
-                <button id="btn-copy-kinematic-article" class="primary-btn" style="padding: 6px 14px; font-size: 11.5px; margin: 0; display: inline-flex; align-items: center; gap: 6px; background: #0a66c2; border: none; border-radius: 4px; color: #fff; cursor: pointer; font-weight: 600;">
+                <button id="btn-copy-kinematic-article" onclick="window.copyKinematicArticle()" class="primary-btn" style="padding: 6px 14px; font-size: 11.5px; margin: 0; display: inline-flex; align-items: center; gap: 6px; background: #0a66c2; border: none; border-radius: 4px; color: #fff; cursor: pointer; font-weight: 600;">
                     <i class="fa-regular fa-clipboard"></i> <span id="btn-copy-text">Copy Article</span>
                 </button>
             </div>
@@ -2555,10 +2569,140 @@
             </div>
 
             <div style="display: flex; justify-content: flex-end; gap: 8px;">
-                <button id="btn-dismiss-kinematic-article-modal" class="secondary-btn" style="font-size: 12px; padding: 6px 16px;">Close Preview</button>
+                <button id="btn-dismiss-kinematic-article-modal" onclick="window.closeKinematicArticleModal()" class="secondary-btn" style="font-size: 12px; padding: 6px 16px;">Close Preview</button>
             </div>
         </div>
     </div>
+
+
+    <!-- Inline Kinematic Agent Handlers (Fail-Safe & Instant Execution) -->
+    <script>
+    window.runKinematicsAgent = async function(e) {
+        if (e && e.preventDefault) e.preventDefault();
+        console.log("[Kinematic Agent] Triggered execution...");
+        const btn = document.getElementById('btn-admin-kinematics-agent');
+        const statusDiv = document.getElementById('admin-kinematics-status');
+        const focusSelect = document.getElementById('sel-kinematics-focus');
+        const symbolInput = document.getElementById('txt-kinematics-symbol');
+        const focusVal = focusSelect ? focusSelect.value : 'all';
+        const symbolVal = symbolInput ? symbolInput.value.trim() : '';
+
+        if (btn) btn.disabled = true;
+        if (statusDiv) {
+            statusDiv.style.color = '#38bdf8';
+            statusDiv.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing tape kinematics & drafting article...';
+        }
+
+        try {
+            const getCookie = (name) => {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            };
+            const csrftoken = getCookie('csrftoken');
+
+            const response = await fetch('/api/admin/run-kinematics-agent/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({
+                    focus: focusVal || 'all',
+                    symbol: symbolVal || null
+                })
+            });
+
+            const data = await response.json();
+            if (response.ok && data.status === 'success') {
+                if (statusDiv) {
+                    statusDiv.style.color = '#10b981';
+                    statusDiv.innerHTML = `<i class="fa-solid fa-circle-check"></i> Article generated via ${data.engine}! Previewing...`;
+                }
+                console.log("[Kinematic Agent] Generated successfully:", data);
+                window.openKinematicArticleModal(data);
+            } else {
+                throw new Error(data.message || 'Server returned an error');
+            }
+        } catch (err) {
+            console.error("[Kinematic Agent] Error:", err);
+            if (statusDiv) {
+                statusDiv.style.color = '#ef4444';
+                statusDiv.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Failed: ${err.message}`;
+            }
+        } finally {
+            if (btn) btn.disabled = false;
+        }
+    };
+
+    window.openKinematicArticleModal = function(payload) {
+        const modal = document.getElementById('kinematic-article-modal');
+        if (!modal) return;
+        const titleEl = document.getElementById('modal-kinematic-article-title');
+        const engineBadge = document.getElementById('modal-kinematic-engine-badge');
+        const dbBadge = document.getElementById('modal-kinematic-db-badge');
+        const bodyEl = document.getElementById('modal-kinematic-article-body');
+
+        if (titleEl) titleEl.textContent = payload.title || 'Market Kinematics Analysis';
+        if (engineBadge) engineBadge.textContent = payload.engine || 'Quantitative Agent';
+        if (dbBadge) {
+            if (payload.post_id) {
+                dbBadge.innerHTML = `<i class="fa-solid fa-database"></i> Saved to Community (#${payload.post_id})`;
+            } else {
+                dbBadge.innerHTML = `<i class="fa-solid fa-file"></i> Draft Saved: ${payload.filename || 'Local'}`;
+            }
+        }
+        if (bodyEl) bodyEl.textContent = payload.article || 'No article generated.';
+
+        modal.style.display = 'flex';
+    };
+
+    window.closeKinematicArticleModal = function() {
+        const modal = document.getElementById('kinematic-article-modal');
+        if (modal) modal.style.display = 'none';
+    };
+
+    window.copyKinematicArticle = async function() {
+        const bodyEl = document.getElementById('modal-kinematic-article-body');
+        const btn = document.getElementById('btn-copy-kinematic-article');
+        if (!bodyEl) return;
+        try {
+            await navigator.clipboard.writeText(bodyEl.textContent);
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Copied!</span>';
+                btn.style.background = '#10b981';
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="fa-regular fa-clipboard"></i> <span id="btn-copy-text">Copy Article</span>';
+                    btn.style.background = '#0a66c2';
+                }, 2200);
+            }
+        } catch (err) {
+            alert('Could not copy to clipboard. Please select text manually.');
+        }
+    };
+
+    // Close modal on escape or backdrop click
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') window.closeKinematicArticleModal();
+    });
+    document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('kinematic-article-modal');
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) window.closeKinematicArticleModal();
+            });
+        }
+    });
+    </script>
 
 </body>
 </html>

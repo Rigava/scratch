@@ -177,7 +177,7 @@ Ensure the entire post is polished, educational, and inspiring without giving di
         api_key = os.environ.get("GEMINI_API_KEY") or getattr(settings, 'GEMINI_API_KEY', None)
 
         if api_key:
-            candidate_models = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-3.5-flash', 'gemini-3.8-flash']
+            candidate_models = ['gemini-2.5-flash', 'gemini-flash-latest']
             for model in candidate_models:
                 try:
                     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
@@ -188,7 +188,7 @@ Ensure the entire post is polished, educational, and inspiring without giving di
                         "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}
                     }
                     req = urllib.request.Request(url, data=json.dumps(req_data).encode('utf-8'), headers={'Content-Type': 'application/json'})
-                    with urllib.request.urlopen(req, timeout=15) as resp:
+                    with urllib.request.urlopen(req, timeout=7) as resp:
                         res_json = json.loads(resp.read().decode('utf-8'))
                         article_text = res_json['candidates'][0]['content']['parts'][0]['text']
                         engine_name = f"Google Gemini ({model})"

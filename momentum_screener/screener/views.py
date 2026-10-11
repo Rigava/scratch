@@ -2166,11 +2166,11 @@ def admin_run_marketing_agent_view(request):
 @login_required
 def admin_run_kinematics_agent_view(request):
     """
-    Superuser-only view to trigger the TradeKriya Kinematics Educational Thought-Leadership Agent.
+    Admin-only view to trigger the TradeKriya Kinematics Educational Thought-Leadership Agent.
     Accepts options: 'symbol' (optional ticker) and 'focus' ('all', 'failures', 'ignitions', 'rotations').
     Returns structured article preview, engine metadata, post ID, and execution logs.
     """
-    if not request.user.is_superuser:
+    if not (request.user.is_superuser or request.user.is_staff):
         return JsonResponse({'status': 'error', 'message': 'Forbidden: Admin / Superuser access required'}, status=403)
 
     if request.method != 'POST':

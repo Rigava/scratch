@@ -872,8 +872,17 @@ const App = (function() {
 
     // Filter stocks list and update the display table
     function renderScreenerGrid() {
-        const query = document.getElementById('grid-search').value.toLowerCase();
         const tbody = document.getElementById('screener-tbody');
+        if (!tbody) {
+            // Screener is hidden from non-admin users; keep backtest dashboard synced
+            const backtestView = document.getElementById('backtest-view-card');
+            if (backtestView && !backtestView.classList.contains('hidden')) {
+                renderBacktestDashboard();
+            }
+            return;
+        }
+        const queryInput = document.getElementById('grid-search');
+        const query = queryInput ? queryInput.value.toLowerCase() : '';
         tbody.innerHTML = '';
 
         let total = 0;
@@ -1126,10 +1135,13 @@ const App = (function() {
             });
         })();
 
-        // Update statistics
-        document.getElementById('stat-total').innerText = total;
-        document.getElementById('stat-knives').innerText = knives;
-        document.getElementById('stat-safe').innerText = safe;
+        // Update statistics (if visible)
+        const elTotal = document.getElementById('stat-total');
+        if (elTotal) elTotal.innerText = total;
+        const elKnives = document.getElementById('stat-knives');
+        if (elKnives) elKnives.innerText = knives;
+        const elSafe = document.getElementById('stat-safe');
+        if (elSafe) elSafe.innerText = safe;
         const statGainers = document.getElementById('stat-gainers');
         if (statGainers) statGainers.innerText = gainers;
         const statLosers = document.getElementById('stat-losers');
@@ -3846,25 +3858,27 @@ const App = (function() {
                     tab.style.color = 'var(--text-secondary)';
                 }
             });
-            screenerStats.classList.add('hidden');
-            screenerGrid.classList.add('hidden');
-            backtestViewCard.classList.add('hidden');
-            journalViewCard.classList.add('hidden');
+            if (screenerStats) screenerStats.classList.add('hidden');
+            if (screenerGrid) screenerGrid.classList.add('hidden');
+            if (backtestViewCard) backtestViewCard.classList.add('hidden');
+            if (journalViewCard) journalViewCard.classList.add('hidden');
             if (advancedViewCard) advancedViewCard.classList.add('hidden');
             if (adminStatsViewCard) adminStatsViewCard.classList.add('hidden');
             if (useCasesSection) useCasesSection.classList.add('hidden');
         }
 
-        tabScreener.addEventListener('click', () => {
-            deactivateAllTabs();
-            tabScreener.classList.add('active');
-            tabScreener.style.background = 'rgba(255,255,255,0.05)';
-            tabScreener.style.color = 'var(--text-primary)';
-            
-            screenerStats.classList.remove('hidden');
-            screenerGrid.classList.remove('hidden');
-            if (useCasesSection) useCasesSection.classList.remove('hidden');
-        });
+        if (tabScreener) {
+            tabScreener.addEventListener('click', () => {
+                deactivateAllTabs();
+                tabScreener.classList.add('active');
+                tabScreener.style.background = 'rgba(255,255,255,0.05)';
+                tabScreener.style.color = 'var(--text-primary)';
+                
+                if (screenerStats) screenerStats.classList.remove('hidden');
+                if (screenerGrid) screenerGrid.classList.remove('hidden');
+                if (useCasesSection) useCasesSection.classList.remove('hidden');
+            });
+        }
         
         tabBacktest.addEventListener('click', () => {
             if (USER_STATUS === 'expired') {
@@ -6672,13 +6686,24 @@ filterPerf === 'all' ||
 
         // Start in Simulation / Historical Snapshot Mode
         loadSimulationData();
+
+        // If non-admin user (screener hidden), ensure Backtest tab is rendered initially
+        if (typeof IS_SUPERUSER !== 'undefined' && !IS_SUPERUSER) {
+            if (backtestViewCard) {
+                backtestViewCard.classList.remove('hidden');
+            }
+            renderBacktestDashboard();
+        }
     }
 
     return {
         init,
         triggerSelect: (ticker) => {
-            // Switch back to screener tab first
-            document.getElementById('btn-tab-screener').click();
+            // Switch back to screener tab first if available
+            const btnScreener = document.getElementById('btn-tab-screener');
+            if (btnScreener) {
+                btnScreener.click();
+            }
             openDetailDrawer(ticker);
         },
         triggerTradeLog: (ticker) => {
@@ -6694,6 +6719,21 @@ filterPerf === 'all' ||
         },
         triggerDeleteTrade: (tradeId) => {
             deleteJournalEntry(tradeId);
+        },
+        runKinematicsAgent: (e) => {
+            if (typeof window.runKinematicsAgent === 'function') {
+                return window.runKinematicsAgent(e);
+            }
+        },
+        openKinematicArticleModal: (payload) => {
+            if (typeof window.openKinematicArticleModal === 'function') {
+                return window.openKinematicArticleModal(payload);
+            }
+        },
+        closeKinematicArticleModal: () => {
+            if (typeof window.closeKinematicArticleModal === 'function') {
+                return window.closeKinematicArticleModal();
+            }
         }
     };
 })();
