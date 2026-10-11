@@ -4905,12 +4905,16 @@ filterPerf === 'all' ||
         if (psychEl) psychEl.textContent = kin.psychology;
         if (actionEl) actionEl.textContent = kin.action;
 
+        modal.style.display = 'flex';
         modal.classList.add('active');
     }
 
     function closeKinematicsModal() {
         const modal = document.getElementById('kinematics-audit-modal');
-        if (modal) modal.classList.remove('active');
+        if (modal) {
+            modal.classList.remove('active');
+            modal.style.display = 'none';
+        }
     }
 
     function showTradeLogModal(ticker, name, tradesLog) {
@@ -6566,6 +6570,10 @@ filterPerf === 'all' ||
         }
     };
 })();
+
+// Attach globally for inline handlers
+window.App = App;
+window.openKinematicsModal = (ticker) => App.openKinematicsModal(ticker);
 
 // Bootstrap the application on page load
 window.addEventListener('DOMContentLoaded', () => {

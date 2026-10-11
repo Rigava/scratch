@@ -13,7 +13,7 @@
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     {% load static %}
-    <link rel="stylesheet" href="{% static 'screener/styles.css' %}?v=4.9">
+    <link rel="stylesheet" href="{% static 'screener/styles.css' %}?v=5.0">
     <style>
         /* Responsive navigation fix to prevent brand & details overlap */
         @media (max-width: 1024px) {
@@ -2351,8 +2351,8 @@
 
     <!-- Project JS dependencies -->
     <script src="{% static 'screener/qrcode.min.js' %}"></script>
-    <script src="{% static 'screener/mockData.js' %}?v=3.6"></script>
-    <script src="{% static 'screener/app.js' %}?v=4.9"></script>
+    <script src="{% static 'screener/mockData.js' %}?v=5.0"></script>
+    <script src="{% static 'screener/app.js' %}?v=5.0"></script>
 
     <!-- Sidebar mobile drawer toggling -->
     <script>
@@ -2444,7 +2444,7 @@
         });
     </script>
     <!-- 3-Day Kinematics Audit Modal -->
-    <div id="kinematics-audit-modal" class="kinematics-modal-backdrop">
+    <div id="kinematics-audit-modal" class="kinematics-modal-backdrop" style="display: none; position: fixed; inset: 0; z-index: 99999;">
         <div class="kinematics-modal-card">
             <button id="btn-close-kinematics-modal" style="position: absolute; top: 16px; right: 16px; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 16px;">
                 <i class="fa-solid fa-xmark"></i>
