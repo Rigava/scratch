@@ -1319,6 +1319,120 @@ body.light-theme .badge-milestone.sma200 {
     border-color: rgba(148, 163, 184, 0.15);
 }
 
+/* 3-Day Kinematics Badges & Progression Strips */
+.badge-kinematics {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    white-space: nowrap;
+}
+
+.badge-kinematics:hover {
+    transform: translateY(-1px);
+}
+
+.badge-kinematics.failure {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.3);
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.2);
+}
+
+.badge-kinematics.ignition {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.3);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
+}
+
+.badge-kinematics.reversal {
+    background: rgba(139, 92, 246, 0.15);
+    color: #c084fc;
+    border-color: rgba(139, 92, 246, 0.3);
+    box-shadow: 0 0 8px rgba(139, 92, 246, 0.2);
+}
+
+.badge-kinematics.stable {
+    background: rgba(148, 163, 184, 0.08);
+    color: var(--text-secondary);
+    border-color: rgba(148, 163, 184, 0.15);
+}
+
+.kinematics-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.kinematics-strip {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-family: var(--font-mono, monospace);
+    font-size: 9.5px;
+    color: var(--text-muted, #94a3b8);
+}
+
+.kinematics-strip .strip-step {
+    padding: 1px 3px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.kinematics-strip .strip-step.highlight {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.kinematics-strip i {
+    font-size: 7px;
+    opacity: 0.4;
+}
+
+/* Kinematics Modal */
+.kinematics-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.kinematics-modal-backdrop.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.kinematics-modal-card {
+    background: var(--bg-card, #111827);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    border-radius: var(--border-radius-lg, 12px);
+    max-width: 620px;
+    width: 100%;
+    padding: 22px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: relative;
+    font-family: var(--font-stack);
+}
+
 /* Mobile Responsive Visual Optimizations */
 @media (max-width: 768px) {
     /* Header layout optimization */
