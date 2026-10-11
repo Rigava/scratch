@@ -26,6 +26,7 @@ urlpatterns = [
     path('api/admin/payments/verify/', views.admin_verify_payment_view, name='admin_verify_payment'),
     path('api/admin/payments/pending/', views.admin_pending_payments_list_view, name='admin_pending_payments_list'),
     path('api/admin/run-marketing-agent/', views.admin_run_marketing_agent_view, name='admin_run_marketing_agent'),
+    path('api/admin/run-kinematics-agent/', views.admin_run_kinematics_agent_view, name='admin_run_kinematics_agent'),
     path('api/notifications/clear/', views.clear_user_notifications_view, name='clear_user_notifications'),
     path('api/simulation/dump/', views.simulation_dump_view, name='simulation_dump_view'),
     

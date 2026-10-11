@@ -3374,6 +3374,133 @@ const App = (function() {
             });
         }
 
+        // Admin Kinematics Thought-Leadership Agent controls
+        const btnAdminKinematics = document.getElementById('btn-admin-kinematics-agent');
+        const kinematicsStatusDiv = document.getElementById('admin-kinematics-status');
+        const kinematicArticleModal = document.getElementById('kinematic-article-modal');
+        const btnCloseKinematicArticleModal = document.getElementById('btn-close-kinematic-article-modal');
+        const btnDismissKinematicArticleModal = document.getElementById('btn-dismiss-kinematic-article-modal');
+        const btnCopyKinematicArticle = document.getElementById('btn-copy-kinematic-article');
+
+        function openKinematicArticleModal(payload) {
+            if (!kinematicArticleModal) return;
+            const titleEl = document.getElementById('modal-kinematic-article-title');
+            const engineBadge = document.getElementById('modal-kinematic-engine-badge');
+            const dbBadge = document.getElementById('modal-kinematic-db-badge');
+            const bodyEl = document.getElementById('modal-kinematic-article-body');
+
+            if (titleEl) titleEl.textContent = payload.title || 'Market Kinematics Analysis';
+            if (engineBadge) engineBadge.textContent = payload.engine || 'Quantitative Agent';
+            if (dbBadge) {
+                if (payload.post_id) {
+                    dbBadge.innerHTML = `<i class="fa-solid fa-database"></i> Saved to Community (#${payload.post_id})`;
+                } else {
+                    dbBadge.innerHTML = `<i class="fa-solid fa-file"></i> Draft Saved: ${payload.filename || 'Local'}`;
+                }
+            }
+            if (bodyEl) bodyEl.textContent = payload.article || 'No article generated.';
+
+            kinematicArticleModal.style.display = 'flex';
+        }
+
+        function closeKinematicArticleModal() {
+            if (kinematicArticleModal) {
+                kinematicArticleModal.style.display = 'none';
+            }
+        }
+
+        if (btnCloseKinematicArticleModal) btnCloseKinematicArticleModal.addEventListener('click', closeKinematicArticleModal);
+        if (btnDismissKinematicArticleModal) btnDismissKinematicArticleModal.addEventListener('click', closeKinematicArticleModal);
+        if (kinematicArticleModal) {
+            kinematicArticleModal.addEventListener('click', (e) => {
+                if (e.target === kinematicArticleModal) closeKinematicArticleModal();
+            });
+        }
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && kinematicArticleModal && kinematicArticleModal.style.display !== 'none') {
+                closeKinematicArticleModal();
+            }
+        });
+
+        if (btnCopyKinematicArticle) {
+            btnCopyKinematicArticle.addEventListener('click', async () => {
+                const bodyEl = document.getElementById('modal-kinematic-article-body');
+                if (!bodyEl) return;
+                const text = bodyEl.textContent;
+                try {
+                    await navigator.clipboard.writeText(text);
+                    const copyTextSpan = document.getElementById('btn-copy-text');
+                    const origHtml = btnCopyKinematicArticle.innerHTML;
+                    btnCopyKinematicArticle.innerHTML = '<i class="fa-solid fa-check"></i> <span>Copied!</span>';
+                    btnCopyKinematicArticle.style.background = '#10b981';
+                    setTimeout(() => {
+                        btnCopyKinematicArticle.innerHTML = '<i class="fa-regular fa-clipboard"></i> <span id="btn-copy-text">Copy Article</span>';
+                        btnCopyKinematicArticle.style.background = '#0a66c2';
+                    }, 2200);
+                } catch (err) {
+                    alert('Could not copy to clipboard. Please select text manually.');
+                }
+            });
+        }
+
+        if (btnAdminKinematics && kinematicsStatusDiv) {
+            btnAdminKinematics.addEventListener('click', async () => {
+                const focusVal = document.getElementById('sel-kinematics-focus') ? document.getElementById('sel-kinematics-focus').value : 'all';
+                const symbolVal = document.getElementById('txt-kinematics-symbol') ? document.getElementById('txt-kinematics-symbol').value.trim() : '';
+
+                btnAdminKinematics.disabled = true;
+                kinematicsStatusDiv.style.color = 'var(--text-secondary)';
+                kinematicsStatusDiv.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing tape kinematics & drafting article...';
+
+                try {
+                    const getCookie = (name) => {
+                        let cookieValue = null;
+                        if (document.cookie && document.cookie !== '') {
+                            const cookies = document.cookie.split(';');
+                            for (let i = 0; i < cookies.length; i++) {
+                                const cookie = cookies[i].trim();
+                                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                    break;
+                                }
+                            }
+                        }
+                        return cookieValue;
+                    };
+                    const csrftoken = getCookie('csrftoken');
+
+                    const response = await fetch('/api/admin/run-kinematics-agent/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrftoken
+                        },
+                        body: JSON.stringify({
+                            focus: focusVal || 'all',
+                            symbol: symbolVal || null
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (response.ok && data.status === 'success') {
+                        kinematicsStatusDiv.style.color = '#38bdf8';
+                        kinematicsStatusDiv.innerHTML = `<i class="fa-solid fa-circle-check"></i> Article generated via ${data.engine}! Previewing...`;
+                        console.log("Kinematics Agent logs:", data.logs);
+                        openKinematicArticleModal(data);
+                    } else {
+                        throw new Error(data.message || 'Server returned an error');
+                    }
+                } catch (err) {
+                    console.error("Kinematics agent trigger failed:", err);
+                    kinematicsStatusDiv.style.color = '#ef4444';
+                    kinematicsStatusDiv.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Failed: ${err.message}`;
+                } finally {
+                    btnAdminKinematics.disabled = false;
+                }
+            });
+        }
+
+
         // Admin User License Management
         // Admin User License Management
         const adminUserListContainer = document.getElementById('admin-user-list');

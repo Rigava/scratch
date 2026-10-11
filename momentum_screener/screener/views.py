@@ -2164,6 +2164,80 @@ def admin_run_marketing_agent_view(request):
 
 @csrf_exempt
 @login_required
+def admin_run_kinematics_agent_view(request):
+    """
+    Superuser-only view to trigger the TradeKriya Kinematics Educational Thought-Leadership Agent.
+    Accepts options: 'symbol' (optional ticker) and 'focus' ('all', 'failures', 'ignitions', 'rotations').
+    Returns structured article preview, engine metadata, post ID, and execution logs.
+    """
+    if not request.user.is_superuser:
+        return JsonResponse({'status': 'error', 'message': 'Forbidden: Admin / Superuser access required'}, status=403)
+
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Only POST method is allowed'}, status=405)
+
+    symbol = None
+    focus = 'all'
+
+    if request.body:
+        try:
+            payload = json.loads(request.body)
+            symbol = payload.get('symbol')
+            focus = payload.get('focus', 'all')
+        except ValueError:
+            pass
+
+    out = io.StringIO()
+    try:
+        kwargs = {}
+        if symbol:
+            kwargs['symbol'] = symbol.strip().upper()
+        if focus:
+            kwargs['focus'] = focus.strip().lower()
+
+        call_command('run_kinematics_agent', stdout=out, stderr=out, **kwargs)
+        output_logs = out.getvalue()
+
+        # Parse structured payload if present
+        payload_data = {}
+        if "---PAYLOAD_START---" in output_logs and "---PAYLOAD_END---" in output_logs:
+            try:
+                start_idx = output_logs.index("---PAYLOAD_START---") + len("---PAYLOAD_START---")
+                end_idx = output_logs.index("---PAYLOAD_END---")
+                json_str = output_logs[start_idx:end_idx].strip()
+                payload_data = json.loads(json_str)
+            except Exception as pe:
+                payload_data = {'parse_error': str(pe)}
+
+        if "[ERROR]" in output_logs:
+            error_lines = [l.replace('[ERROR]', '').strip() for l in output_logs.splitlines() if "[ERROR]" in l]
+            error_msg = error_lines[0] if error_lines else 'Kinematics agent run completed with errors.'
+            return JsonResponse({
+                'status': 'error',
+                'message': error_msg,
+                'logs': output_logs
+            }, status=500)
+
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Kinematics agent executed successfully.',
+            'title': payload_data.get('title', 'Market Kinematics Analysis'),
+            'engine': payload_data.get('engine', 'TradeKriya Quantitative Agent Engine'),
+            'post_id': payload_data.get('post_id'),
+            'filename': payload_data.get('filename'),
+            'article': payload_data.get('article', ''),
+            'logs': output_logs
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': f"Unexpected error executing kinematics agent: {str(e)}",
+            'logs': out.getvalue()
+        }, status=500)
+
+
+@csrf_exempt
+@login_required
 def advanced_strategy_view(request):
     """
     Renders second-order stock rankings for Pro tier users only.
