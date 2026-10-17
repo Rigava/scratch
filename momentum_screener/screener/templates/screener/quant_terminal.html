@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradeKriya - Quant Terminal | Institutional S/R & Demand-Supply</title>
+    <!-- Lightweight Charts by TradingView -->
+    <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Yatra+One&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #0c0a09;
+            --bg-panel: #141210;
+            --bg-card: #1c1917;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-hover: #e9805d;
+            --text-main: #f5f5f4;
+            --text-muted: #a8a29e;
+            --text-dim: #78716c;
+            --accent: #e9805d;
+            --accent-glow: rgba(233, 128, 93, 0.2);
+            --green: #10b981;
+            --green-glow: rgba(16, 185, 129, 0.2);
+            --red: #ef4444;
+            --red-glow: rgba(239, 68, 68, 0.2);
+            --blue: #38bdf8;
+            --amber: #f59e0b;
+            --purple: #a855f7;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* TOP NAVIGATION HEADER */
+        header {
+            height: 52px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 18px;
+            flex-shrink: 0;
+            z-index: 20;
+        }
+
+        .brand-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: var(--text-main);
+        }
+
+        .brand-logo h1 {
+            font-family: 'Yatra One', cursive;
+            font-size: 20px;
+            margin: 0;
+            letter-spacing: 0.5px;
+        }
+
+        .terminal-pill {
+            background: linear-gradient(135deg, rgba(233, 128, 93, 0.2), rgba(216, 106, 71, 0.3));
+            border: 1px solid rgba(233, 128, 93, 0.4);
+            color: #f4a261;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .header-nav-links {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .h-nav-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .h-nav-btn:hover {
+            color: var(--text-main);
+            border-color: var(--accent);
+            background: rgba(233, 128, 93, 0.08);
+        }
+
+        .admin-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11.5px;
+            font-weight: 600;
+            color: #fbbf24;
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+
+        /* WORKSPACE LAYOUT (CHART 72% / STOCK LIST 28%) */
+        .workspace {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 52px);
+            overflow: hidden;
+        }
+
+        /* LEFT: FULL-VIEW TRADINGVIEW CHART STAGE */
+        .chart-stage {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-main);
+            position: relative;
+            border-right: 1px solid var(--border);
+            min-width: 0;
+        }
+
+        /* CHART TOP CONTROL TOOLBAR */
+        .chart-toolbar {
+            height: 52px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            flex-shrink: 0;
+        }
+
+        .stock-identity {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .stock-symbol {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            font-family: 'JetBrains Mono', monospace;
+            color: #fff;
+        }
+
+        .stock-price {
+            font-size: 18px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            color: #fff;
+        }
+
+        .stock-chg {
+            font-size: 13px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .badge-up { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-down { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); }
+
+        .regime-tag {
+            font-size: 11px;
+            padding: 3px 9px;
+            border-radius: 4px;
+            font-weight: 600;
+            border: 1px solid transparent;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tag-rebound { background: rgba(16, 185, 129, 0.12); color: #34d399; border-color: rgba(52, 211, 153, 0.3); }
+        .tag-breakout { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border-color: rgba(56, 189, 248, 0.3); }
+        .tag-breakdown { background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(248, 113, 113, 0.3); }
+        .tag-rejection { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(251, 191, 36, 0.3); }
+        .tag-neutral { background: rgba(148, 163, 184, 0.1); color: #94a3b8; border-color: rgba(148, 163, 184, 0.2); }
+
+        /* INTERACTIVE DECLUTTER CONTROLS */
+        .chart-controls {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .chart-toggle-group {
+            display: flex;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 2px;
+        }
+
+        .btn-toggle-type {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-toggle-type.active {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .declutter-toggles {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 11px;
+            color: var(--text-muted);
+            user-select: none;
+        }
+
+        .toggle-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .toggle-item input[type="checkbox"] {
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        /* CHART VIEW CONTAINER */
+        #tv_chart_container {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            height: calc(100% - 130px);
+        }
+
+        /* S/R QUALITY VERIFICATION BADGE */
+        .sr-overlay-badge {
+            position: absolute;
+            top: 14px;
+            left: 16px;
+            background: rgba(20, 18, 16, 0.88);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            z-index: 10;
+            font-size: 11px;
+            pointer-events: none;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            max-width: 380px;
+            transition: opacity 0.2s;
+        }
+
+        .sr-badge-title {
+            font-weight: 700;
+            color: var(--text-muted);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .sr-badge-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .grade-pill {
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-weight: 700;
+            font-size: 10px;
+        }
+        .grade-a-plus { background: rgba(16, 185, 129, 0.25); color: #34d399; border: 1px solid #10b981; }
+        .grade-a { background: rgba(56, 189, 248, 0.25); color: #38bdf8; border: 1px solid #38bdf8; }
+        .grade-b { background: rgba(245, 158, 11, 0.25); color: #fbbf24; border: 1px solid #f59e0b; }
+
+        /* CHART BOTTOM TECHNICAL STRIP */
+        .chart-stats-strip {
+            height: 78px;
+            background: var(--bg-panel);
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            padding: 10px 16px;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .strip-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 6px 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .strip-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .strip-val {
+            font-size: 13px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 2px;
+            color: #fff;
+        }
+
+        /* RIGHT: SCREENED STOCK LIST PANEL */
+        .sidebar-panel {
+            width: 440px;
+            background: var(--bg-panel);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            border-left: 1px solid var(--border);
+        }
+
+        .panel-header {
+            padding: 14px 16px 10px 16px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-panel);
+        }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        /* FILTER TABS */
+        .filter-tabs {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 6px;
+        }
+
+        .filter-tab {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .filter-tab:hover {
+            color: var(--text-main);
+            border-color: var(--accent);
+        }
+
+        .filter-tab.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        /* SEARCH & SORT BAR */
+        .search-sort-bar {
+            padding: 8px 16px;
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-card);
+        }
+
+        .search-input {
+            flex: 1;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-main);
+            padding: 6px 10px;
+            font-size: 12px;
+            font-family: 'Outfit', sans-serif;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent);
+        }
+
+        .sort-select {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-main);
+            padding: 6px 8px;
+            font-size: 11px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        /* STOCK LIST ITEMS */
+        .stock-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .stock-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .stock-item:hover {
+            background: #231f1c;
+            border-color: var(--accent);
+            transform: translateY(-1px);
+        }
+
+        .stock-item.active {
+            background: #2a2420;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px var(--accent), 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .item-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .item-sym {
+            font-weight: 700;
+            font-size: 13px;
+            font-family: 'JetBrains Mono', monospace;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .item-price {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .item-middle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .item-bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 10px;
+            padding-top: 4px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.08);
+            color: var(--text-dim);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* CUSTOM SCROLLBARS */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2e2824;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOP HEADER -->
+    <header>
+        <div class="brand-section">
+            <a href="/" class="brand-logo">
+                <i class="fa-solid fa-shield-halved" style="font-size: 20px; color: var(--accent);"></i>
+                <h1>TradeKriya</h1>
+            </a>
+            <span class="terminal-pill"><i class="fa-solid fa-terminal"></i> QUANT TERMINAL</span>
+            <span class="admin-indicator"><i class="fa-solid fa-crown"></i> Admin Access</span>
+        </div>
+        
+        <div class="header-nav-links">
+            <a href="/dashboard/" class="h-nav-btn"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+            <a href="/advisory/" class="h-nav-btn"><i class="fa-solid fa-crosshairs"></i> Advisory Desk</a>
+            <a href="/community/" class="h-nav-btn"><i class="fa-solid fa-bullhorn"></i> Use Cases</a>
+            <a href="/logout/" class="h-nav-btn" style="color: #f87171;"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+        </div>
+    </header>
+
+    <!-- WORKSPACE -->
+    <div class="workspace">
+        
+        <!-- LEFT: TRADINGVIEW STYLE CHART FULL VIEW -->
+        <div class="chart-stage">
+            
+            <!-- TOOLBAR WITH PRICE IDENTITY & DECLUTTER CONTROLS -->
+            <div class="chart-toolbar">
+                <div class="stock-identity">
+                    <span class="stock-symbol" id="tv_symbol">TECHM</span>
+                    <span class="stock-price" id="tv_price">₹1,514.10</span>
+                    <span class="stock-chg badge-up" id="tv_chg">+1.85%</span>
+                    <span class="regime-tag tag-rebound" id="tv_regime">Demand Rebound</span>
+                </div>
+                
+                <!-- DECLUTTER & DISPLAY TOGGLES -->
+                <div class="chart-controls">
+                    <!-- Price Type: Candlestick vs Line -->
+                    <div class="chart-toggle-group">
+                        <button class="btn-toggle-type active" id="btn_type_candle" onclick="setChartType('candle')">
+                            <i class="fa-solid fa-chart-simple"></i> Candle
+                        </button>
+                        <button class="btn-toggle-type" id="btn_type_line" onclick="setChartType('line')">
+                            <i class="fa-solid fa-chart-line"></i> Line
+                        </button>
+                    </div>
+
+                    <!-- Declutter Checkboxes -->
+                    <div class="declutter-toggles">
+                        <label class="toggle-item" title="Toggle 20/45/90 Moving Averages">
+                            <input type="checkbox" id="chk_smas" checked onchange="toggleSMAs(this.checked)">
+                            <span>SMAs</span>
+                        </label>
+                        <label class="toggle-item" title="Toggle Support & Resistance Levels">
+                            <input type="checkbox" id="chk_sr" checked onchange="toggleSR(this.checked)">
+                            <span>S/R Levels</span>
+                        </label>
+                        <label class="toggle-item" title="Toggle Target & Stop-Loss Lines">
+                            <input type="checkbox" id="chk_sl_tgt" checked onchange="toggleSLTGT(this.checked)">
+                            <span>SL / TGT</span>
+                        </label>
+                        <label class="toggle-item" title="Toggle S/R Verification Badge Overlay">
+                            <input type="checkbox" id="chk_badge" checked onchange="toggleBadge(this.checked)">
+                            <span>Quality Badge</span>
+                        </label>
+                    </div>
+
+                    <div style="font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">
+                        ATR(14): <b id="tv_atr" style="color: var(--text-main);">₹28.40</b>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHART CANVAS -->
+            <div id="tv_chart_container">
+                <!-- S/R VALIDATION OVERLAY BADGE -->
+                <div class="sr-overlay-badge" id="tv_badge">
+                    <div class="sr-badge-title">
+                        <span>Structural S/R Quality Verification</span>
+                        <span id="badge_age">Lookback: 120 Sessions</span>
+                    </div>
+                    <div class="sr-badge-row">
+                        <span style="color: var(--green); font-weight: 600;">Demand Support: <span id="badge_sup_val">₹1,510.50</span></span>
+                        <div>
+                            <span class="grade-pill grade-a-plus" id="badge_sup_grade">GRADE A+</span>
+                            <span style="color: var(--text-muted); font-size: 10px;" id="badge_sup_score">100/100</span>
+                        </div>
+                    </div>
+                    <div style="font-size: 10px; color: var(--text-muted);" id="badge_sup_detail">
+                        Tested: 23 sessions | Rejection Wicks: 4 | Role Flips: 1
+                    </div>
+                    <div class="sr-badge-row" style="margin-top: 4px;">
+                        <span style="color: var(--red); font-weight: 600;">Supply Resist: <span id="badge_res_val">₹1,620.00</span></span>
+                        <div>
+                            <span class="grade-pill grade-a" id="badge_res_grade">GRADE A</span>
+                            <span style="color: var(--text-muted); font-size: 10px;" id="badge_res_score">75/100</span>
+                        </div>
+                    </div>
+                    <div style="font-size: 10px; color: var(--text-muted);" id="badge_res_detail">
+                        Tested: 16 sessions | Rejection Wicks: 3 | Role Flips: 0
+                    </div>
+                </div>
+            </div>
+
+            <!-- BOTTOM TECHNICAL STATS STRIP -->
+            <div class="chart-stats-strip">
+                <div class="strip-card">
+                    <span class="strip-label">Demand Zone (Support)</span>
+                    <span class="strip-val" id="strip_demand" style="color: var(--green);">₹1,503 - ₹1,531</span>
+                </div>
+                <div class="strip-card">
+                    <span class="strip-label">Supply Zone (Resist)</span>
+                    <span class="strip-val" id="strip_supply" style="color: var(--red);">₹1,598 - ₹1,627</span>
+                </div>
+                <div class="strip-card">
+                    <span class="strip-label">Ideal Stop Loss</span>
+                    <span class="strip-val" id="strip_sl" style="color: #f87171;">₹1,489.30 (-1.6%)</span>
+                </div>
+                <div class="strip-card">
+                    <span class="strip-label">Ideal Target & R:R</span>
+                    <span class="strip-val" id="strip_tgt" style="color: #34d399;">₹1,598.00 (R:R 3.4)</span>
+                </div>
+                <div class="strip-card">
+                    <span class="strip-label">52-Week High / Low</span>
+                    <span class="strip-val" id="strip_52w">₹1,720 / ₹1,120</span>
+                </div>
+                <div class="strip-card">
+                    <span class="strip-label">Volatility (Daily / Ann)</span>
+                    <span class="strip-val" id="strip_vol">1.45% / 23.0%</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT: SCREENED STOCK LIST PANEL -->
+        <div class="sidebar-panel">
+            
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span>Demand & Supply Screener</span>
+                    <span style="font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;" id="list_count">115 Stocks</span>
+                </div>
+                
+                <!-- FILTER TABS -->
+                <div class="filter-tabs">
+                    <button class="filter-tab active" onclick="setFilter('ALL', this)">All (115)</button>
+                    <button class="filter-tab" onclick="setFilter('DEMAND_REBOUND', this)">🛡️ Rebound (60)</button>
+                    <button class="filter-tab" onclick="setFilter('GRADE_A_PLUS', this)">⭐ Grade A+ S/R (37)</button>
+                    <button class="filter-tab" onclick="setFilter('SUPPLY_BREAKOUT', this)">🚀 Breakout (6)</button>
+                    <button class="filter-tab" onclick="setFilter('DEMAND_BREAKDOWN', this)">🔻 Breakdown (22)</button>
+                    <button class="filter-tab" onclick="setFilter('SUPPLY_REJECTION', this)">⚠️ Rejection (5)</button>
+                </div>
+            </div>
+
+            <!-- SEARCH & SORT -->
+            <div class="search-sort-bar">
+                <input type="text" id="search_input" class="search-input" placeholder="Search symbol..." oninput="renderStockList()">
+                <select id="sort_select" class="sort-select" onchange="renderStockList()">
+                    <option value="score">Sort by S/R Score</option>
+                    <option value="rr">Sort by R:R Ratio</option>
+                    <option value="chg_desc">Top Gainers (%)</option>
+                    <option value="chg_asc">Top Losers (%)</option>
+                    <option value="vol">Volume Surge (xSMA)</option>
+                </select>
+            </div>
+
+            <!-- STOCK CARDS LIST -->
+            <div class="stock-list" id="stock_items_container">
+                <!-- Injected via JavaScript -->
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- DATA INJECTION -->
+    <script>
+        const STOCKS_METRICS = {{ stocks_json|safe }};
+        const CHARTS_DATA = {{ charts_json|safe }};
+        
+        let currentFilter = 'ALL';
+        let currentSymbol = 'TECHM';
+        let currentChartType = 'candle'; // 'candle' or 'line'
+        
+        let tvChart = null;
+        let candleSeries = null;
+        let lineSeries = null;
+        let volumeSeries = null;
+        let sma20Series = null;
+        let sma45Series = null;
+        let sma90Series = null;
+        let srPriceLines = [];
+        let slTgtPriceLines = [];
+
+        // Toggle state flags
+        let showSMAs = true;
+        let showSR = true;
+        let showSLTGT = true;
+
+        // Initialize TradingView Chart with isolated scales
+        function initTradingViewChart() {
+            const container = document.getElementById('tv_chart_container');
+            
+            tvChart = LightweightCharts.createChart(container, {
+                width: container.clientWidth,
+                height: container.clientHeight,
+                layout: {
+                    background: { color: '#0c0a09' },
+                    textColor: '#a8a29e',
+                    fontFamily: "'JetBrains Mono', monospace"
+                },
+                grid: {
+                    vertLines: { color: 'rgba(255, 255, 255, 0.04)' },
+                    horzLines: { color: 'rgba(255, 255, 255, 0.04)' }
+                },
+                crosshair: {
+                    mode: LightweightCharts.CrosshairMode.Normal,
+                    vertLine: { color: '#e9805d', width: 1, style: 2 },
+                    horzLine: { color: '#e9805d', width: 1, style: 2 }
+                },
+                rightPriceScale: {
+                    borderColor: 'rgba(255, 255, 255, 0.08)',
+                    scaleMargins: {
+                        top: 0.08,    // 8% margin at the top
+                        bottom: 0.28  // 28% margin reserved at bottom so price NEVER touches volume
+                    }
+                },
+                timeScale: {
+                    borderColor: 'rgba(255, 255, 255, 0.08)',
+                    timeVisible: true
+                }
+            });
+
+            // 1. Candlestick Series (Default)
+            candleSeries = tvChart.addCandlestickSeries({
+                upColor: '#10b981',
+                downColor: '#ef4444',
+                borderVisible: false,
+                wickUpColor: '#10b981',
+                wickDownColor: '#ef4444'
+            });
+
+            // 2. Line Series (Alternative)
+            lineSeries = tvChart.addLineSeries({
+                color: '#38bdf8',
+                lineWidth: 2,
+                visible: false
+            });
+
+            // 3. Volume Histogram Series on an ISOLATED scale ('vol_scale')
+            // This prevents volume bars from overshooting into the price region!
+            volumeSeries = tvChart.addHistogramSeries({
+                priceFormat: { type: 'volume' },
+                priceScaleId: 'vol_scale'
+            });
+
+            tvChart.priceScale('vol_scale').applyOptions({
+                scaleMargins: {
+                    top: 0.78,    // Volume starts at 78% from top (strictly bottom 22% of chart)
+                    bottom: 0.0
+                }
+            });
+
+            // 4. SMAs
+            sma20Series = tvChart.addLineSeries({ color: '#f59e0b', lineWidth: 1.5, title: 'SMA 20' });
+            sma45Series = tvChart.addLineSeries({ color: '#a855f7', lineWidth: 1.5, title: 'SMA 45' });
+            sma90Series = tvChart.addLineSeries({ color: '#10b981', lineWidth: 1.5, title: 'SMA 90' });
+
+            window.addEventListener('resize', () => {
+                if (tvChart) {
+                    tvChart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
+                }
+            });
+        }
+
+        // Switch between Candlestick and Line Chart
+        function setChartType(type) {
+            currentChartType = type;
+            document.getElementById('btn_type_candle').classList.toggle('active', type === 'candle');
+            document.getElementById('btn_type_line').classList.toggle('active', type === 'line');
+
+            if (type === 'candle') {
+                candleSeries.applyOptions({ visible: true });
+                lineSeries.applyOptions({ visible: false });
+            } else {
+                candleSeries.applyOptions({ visible: false });
+                lineSeries.applyOptions({ visible: true });
+            }
+        }
+
+        // Declutter Toggles
+        function toggleSMAs(visible) {
+            showSMAs = visible;
+            sma20Series.applyOptions({ visible: visible });
+            sma45Series.applyOptions({ visible: visible });
+            sma90Series.applyOptions({ visible: visible });
+        }
+
+        function toggleSR(visible) {
+            showSR = visible;
+            refreshPriceLines();
+        }
+
+        function toggleSLTGT(visible) {
+            showSLTGT = visible;
+            refreshPriceLines();
+        }
+
+        function toggleBadge(visible) {
+            const badge = document.getElementById('tv_badge');
+            if (badge) badge.style.display = visible ? 'flex' : 'none';
+        }
+
+        // Re-draw or remove price lines based on current toggle state
+        function refreshPriceLines() {
+            const targetSeries = currentChartType === 'candle' ? candleSeries : lineSeries;
+            
+            // Remove existing lines from both series
+            srPriceLines.forEach(l => {
+                try { candleSeries.removePriceLine(l); } catch(e) {}
+                try { lineSeries.removePriceLine(l); } catch(e) {}
+            });
+            slTgtPriceLines.forEach(l => {
+                try { candleSeries.removePriceLine(l); } catch(e) {}
+                try { lineSeries.removePriceLine(l); } catch(e) {}
+            });
+            srPriceLines = [];
+            slTgtPriceLines = [];
+
+            const stock = STOCKS_METRICS.find(s => s.symbol === currentSymbol);
+            if (!stock) return;
+
+            // Draw S/R Lines if enabled
+            if (showSR) {
+                srPriceLines.push(targetSeries.createPriceLine({
+                    price: stock.support_lvl,
+                    color: '#10b981',
+                    lineWidth: 2,
+                    lineStyle: LightweightCharts.LineStyle.Solid,
+                    axisLabelVisible: true,
+                    title: `Support ₹${stock.support_lvl} [${stock.support_grade}]`
+                }));
+
+                srPriceLines.push(targetSeries.createPriceLine({
+                    price: stock.resist_lvl,
+                    color: '#ef4444',
+                    lineWidth: 2,
+                    lineStyle: LightweightCharts.LineStyle.Solid,
+                    axisLabelVisible: true,
+                    title: `Resistance ₹${stock.resist_lvl} [${stock.resist_grade}]`
+                }));
+            }
+
+            // Draw SL & Target Lines if enabled
+            if (showSLTGT) {
+                slTgtPriceLines.push(targetSeries.createPriceLine({
+                    price: stock.ideal_sl,
+                    color: '#f87171',
+                    lineWidth: 1.5,
+                    lineStyle: LightweightCharts.LineStyle.Dashed,
+                    axisLabelVisible: true,
+                    title: `SL ₹${stock.ideal_sl}`
+                }));
+
+                slTgtPriceLines.push(targetSeries.createPriceLine({
+                    price: stock.ideal_tgt,
+                    color: '#34d399',
+                    lineWidth: 1.5,
+                    lineStyle: LightweightCharts.LineStyle.Dashed,
+                    axisLabelVisible: true,
+                    title: `TGT ₹${stock.ideal_tgt} (R:R ${stock.rr_ratio})`
+                }));
+            }
+        }
+
+        // Load Stock Data into Chart
+        function loadStockIntoChart(symbol) {
+            currentSymbol = symbol;
+            const stock = STOCKS_METRICS.find(s => s.symbol === symbol);
+            const candles = CHARTS_DATA[symbol] || [];
+            if (!stock || !candles.length) return;
+
+            // Format data
+            const candleFormatted = candles.map(c => ({ time: c.time, open: c.open, high: c.high, low: c.low, close: c.close }));
+            const lineFormatted = candles.map(c => ({ time: c.time, value: c.close }));
+            const volFormatted = candles.map(c => ({
+                time: c.time,
+                value: c.volume,
+                color: c.close >= c.open ? 'rgba(16, 185, 129, 0.45)' : 'rgba(239, 68, 68, 0.45)'
+            }));
+            const sma20Formatted = candles.filter(c => c.sma20).map(c => ({ time: c.time, value: c.sma20 }));
+            const sma45Formatted = candles.filter(c => c.sma45).map(c => ({ time: c.time, value: c.sma45 }));
+            const sma90Formatted = candles.filter(c => c.sma90).map(c => ({ time: c.time, value: c.sma90 }));
+
+            candleSeries.setData(candleFormatted);
+            lineSeries.setData(lineFormatted);
+            volumeSeries.setData(volFormatted);
+            sma20Series.setData(sma20Formatted);
+            sma45Series.setData(sma45Formatted);
+            sma90Series.setData(sma90Formatted);
+
+            // Refresh lines for active symbol
+            refreshPriceLines();
+
+            tvChart.timeScale().fitContent();
+
+            // Update UI Elements
+            document.getElementById('tv_symbol').innerText = stock.symbol;
+            document.getElementById('tv_price').innerText = `₹${stock.close.toLocaleString('en-IN')}`;
+            
+            const chgEl = document.getElementById('tv_chg');
+            chgEl.innerText = `${stock.change_pct >= 0 ? '+' : ''}${stock.change_pct}%`;
+            chgEl.className = `stock-chg ${stock.change_pct >= 0 ? 'badge-up' : 'badge-down'}`;
+
+            const regimeEl = document.getElementById('tv_regime');
+            regimeEl.innerText = stock.category;
+            if (stock.category.includes('Rebound')) regimeEl.className = 'regime-tag tag-rebound';
+            else if (stock.category.includes('Breakout')) regimeEl.className = 'regime-tag tag-breakout';
+            else if (stock.category.includes('Breakdown')) regimeEl.className = 'regime-tag tag-breakdown';
+            else if (stock.category.includes('Rejection')) regimeEl.className = 'regime-tag tag-rejection';
+            else regimeEl.className = 'regime-tag tag-neutral';
+
+            document.getElementById('tv_atr').innerText = `₹${stock.atr}`;
+
+            // Update S/R Quality Badge
+            const badgeEl = document.getElementById('tv_badge');
+            badgeEl.innerHTML = `
+                <div class="sr-badge-title">
+                    <span>Structural S/R Quality Verification</span>
+                    <span>120 Sessions Lookback</span>
+                </div>
+                <div class="sr-badge-row">
+                    <span style="color: var(--green); font-weight: 600;">Demand Support: ₹${stock.support_lvl}</span>
+                    <div>
+                        <span class="grade-pill ${stock.support_grade === 'A+' ? 'grade-a-plus' : (stock.support_grade === 'A' ? 'grade-a' : 'grade-b')}">GRADE ${stock.support_grade}</span>
+                        <span style="color: var(--text-muted); font-size: 10px;">${stock.support_score}/100</span>
+                    </div>
+                </div>
+                <div style="font-size: 10px; color: var(--text-muted);">
+                    Tested: <b>${stock.support_touches}</b> sessions | Rejection Wicks: <b>${stock.support_rejections}</b> | Role Flips: <b>${stock.support_flips}</b>
+                </div>
+                <div class="sr-badge-row" style="margin-top: 4px;">
+                    <span style="color: var(--red); font-weight: 600;">Supply Resist: ₹${stock.resist_lvl}</span>
+                    <div>
+                        <span class="grade-pill ${stock.resist_grade === 'A+' ? 'grade-a-plus' : (stock.resist_grade === 'A' ? 'grade-a' : 'grade-b')}">GRADE ${stock.resist_grade}</span>
+                        <span style="color: var(--text-muted); font-size: 10px;">${stock.resist_score}/100</span>
+                    </div>
+                </div>
+                <div style="font-size: 10px; color: var(--text-muted);">
+                    Tested: <b>${stock.resist_touches}</b> sessions | Rejection Wicks: <b>${stock.resist_rejections}</b> | Role Flips: <b>${stock.resist_flips}</b>
+                </div>
+            `;
+
+            // Update Bottom Strip
+            document.getElementById('strip_demand').innerText = `₹${stock.demand_floor} - ₹${stock.demand_ceil}`;
+            document.getElementById('strip_supply').innerText = `₹${stock.supply_floor} - ₹${stock.supply_ceil}`;
+            const riskPct = (((stock.close - stock.ideal_sl) / stock.close) * 100).toFixed(1);
+            document.getElementById('strip_sl').innerText = `₹${stock.ideal_sl} (-${riskPct}%)`;
+            const rewPct = (((stock.ideal_tgt - stock.close) / stock.close) * 100).toFixed(1);
+            document.getElementById('strip_tgt').innerText = `₹${stock.ideal_tgt} (+${rewPct}% | R:R ${stock.rr_ratio})`;
+            document.getElementById('strip_52w').innerText = `₹${stock.h52w} (${stock.dist_52wh}%) / ₹${stock.l52w} (+${stock.dist_52wl}%)`;
+            document.getElementById('strip_vol').innerText = `${stock.daily_vol}% / ${stock.annual_vol}%`;
+
+            // Highlight Active Card in Right List
+            document.querySelectorAll('.stock-item').forEach(el => {
+                el.classList.toggle('active', el.dataset.symbol === symbol);
+            });
+        }
+
+        // Filter Handlers
+        function setFilter(filterType, btnEl) {
+            currentFilter = filterType;
+            document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+            btnEl.classList.add('active');
+            renderStockList();
+        }
+
+        // Render Right Side Stock List
+        function renderStockList() {
+            const searchVal = document.getElementById('search_input').value.toUpperCase().trim();
+            const sortBy = document.getElementById('sort_select').value;
+            const container = document.getElementById('stock_items_container');
+
+            let filtered = STOCKS_METRICS.filter(s => {
+                // Search filter
+                if (searchVal && !s.symbol.includes(searchVal)) return false;
+                
+                // Category tab filter
+                if (currentFilter === 'DEMAND_REBOUND') return s.category.includes('Demand Rebound');
+                if (currentFilter === 'GRADE_A_PLUS') return s.support_grade === 'A+' || s.resist_grade === 'A+';
+                if (currentFilter === 'SUPPLY_BREAKOUT') return s.category.includes('Supply Breakout');
+                if (currentFilter === 'DEMAND_BREAKDOWN') return s.category.includes('Demand Breakdown');
+                if (currentFilter === 'SUPPLY_REJECTION') return s.category.includes('Supply Rejection');
+                return true;
+            });
+
+            // Sorting
+            if (sortBy === 'score') filtered.sort((a, b) => (b.support_score + b.resist_score) - (a.support_score + a.resist_score));
+            else if (sortBy === 'rr') filtered.sort((a, b) => b.rr_ratio - a.rr_ratio);
+            else if (sortBy === 'chg_desc') filtered.sort((a, b) => b.change_pct - a.change_pct);
+            else if (sortBy === 'chg_asc') filtered.sort((a, b) => a.change_pct - b.change_pct);
+            else if (sortBy === 'vol') filtered.sort((a, b) => b.vol_ratio - a.vol_ratio);
+
+            document.getElementById('list_count').innerText = `${filtered.length} Stocks`;
+
+            container.innerHTML = filtered.map(s => `
+                <div class="stock-item ${s.symbol === currentSymbol ? 'active' : ''}" data-symbol="${s.symbol}" onclick="loadStockIntoChart('${s.symbol}')">
+                    <div class="item-top">
+                        <span class="item-sym">${s.symbol}</span>
+                        <span class="item-price">₹${s.close.toLocaleString('en-IN')}</span>
+                    </div>
+                    <div class="item-middle">
+                        <span style="color: ${s.change_pct >= 0 ? '#10b981' : '#ef4444'}; font-weight: 600;">
+                            ${s.change_pct >= 0 ? '+' : ''}${s.change_pct}% | Vol ${s.vol_ratio}x
+                        </span>
+                        <span>
+                            Sup <b style="color: #34d399;">${s.support_grade} (${s.support_score})</b>
+                        </span>
+                    </div>
+                    <div class="item-bottom">
+                        <span>Zone: ${s.demand_floor} - ${s.demand_ceil}</span>
+                        <span>R:R: <b style="color: #38bdf8;">${s.rr_ratio}</b></span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Initialization
+        window.onload = function() {
+            initTradingViewChart();
+            renderStockList();
+            loadStockIntoChart('TECHM');
+        };
+    </script>
+</body>
+</html>

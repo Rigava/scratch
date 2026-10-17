@@ -455,6 +455,7 @@
                 <div class="header-actions-row" style="display: flex; gap: 8px;">
                     {% if request.user.is_superuser or request.user.is_staff %}
                     <a href="{% url 'screener:advisory' %}" class="guide-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: rgba(233, 128, 93, 0.15); border: 1px solid rgba(233, 128, 93, 0.4); color: #f4a261;"><i class="fa-solid fa-crosshairs"></i> <span>Advisory Desk</span></a>
+                    <a href="{% url 'screener:quant_terminal' %}" class="guide-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8;"><i class="fa-solid fa-terminal"></i> <span>Quant Terminal</span></a>
                     {% endif %}
                     <a href="{% url 'screener:community' %}" class="guide-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-bullhorn"></i> <span>Use Cases</span></a>
                     <button id="btn-open-guide" class="guide-btn" style="display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-circle-info"></i> <span>How it Works</span></button>

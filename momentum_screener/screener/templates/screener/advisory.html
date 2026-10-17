@@ -514,6 +514,9 @@
                 <a href="/" class="nav-link" style="color: var(--text-secondary, #a8a29e); text-decoration: none; font-size: 13px; font-weight: 500;">Home</a>
                 <a href="/dashboard/" class="nav-link" style="color: var(--text-secondary, #a8a29e); text-decoration: none; font-size: 13px; font-weight: 500;">Dashboard</a>
                 <a href="/advisory/" class="nav-link active" style="color: var(--accent-indigo, #e9805d); text-decoration: none; font-size: 13px; font-weight: 600;"><i class="fa-solid fa-crosshairs" style="margin-right: 4px;"></i> Advisory Desk</a>
+                {% if is_admin %}
+                <a href="/quant-terminal/" class="nav-link" style="color: #38bdf8; text-decoration: none; font-size: 13px; font-weight: 600;"><i class="fa-solid fa-terminal" style="margin-right: 4px;"></i> Quant Terminal</a>
+                {% endif %}
                 <a href="/community/" class="nav-link" style="color: var(--text-secondary, #a8a29e); text-decoration: none; font-size: 13px; font-weight: 500;">Use Cases</a>
             </nav>
 

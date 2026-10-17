@@ -3402,3 +3402,44 @@ def api_advisory_audit_stock(request):
     return JsonResponse({'status': 'success', 'audit': audit})
 
 
+def quant_terminal_view(request):
+    """
+    Renders the Quant Terminal Page (Institutional Demand & Supply Screener & TradingView Chart).
+    Strictly restricted to Admin / Superuser / Staff accounts.
+    """
+    if not request.user.is_authenticated:
+        return redirect(f"/login/?next={request.path}")
+    if not (request.user.is_superuser or request.user.is_staff):
+        return HttpResponseForbidden(
+            """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>403 - Admin Access Required | TradeKriya</title>
+</head>
+<body style="background:#0c0a09; color:#f5f5f4; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; padding:20px; box-sizing:border-box;">
+    <div style="text-align:center; padding:36px; background:#1c1917; border:1px solid rgba(255,255,255,0.1); border-radius:12px; max-width:440px; box-shadow:0 10px 25px rgba(0,0,0,0.5);">
+        <div style="font-size:42px; margin-bottom:12px;">🔒</div>
+        <h2 style="color:#f87171; margin-top:0; margin-bottom:12px; font-size:20px;">Access Restricted</h2>
+        <p style="color:#a8a29e; font-size:13.5px; line-height:1.6; margin-bottom:24px;">The Quant Terminal is an institutional module reserved exclusively for system administrators.</p>
+        <a href="/dashboard/" style="background:#e9805d; color:#fff; text-decoration:none; padding:10px 20px; border-radius:8px; font-size:13px; font-weight:600; display:inline-block;">Return to Dashboard</a>
+    </div>
+</body>
+</html>"""
+        )
+
+    from .quant_service import get_quant_terminal_payload, NpEncoder
+    records, chart_data_payload = get_quant_terminal_payload()
+
+    context = {
+        'stocks_json': json.dumps(records, cls=NpEncoder),
+        'charts_json': json.dumps(chart_data_payload, cls=NpEncoder),
+        'total_stocks': len(records),
+        'is_admin': True,
+        'username': request.user.username,
+    }
+    return render(request, 'screener/quant_terminal.html', context)
+
+
+
