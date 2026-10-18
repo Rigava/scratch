@@ -21,10 +21,103 @@ def parse_df(records):
         df[c] = pd.to_numeric(df[c], errors='coerce')
     return df
 
+def compute_5y_structural_profile(symbol, df):
+    """
+    Evaluates 6 core quantitative dimensions over trailing 5 years:
+    1. Demand Bounce Probability (Support Integrity)
+    2. Demand Breakdown Probability (Falling Zone Cascade Risk)
+    3. Supply Breakout vs Rejection Propensity
+    4. 200-Day SMA Bullish Persistence (% of trading days above 200 SMA)
+    5. Maximum Tail Drawdown (Max DD)
+    6. Annualized Realized Volatility
+    """
+    df = df.copy()
+    df['sma_200'] = df['close'].rolling(200).mean()
+    valid_200 = df.dropna(subset=['sma_200'])
+    pct_above_200 = float((valid_200['close'] > valid_200['sma_200']).mean() * 100.0) if len(valid_200) > 0 else 50.0
+    
+    peak = df['close'].cummax()
+    dd = (df['close'] - peak) / peak
+    max_dd = float(abs(dd.min() * 100.0))
+    pct_rets = df['close'].pct_change().dropna()
+    ann_vol = float(pct_rets.std() * np.sqrt(252) * 100.0)
+    
+    lows = df['low'].values
+    highs = df['high'].values
+    
+    is_pivot_low = (lows[2:-2] < lows[1:-3]) & (lows[2:-2] < lows[:-4]) & (lows[2:-2] < lows[3:-1]) & (lows[2:-2] < lows[4:])
+    pivot_low_indices = np.where(is_pivot_low)[0] + 2
+    
+    is_pivot_high = (highs[2:-2] > highs[1:-3]) & (highs[2:-2] > highs[:-4]) & (highs[2:-2] > highs[3:-1]) & (highs[2:-2] > highs[4:])
+    pivot_high_indices = np.where(is_pivot_high)[0] + 2
+    
+    bounces, breakdowns, d_tests = 0, 0, 0
+    for idx in pivot_low_indices[:-1]:
+        p_low = lows[idx]
+        fwd_low = lows[idx+1 : min(len(df), idx+15)]
+        fwd_high = highs[idx+1 : min(len(df), idx+15)]
+        if len(fwd_low) == 0: continue
+        d_tests += 1
+        if np.min(fwd_low) < p_low * 0.975: breakdowns += 1
+        elif np.max(fwd_high) > p_low * 1.04: bounces += 1
+        
+    demand_bounce_rate = (bounces / d_tests * 100.0) if d_tests > 0 else 50.0
+    demand_breakdown_rate = (breakdowns / d_tests * 100.0) if d_tests > 0 else 50.0
+    
+    breakouts, rejections, s_tests = 0, 0, 0
+    for idx in pivot_high_indices[:-1]:
+        p_high = highs[idx]
+        fwd_high = highs[idx+1 : min(len(df), idx+15)]
+        fwd_low = lows[idx+1 : min(len(df), idx+15)]
+        if len(fwd_high) == 0: continue
+        s_tests += 1
+        if np.max(fwd_high) > p_high * 1.025: breakouts += 1
+        elif np.min(fwd_low) < p_high * 0.96: rejections += 1
+        
+    supply_breakout_rate = (breakouts / s_tests * 100.0) if s_tests > 0 else 50.0
+    supply_rejection_rate = (rejections / s_tests * 100.0) if s_tests > 0 else 50.0
+    
+    score = 0
+    score += min(30, (demand_bounce_rate / 60.0) * 30)
+    score += max(0, min(20, (1.0 - (demand_breakdown_rate - 20) / 40.0) * 20))
+    score += max(0, min(20, (1.0 - (max_dd - 20) / 40.0) * 20))
+    score += min(15, (pct_above_200 / 70.0) * 15)
+    score += 15 if (18 <= ann_vol <= 32) else (10 if ann_vol < 18 else max(0, 15 - (ann_vol - 32)*0.5))
+    safety_score = round(min(100.0, max(0.0, score)), 1)
+    
+    if demand_breakdown_rate >= 42.0 or max_dd >= 58.0:
+        label = "High Falling-Zone Risk"
+        rec = "AVOID Buying Dips (Cascade traps; demand levels fail repeatedly)"
+    elif supply_breakout_rate >= 45.0 and pct_above_200 >= 60.0:
+        label = "Expansion Runner"
+        rec = "Breakout Favored (Regularly punches through overhead supply)"
+    elif safety_score >= 75.0 and demand_breakdown_rate < 38.0 and max_dd < 50.0:
+        label = "Safe D&S Anchor"
+        rec = "Safe for Demand-Buying (Institutional limit orders absorb supply)"
+    elif demand_bounce_rate >= 45.0 and supply_rejection_rate >= 45.0:
+        label = "Mean-Reversion Oscillating"
+        rec = "Range-Bound Setup (Reliable for buying floor and selling ceiling)"
+    else:
+        label = "Moderate Integrity / Transitional"
+        rec = "Requires Stricter Volume Confirmation"
+        
+    return {
+        'struct_label': label,
+        'struct_recommendation': rec,
+        'safety_score': safety_score,
+        'demand_bounce_rate': round(demand_bounce_rate, 1),
+        'demand_breakdown_rate': round(demand_breakdown_rate, 1),
+        'supply_breakout_rate': round(supply_breakout_rate, 1),
+        'supply_rejection_rate': round(supply_rejection_rate, 1),
+        'pct_above_200': round(pct_above_200, 1),
+        'max_dd': round(max_dd, 1),
+        'ann_vol': round(ann_vol, 1),
+    }
+
 def get_quant_terminal_payload():
     """
     Computes full universe metrics, verified S/R levels, demand/supply boundaries,
-    and 100-session candlestick data for all stocks in fo_historical_dump.json.
+    5-year structural behavioral profiling, and 100-session candlestick data for all stocks in fo_historical_dump.json.
     """
     base_dir = os.path.dirname(os.path.abspath(__file__))
     dump_path = os.path.join(base_dir, 'data', 'fo_historical_dump.json')
@@ -42,6 +135,9 @@ def get_quant_terminal_payload():
         if len(raw_records) < 70:
             continue
         df = parse_df(raw_records)
+        
+        # 5-Year Structural Personality Inference
+        prof = compute_5y_structural_profile(symbol, df)
         
         tr = pd.concat([
             df['high'] - df['low'],
@@ -126,11 +222,19 @@ def get_quant_terminal_payload():
         s_floor = round(res_val - 0.75 * atr, 2)
         s_ceil = round(res_val + 0.25 * atr, 2)
         
-        # 4 Structural Regimes
-        is_breakdown_demand_hv = ((cmp_price < d_floor and vol_ratio >= 1.2) or (prev['close'] < d_floor and prev_vol_ratio >= 1.2))
-        is_breakout_supply_hv = ((cmp_price > s_ceil and vol_ratio >= 1.2) or (prev['close'] > s_ceil and prev_vol_ratio >= 1.2))
-        is_demand_rebound = ((curr['low'] <= d_ceil) and (cmp_price >= d_floor) and (cmp_price > curr['open']) and (day_ret >= 0.5))
-        is_supply_rejection = ((curr['high'] >= s_floor) and (cmp_price <= s_ceil) and (cmp_price < curr['open']) and (day_ret <= -0.5))
+        # 4 Structural Flow Regimes
+        is_breakout = bool(
+            (cmp_price >= s_ceil and (vol_ratio >= 1.05 or day_ret >= 0.5)) or
+            (cmp_price >= s_floor and vol_ratio >= 1.2 and day_ret >= 0.5) or
+            (prev['close'] >= s_ceil and prev_vol_ratio >= 1.1 and cmp_price >= s_floor) or
+            (prev['close'] >= s_floor and prev_vol_ratio >= 1.25 and cmp_price >= s_floor and day_ret >= -0.5)
+        )
+        is_breakdown_demand_hv = bool(
+            (cmp_price < d_floor and (vol_ratio >= 1.2 or day_ret <= -0.5)) or
+            (prev['close'] < d_floor and (prev_vol_ratio >= 1.2 or day_ret <= -0.5))
+        )
+        is_demand_rebound = bool((curr['low'] <= d_ceil) and (cmp_price >= d_floor) and (cmp_price > curr['open']) and (day_ret >= 0.5))
+        is_supply_rejection = bool((curr['high'] >= s_floor) and (cmp_price <= s_ceil) and (cmp_price < curr['open']) and (day_ret <= -0.5))
         
         ideal_sl = round(d_floor - 0.50 * atr, 2)
         ideal_tgt = round(s_floor, 2) if cmp_price < s_floor else round(s_ceil + 2.0 * atr, 2)
@@ -139,8 +243,8 @@ def get_quant_terminal_payload():
         rr = round(reward_pts / risk_pts, 2) if risk_pts > 0 else 0.0
         
         category = "Consolidation / Equilibrium"
-        if is_breakdown_demand_hv: category = "Demand Breakdown (High Vol)"
-        elif is_breakout_supply_hv: category = "Supply Breakout (High Vol)"
+        if is_breakout: category = "Supply Breakout (High Vol)"
+        elif is_breakdown_demand_hv: category = "Demand Breakdown (High Vol)"
         elif is_demand_rebound: category = "Demand Rebound"
         elif is_supply_rejection: category = "Supply Rejection"
         elif cmp_price <= d_ceil: category = "In Demand Zone"
@@ -153,6 +257,18 @@ def get_quant_terminal_payload():
             'volume': int(curr['volume']),
             'vol_ratio': round(vol_ratio, 2),
             'category': category,
+            'is_breakout': is_breakout,
+            # 5-Year Structural Personality & Safety
+            'struct_label': prof['struct_label'],
+            'struct_rec': prof['struct_recommendation'],
+            'safety_score': prof['safety_score'],
+            'demand_bounce_rate': prof['demand_bounce_rate'],
+            'demand_breakdown_rate': prof['demand_breakdown_rate'],
+            'supply_breakout_rate': prof['supply_breakout_rate'],
+            'supply_rejection_rate': prof['supply_rejection_rate'],
+            'pct_above_200': prof['pct_above_200'],
+            'max_dd': prof['max_dd'],
+            # S/R Boundaries & Verification
             'demand_floor': d_floor,
             'demand_ceil': d_ceil,
             'supply_floor': s_floor,

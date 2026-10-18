@@ -213,6 +213,36 @@
         .tag-rejection { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(251, 191, 36, 0.3); }
         .tag-neutral { background: rgba(148, 163, 184, 0.1); color: #94a3b8; border-color: rgba(148, 163, 184, 0.2); }
 
+        .dna-pill {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .pill-runner { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); }
+        .pill-anchor { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); }
+        .pill-trap { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); }
+        .pill-revert { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35); }
+        .pill-neutral { background: rgba(148, 163, 184, 0.1); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.2); }
+
+        .badge-dna {
+            font-size: 9.5px;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+        .badge-runner { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+        .badge-anchor { background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.25); }
+        .badge-trap { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .badge-revert { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.25); }
+        .badge-neutral { background: rgba(148, 163, 184, 0.1); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.2); }
+
         /* INTERACTIVE DECLUTTER CONTROLS */
         .chart-controls {
             display: flex;
@@ -582,6 +612,7 @@
                     <span class="stock-price" id="tv_price">₹1,514.10</span>
                     <span class="stock-chg badge-up" id="tv_chg">+1.85%</span>
                     <span class="regime-tag tag-rebound" id="tv_regime">Demand Rebound</span>
+                    <span class="dna-pill pill-runner" id="tv_dna_pill"><i class="fa-solid fa-bolt"></i> Runner</span>
                 </div>
                 
                 <!-- DECLUTTER & DISPLAY TOGGLES -->
@@ -694,12 +725,13 @@
                 
                 <!-- FILTER TABS -->
                 <div class="filter-tabs">
-                    <button class="filter-tab active" onclick="setFilter('ALL', this)">All (115)</button>
-                    <button class="filter-tab" onclick="setFilter('DEMAND_REBOUND', this)">🛡️ Rebound (60)</button>
-                    <button class="filter-tab" onclick="setFilter('GRADE_A_PLUS', this)">⭐ Grade A+ S/R (37)</button>
-                    <button class="filter-tab" onclick="setFilter('SUPPLY_BREAKOUT', this)">🚀 Breakout (6)</button>
-                    <button class="filter-tab" onclick="setFilter('DEMAND_BREAKDOWN', this)">🔻 Breakdown (22)</button>
-                    <button class="filter-tab" onclick="setFilter('SUPPLY_REJECTION', this)">⚠️ Rejection (5)</button>
+                    <button class="filter-tab active" id="tab_all" onclick="setFilter('ALL', this)">All (115)</button>
+                    <button class="filter-tab" id="tab_breakout" onclick="setFilter('SUPPLY_BREAKOUT', this)">🚀 Breakout (Live) (0)</button>
+                    <button class="filter-tab" id="tab_runners" onclick="setFilter('RUNNERS_5Y', this)">⚡ 5Y Runners (9)</button>
+                    <button class="filter-tab" id="tab_rebound" onclick="setFilter('DEMAND_REBOUND', this)">🛡️ Rebound (0)</button>
+                    <button class="filter-tab" id="tab_sr_a" onclick="setFilter('GRADE_A_PLUS', this)">⭐ Grade A+ S/R (0)</button>
+                    <button class="filter-tab" id="tab_breakdown" onclick="setFilter('DEMAND_BREAKDOWN', this)">🔻 Breakdown (0)</button>
+                    <button class="filter-tab" id="tab_rejection" onclick="setFilter('SUPPLY_REJECTION', this)">⚠️ Rejection (0)</button>
                 </div>
             </div>
 
@@ -708,6 +740,7 @@
                 <input type="text" id="search_input" class="search-input" placeholder="Search symbol..." oninput="renderStockList()">
                 <select id="sort_select" class="sort-select" onchange="renderStockList()">
                     <option value="score">Sort by S/R Score</option>
+                    <option value="safety">Sort by 5Y Safety Score</option>
                     <option value="rr">Sort by R:R Ratio</option>
                     <option value="chg_desc">Top Gainers (%)</option>
                     <option value="chg_asc">Top Losers (%)</option>
@@ -973,12 +1006,19 @@
 
             document.getElementById('tv_atr').innerText = `₹${stock.atr}`;
 
-            // Update S/R Quality Badge
+            // Update S/R Quality & 5Y Structural Badge
             const badgeEl = document.getElementById('tv_badge');
             badgeEl.innerHTML = `
                 <div class="sr-badge-title">
-                    <span>Structural S/R Quality Verification</span>
-                    <span>120 Sessions Lookback</span>
+                    <span>5Y Structural Profile & S/R Verification</span>
+                    <span id="badge_age">Safety Score: <b style="color: ${stock.safety_score >= 75 ? '#34d399' : (stock.safety_score < 50 ? '#f87171' : '#fbbf24')};">${stock.safety_score}/100</b></span>
+                </div>
+                <div class="sr-badge-row" style="margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px dashed rgba(255,255,255,0.08);">
+                    <span style="color: #38bdf8; font-weight: 600;"><i class="fa-solid fa-dna"></i> ${stock.struct_label}</span>
+                    <span style="color: var(--text-muted); font-size: 10px;">${stock.pct_above_200}% > 200 SMA</span>
+                </div>
+                <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 6px;">
+                    Supply Breakout: <b style="color: #38bdf8;">${stock.supply_breakout_rate}%</b> | Bounce: <b style="color: #34d399;">${stock.demand_bounce_rate}%</b> | Max DD: <b style="color: #f87171;">-${stock.max_dd}%</b>
                 </div>
                 <div class="sr-badge-row">
                     <span style="color: var(--green); font-weight: 600;">Demand Support: ₹${stock.support_lvl}</span>
@@ -1000,7 +1040,31 @@
                 <div style="font-size: 10px; color: var(--text-muted);">
                     Tested: <b>${stock.resist_touches}</b> sessions | Rejection Wicks: <b>${stock.resist_rejections}</b> | Role Flips: <b>${stock.resist_flips}</b>
                 </div>
+                <div style="font-size: 9.5px; color: #a8a29e; margin-top: 5px; font-style: italic;">
+                    ${stock.struct_rec}
+                </div>
             `;
+
+            // Update DNA Pill in toolbar
+            const dnaPill = document.getElementById('tv_dna_pill');
+            if (dnaPill) {
+                if (stock.struct_label === 'Expansion Runner') {
+                    dnaPill.className = 'dna-pill pill-runner';
+                    dnaPill.innerHTML = `<i class="fa-solid fa-bolt"></i> 5Y Runner (${stock.supply_breakout_rate}%)`;
+                } else if (stock.struct_label === 'Safe D&S Anchor') {
+                    dnaPill.className = 'dna-pill pill-anchor';
+                    dnaPill.innerHTML = `<i class="fa-solid fa-shield"></i> Safe Anchor (${stock.safety_score})`;
+                } else if (stock.struct_label === 'High Falling-Zone Risk') {
+                    dnaPill.className = 'dna-pill pill-trap';
+                    dnaPill.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Cascade Risk`;
+                } else if (stock.struct_label === 'Mean-Reversion Oscillating') {
+                    dnaPill.className = 'dna-pill pill-revert';
+                    dnaPill.innerHTML = `<i class="fa-solid fa-arrows-rotate"></i> Oscillating`;
+                } else {
+                    dnaPill.className = 'dna-pill pill-neutral';
+                    dnaPill.innerHTML = `<i class="fa-solid fa-chart-line"></i> Transitional`;
+                }
+            }
 
             // Update Bottom Strip
             document.getElementById('strip_demand').innerText = `₹${stock.demand_floor} - ₹${stock.demand_ceil}`;
@@ -1018,16 +1082,58 @@
             });
         }
 
+        // Helper to render stock card DNA badge
+        function renderCardDnaBadge(s) {
+            if (s.struct_label === 'Expansion Runner') {
+                return `<span class="badge-dna badge-runner"><i class="fa-solid fa-bolt"></i> Runner ${s.supply_breakout_rate}%</span>`;
+            } else if (s.struct_label === 'Safe D&S Anchor') {
+                return `<span class="badge-dna badge-anchor"><i class="fa-solid fa-shield"></i> Safe Anchor</span>`;
+            } else if (s.struct_label === 'High Falling-Zone Risk') {
+                return `<span class="badge-dna badge-trap"><i class="fa-solid fa-triangle-exclamation"></i> Trap Risk</span>`;
+            } else if (s.struct_label === 'Mean-Reversion Oscillating') {
+                return `<span class="badge-dna badge-revert"><i class="fa-solid fa-arrows-rotate"></i> Reverting</span>`;
+            }
+            return `<span class="badge-dna badge-neutral">Transitional</span>`;
+        }
+
+        // Dynamic Tab Counts Updater
+        function updateTabCounts() {
+            const counts = {
+                ALL: STOCKS_METRICS.length,
+                SUPPLY_BREAKOUT: STOCKS_METRICS.filter(s => s.is_breakout || (s.category && s.category.includes('Breakout'))).length,
+                RUNNERS_5Y: STOCKS_METRICS.filter(s => s.struct_label === 'Expansion Runner').length,
+                DEMAND_REBOUND: STOCKS_METRICS.filter(s => s.category && s.category.includes('Demand Rebound')).length,
+                GRADE_A_PLUS: STOCKS_METRICS.filter(s => s.support_grade === 'A+' || s.resist_grade === 'A+').length,
+                DEMAND_BREAKDOWN: STOCKS_METRICS.filter(s => s.category && s.category.includes('Demand Breakdown')).length,
+                SUPPLY_REJECTION: STOCKS_METRICS.filter(s => s.category && s.category.includes('Supply Rejection')).length
+            };
+
+            const tabMap = {
+                tab_all: `All (${counts.ALL})`,
+                tab_breakout: `🚀 Breakout (${counts.SUPPLY_BREAKOUT})`,
+                tab_runners: `⚡ 5Y Runners (${counts.RUNNERS_5Y})`,
+                tab_rebound: `🛡️ Rebound (${counts.DEMAND_REBOUND})`,
+                tab_sr_a: `⭐ Grade A+ (${counts.GRADE_A_PLUS})`,
+                tab_breakdown: `🔻 Breakdown (${counts.DEMAND_BREAKDOWN})`,
+                tab_rejection: `⚠️ Rejection (${counts.SUPPLY_REJECTION})`
+            };
+
+            for (const [id, text] of Object.entries(tabMap)) {
+                const el = document.getElementById(id);
+                if (el) el.innerText = text;
+            }
+        }
+
         // Filter Handlers
         function setFilter(filterType, btnEl) {
             currentFilter = filterType;
             document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
             btnEl.classList.add('active');
-            renderStockList();
+            renderStockList(true);
         }
 
         // Render Right Side Stock List
-        function renderStockList() {
+        function renderStockList(autoSwitch = false) {
             const searchVal = document.getElementById('search_input').value.toUpperCase().trim();
             const sortBy = document.getElementById('sort_select').value;
             const container = document.getElementById('stock_items_container');
@@ -1037,22 +1143,31 @@
                 if (searchVal && !s.symbol.includes(searchVal)) return false;
                 
                 // Category tab filter
-                if (currentFilter === 'DEMAND_REBOUND') return s.category.includes('Demand Rebound');
+                if (currentFilter === 'SUPPLY_BREAKOUT') return s.is_breakout || (s.category && s.category.includes('Breakout'));
+                if (currentFilter === 'RUNNERS_5Y') return s.struct_label === 'Expansion Runner';
+                if (currentFilter === 'DEMAND_REBOUND') return s.category && s.category.includes('Demand Rebound');
                 if (currentFilter === 'GRADE_A_PLUS') return s.support_grade === 'A+' || s.resist_grade === 'A+';
-                if (currentFilter === 'SUPPLY_BREAKOUT') return s.category.includes('Supply Breakout');
-                if (currentFilter === 'DEMAND_BREAKDOWN') return s.category.includes('Demand Breakdown');
-                if (currentFilter === 'SUPPLY_REJECTION') return s.category.includes('Supply Rejection');
+                if (currentFilter === 'DEMAND_BREAKDOWN') return s.category && s.category.includes('Demand Breakdown');
+                if (currentFilter === 'SUPPLY_REJECTION') return s.category && s.category.includes('Supply Rejection');
                 return true;
             });
 
             // Sorting
             if (sortBy === 'score') filtered.sort((a, b) => (b.support_score + b.resist_score) - (a.support_score + a.resist_score));
+            else if (sortBy === 'safety') filtered.sort((a, b) => b.safety_score - a.safety_score);
             else if (sortBy === 'rr') filtered.sort((a, b) => b.rr_ratio - a.rr_ratio);
             else if (sortBy === 'chg_desc') filtered.sort((a, b) => b.change_pct - a.change_pct);
             else if (sortBy === 'chg_asc') filtered.sort((a, b) => a.change_pct - b.change_pct);
             else if (sortBy === 'vol') filtered.sort((a, b) => b.vol_ratio - a.vol_ratio);
 
             document.getElementById('list_count').innerText = `${filtered.length} Stocks`;
+
+            if (autoSwitch && filtered.length > 0) {
+                const isCurrentInFiltered = filtered.some(s => s.symbol === currentSymbol);
+                if (!isCurrentInFiltered) {
+                    loadStockIntoChart(filtered[0].symbol);
+                }
+            }
 
             container.innerHTML = filtered.map(s => `
                 <div class="stock-item ${s.symbol === currentSymbol ? 'active' : ''}" data-symbol="${s.symbol}" onclick="loadStockIntoChart('${s.symbol}')">
@@ -1069,8 +1184,8 @@
                         </span>
                     </div>
                     <div class="item-bottom">
-                        <span>Zone: ${s.demand_floor} - ${s.demand_ceil}</span>
-                        <span>R:R: <b style="color: #38bdf8;">${s.rr_ratio}</b></span>
+                        <div>${renderCardDnaBadge(s)}</div>
+                        <span>Safety: <b style="color: ${s.safety_score >= 75 ? '#34d399' : (s.safety_score < 50 ? '#f87171' : '#fbbf24')};">${s.safety_score}</b></span>
                     </div>
                 </div>
             `).join('');
@@ -1079,6 +1194,7 @@
         // Initialization
         window.onload = function() {
             initTradingViewChart();
+            updateTabCounts();
             renderStockList();
             loadStockIntoChart('TECHM');
         };
