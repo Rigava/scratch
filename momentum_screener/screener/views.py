@@ -3430,16 +3430,43 @@ def quant_terminal_view(request):
         )
 
     from .quant_service import get_quant_terminal_payload, NpEncoder
+    from .market_breadth_service import get_market_pulse_summary
     records, chart_data_payload = get_quant_terminal_payload()
+    market_pulse = get_market_pulse_summary()
 
     context = {
         'stocks_json': json.dumps(records, cls=NpEncoder),
         'charts_json': json.dumps(chart_data_payload, cls=NpEncoder),
+        'market_pulse_json': json.dumps(market_pulse, cls=NpEncoder),
         'total_stocks': len(records),
         'is_admin': True,
         'username': request.user.username,
     }
     return render(request, 'screener/quant_terminal.html', context)
+
+
+def market_breadth_view(request):
+    """
+    Renders the dedicated Market Breadth & Internals Terminal.
+    Displays multi-horizon moving average health, daily gainers/losers flow,
+    volume thrust accumulation, McClellan Oscillator, and the Composite Market Strength Index (CMSI).
+    Includes dynamic filtering for Nifty 50 vs Nifty F&O (115) universes.
+    """
+    if not request.user.is_authenticated:
+        return redirect(f"/login/?next={request.path}")
+    
+    from .market_breadth_service import get_market_breadth_payload
+    from .quant_service import NpEncoder
+
+    breadth_payload = get_market_breadth_payload()
+
+    context = {
+        'breadth_json': json.dumps(breadth_payload, cls=NpEncoder),
+        'username': request.user.username,
+        'is_admin': request.user.is_superuser or request.user.is_staff,
+    }
+    return render(request, 'screener/market_breadth.html', context)
+
 
 
 

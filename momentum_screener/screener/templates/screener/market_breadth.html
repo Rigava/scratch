@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradeKriya - Market Breadth & Macro Internals Terminal</title>
+    <!-- Lightweight Charts by TradingView -->
+    <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Yatra+One&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #0c0a09;
+            --bg-panel: #141210;
+            --bg-card: #1c1917;
+            --bg-hover: #26221f;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-hover: #e9805d;
+            --text-main: #f5f5f4;
+            --text-muted: #a8a29e;
+            --text-dim: #78716c;
+            --accent: #e9805d;
+            --accent-glow: rgba(233, 128, 93, 0.25);
+            --green: #10b981;
+            --green-glow: rgba(16, 185, 129, 0.18);
+            --red: #ef4444;
+            --red-glow: rgba(239, 68, 68, 0.18);
+            --blue: #38bdf8;
+            --amber: #f59e0b;
+            --purple: #c084fc;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* TOP NAVIGATION HEADER */
+        header {
+            height: 56px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .brand-section {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: var(--text-main);
+        }
+
+        .brand-logo h1 {
+            font-family: 'Yatra One', cursive;
+            font-size: 21px;
+            margin: 0;
+            letter-spacing: 0.5px;
+        }
+
+        .terminal-pill {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.18), rgba(5, 150, 105, 0.25));
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #34d399;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* UNIVERSE TOGGLE BUTTONS IN HEADER */
+        .universe-toggle-wrap {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.45);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 3px;
+            gap: 4px;
+        }
+
+        .universe-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 5px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .universe-btn:hover {
+            color: var(--text-main);
+        }
+
+        .universe-btn.active {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 2px 8px var(--accent-glow);
+        }
+
+        .header-nav-links {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .h-nav-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .h-nav-btn:hover {
+            color: var(--text-main);
+            border-color: var(--accent);
+            background: rgba(233, 128, 93, 0.08);
+        }
+
+        /* MAIN PAGE CONTENT CONTAINER */
+        .content-container {
+            max-width: 1540px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px 24px 60px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* HERO CMSI BANNER */
+        .hero-banner {
+            background: linear-gradient(145deg, #161311 0%, #1c1917 100%);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 22px 26px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .hero-banner::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            background: var(--regime-accent, #f59e0b);
+        }
+
+        .hero-left {
+            display: flex;
+            align-items: center;
+            gap: 22px;
+            flex-wrap: wrap;
+        }
+
+        .cmsi-score-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 12px 20px;
+            min-width: 140px;
+        }
+
+        .cmsi-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .cmsi-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 38px;
+            font-weight: 800;
+            line-height: 1;
+            color: var(--regime-accent, #f59e0b);
+        }
+
+        .cmsi-scale {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+
+        .hero-info {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-width: 680px;
+        }
+
+        .hero-title-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .regime-badge {
+            font-size: 13px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .shift-pill {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .hero-desc {
+            font-size: 14px;
+            color: #d6d3d1;
+            line-height: 1.5;
+        }
+
+        .hero-playbook {
+            background: rgba(0, 0, 0, 0.3);
+            border-left: 3px solid var(--accent);
+            padding: 8px 14px;
+            border-radius: 0 6px 6px 0;
+            font-size: 13px;
+            color: #fed7aa;
+            margin-top: 4px;
+        }
+
+        .hero-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px;
+            text-align: right;
+        }
+
+        .hero-date {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .hero-universe-badge {
+            background: rgba(233, 128, 93, 0.15);
+            border: 1px solid rgba(233, 128, 93, 0.3);
+            color: var(--accent);
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.4px;
+        }
+
+        /* 4 KPI CARDS ROW */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        @media (max-width: 1180px) {
+            .kpi-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .kpi-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.18);
+        }
+
+        .kpi-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .kpi-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .kpi-body {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+        }
+
+        .kpi-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 26px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .kpi-sub {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .val-up { color: var(--green); }
+        .val-down { color: var(--red); }
+        .val-neutral { color: var(--amber); }
+
+        .kpi-progress-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .kpi-progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.4s ease;
+        }
+
+        .kpi-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        /* ============================================================ */
+        /* DATE SLIDER & TIMELINE SLICER CARD */
+        /* ============================================================ */
+        .timeline-slicer-card {
+            background: #181513;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        .slicer-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+
+        .slicer-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .slicer-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .preset-group {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 2px;
+            gap: 3px;
+        }
+
+        .preset-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .preset-btn:hover {
+            color: #fff;
+        }
+
+        .preset-btn.active {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 1px 6px var(--accent-glow);
+        }
+
+        .slicer-dates {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .date-input-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11.5px;
+            color: var(--text-muted);
+        }
+
+        .date-input-group input[type="date"] {
+            background: #110f0e;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            color: #fff;
+            padding: 4px 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11.5px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .date-input-group input[type="date"]:focus {
+            border-color: var(--accent);
+        }
+
+        .reset-range-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+
+        .reset-range-btn:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        /* SLIDER TRACK CONTAINER */
+        .range-slider-wrapper {
+            position: relative;
+            width: 100%;
+            height: 36px;
+            display: flex;
+            align-items: center;
+        }
+
+        .slider-track {
+            position: absolute;
+            width: 100%;
+            height: 8px;
+            background: #24201c;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .slider-highlight {
+            position: absolute;
+            height: 8px;
+            background: linear-gradient(90deg, #e9805d, #f59e0b);
+            border-radius: 4px;
+            box-shadow: 0 0 8px var(--accent-glow);
+            pointer-events: none;
+        }
+
+        .range-slider-input {
+            position: absolute;
+            width: 100%;
+            height: 8px;
+            background: transparent;
+            -webkit-appearance: none;
+            appearance: none;
+            pointer-events: none;
+            outline: none;
+            margin: 0;
+        }
+
+        .range-slider-input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid var(--accent);
+            cursor: pointer;
+            pointer-events: auto;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+            transition: transform 0.1s, background-color 0.1s;
+        }
+
+        .range-slider-input::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            background: #fed7aa;
+        }
+
+        .range-slider-input::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid var(--accent);
+            cursor: pointer;
+            pointer-events: auto;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+        }
+
+        .slicer-meta-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11.5px;
+            color: var(--text-dim);
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* 4-PANEL CHART SECTION */
+        .chart-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .chart-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .chart-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 3px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .chart-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .chart-legend {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 12px;
+            color: var(--text-muted);
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-color {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+        }
+
+        .hud-val {
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12.5px;
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 250px;
+            position: relative;
+        }
+
+        /* DIAGNOSTIC TABLE SECTION */
+        .table-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        .table-card h3 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #fff;
+        }
+
+        .matrix-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .matrix-table th {
+            text-align: left;
+            padding: 10px 14px;
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.6px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .matrix-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: #d6d3d1;
+        }
+
+        .matrix-table tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+    </style>
+</head>
+<body>
+    <!-- TOP NAVIGATION -->
+    <header>
+        <div class="brand-section">
+            <a href="/" class="brand-logo">
+                <i class="fa-solid fa-shield-halved" style="font-size: 20px; color: var(--accent);"></i>
+                <h1>TradeKriya</h1>
+            </a>
+            <span class="terminal-pill"><i class="fa-solid fa-chart-line"></i> MARKET BREADTH TERMINAL</span>
+            
+            <!-- UNIVERSE TOGGLE IN NAVBAR -->
+            <div class="universe-toggle-wrap" id="universe_toggle_wrap">
+                <button class="universe-btn active" id="btn_universe_all" onclick="switchUniverse('all')">
+                    <i class="fa-solid fa-globe"></i> Nifty F&O (115 All)
+                </button>
+                <button class="universe-btn" id="btn_universe_nifty50" onclick="switchUniverse('nifty50')">
+                    <i class="fa-solid fa-building-columns"></i> Nifty 50 (Bluechips)
+                </button>
+            </div>
+        </div>
+        
+        <div class="header-nav-links">
+            <a href="/quant-terminal/" class="h-nav-btn"><i class="fa-solid fa-terminal"></i> Quant Terminal</a>
+            <a href="/dashboard/" class="h-nav-btn"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+            <a href="/advisory/" class="h-nav-btn"><i class="fa-solid fa-crosshairs"></i> Advisory Desk</a>
+            <a href="/logout/" class="h-nav-btn" style="color: #f87171;"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+        </div>
+    </header>
+
+    <!-- CONTENT WRAPPER -->
+    <div class="content-container">
+        
+        <!-- HERO BANNER -->
+        <div class="hero-banner" id="hero_banner">
+            <div class="hero-left">
+                <div class="cmsi-score-box">
+                    <span class="cmsi-label">Composite Breadth</span>
+                    <span class="cmsi-value" id="cmsi_val">--</span>
+                    <span class="cmsi-scale">Scale 0 - 100</span>
+                </div>
+                
+                <div class="hero-info">
+                    <div class="hero-title-row">
+                        <span class="regime-badge" id="regime_badge">--</span>
+                        <span class="shift-pill" id="cmsi_shift_pill">1M Shift: --</span>
+                    </div>
+                    <p class="hero-desc" id="regime_desc">Evaluating multi-timeframe market health...</p>
+                    <div class="hero-playbook" id="hero_playbook">
+                        <i class="fa-solid fa-lightbulb" style="margin-right: 6px;"></i> <span id="playbook_text">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hero-meta">
+                <span class="hero-universe-badge" id="active_universe_label">NIFTY F&O (115 EQUITIES)</span>
+                <span class="hero-date" id="hero_date"><i class="fa-regular fa-calendar" style="margin-right: 5px;"></i> Latest As Of: --</span>
+            </div>
+        </div>
+
+        <!-- 4 KPI SUMMARY CARDS -->
+        <div class="kpi-grid">
+            <!-- CARD 1: LONG TERM 200 SMA -->
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title"><i class="fa-solid fa-compass"></i> Macro Trend (> 200 SMA)</span>
+                    <span class="kpi-sub" id="pct_200_shift">-- 1M</span>
+                </div>
+                <div class="kpi-body">
+                    <span class="kpi-val" id="pct_200_val">--%</span>
+                    <span style="font-size: 13px; color: var(--text-muted);" id="count_200_val">-- / --</span>
+                </div>
+                <div class="kpi-progress-bar">
+                    <div class="kpi-progress-fill" id="bar_200_fill" style="width: 0%; background: #38bdf8;"></div>
+                </div>
+                <div class="kpi-footer">
+                    <span>Bullish > 70% | Depressed < 40%</span>
+                    <span id="tag_200_status">--</span>
+                </div>
+            </div>
+
+            <!-- CARD 2: DAILY GAINERS & FLOW -->
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title"><i class="fa-solid fa-wave-square"></i> Daily Advance Flow</span>
+                    <span class="kpi-sub" id="gainers_10sma_shift">-- 1M</span>
+                </div>
+                <div class="kpi-body">
+                    <span class="kpi-val" id="pct_gainers_val">--%</span>
+                    <span style="font-size: 13px; color: var(--text-muted);" id="adv_dec_ratio">-- Adv / -- Dec</span>
+                </div>
+                <div class="kpi-progress-bar">
+                    <div class="kpi-progress-fill" id="bar_gainers_fill" style="width: 0%; background: #10b981;"></div>
+                </div>
+                <div class="kpi-footer">
+                    <span>10D Flow SMA: <strong id="val_gainers_10sma" class="mono">--%</strong></span>
+                    <span id="tag_gainers_status">--</span>
+                </div>
+            </div>
+
+            <!-- CARD 3: VOLUME THRUST -->
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title"><i class="fa-solid fa-bolt"></i> Volume Thrust %</span>
+                    <span class="kpi-sub" id="vol_thrust_shift">-- 1M</span>
+                </div>
+                <div class="kpi-body">
+                    <span class="kpi-val" id="pct_up_vol_val">--%</span>
+                    <span style="font-size: 13px; color: var(--text-muted);" id="vol_thrust_10sma_val">10D: --%</span>
+                </div>
+                <div class="kpi-progress-bar">
+                    <div class="kpi-progress-fill" id="bar_vol_fill" style="width: 0%; background: #f59e0b;"></div>
+                </div>
+                <div class="kpi-footer">
+                    <span>Accumulation > 80% | Outflow < 40%</span>
+                    <span id="tag_vol_status">--</span>
+                </div>
+            </div>
+
+            <!-- CARD 4: MCCLELLAN OSCILLATOR -->
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title"><i class="fa-solid fa-gauge"></i> McClellan Oscillator</span>
+                    <span class="kpi-sub" id="mcclellan_shift">-- 1M</span>
+                </div>
+                <div class="kpi-body">
+                    <span class="kpi-val" id="mcclellan_val">--</span>
+                    <span style="font-size: 13px; color: var(--text-muted);" id="mcclellan_regime">--</span>
+                </div>
+                <div class="kpi-progress-bar">
+                    <div class="kpi-progress-fill" id="bar_mcclellan_fill" style="width: 50%; background: #c084fc;"></div>
+                </div>
+                <div class="kpi-footer">
+                    <span>Oversold < -20 | Overbought > +30</span>
+                    <span id="tag_mcclellan_status">--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- DATE SLIDER & TIMELINE SLICER CONTROL PANEL -->
+        <!-- ============================================================ -->
+        <div class="timeline-slicer-card">
+            <div class="slicer-top-row">
+                <div class="slicer-left">
+                    <span class="slicer-title"><i class="fa-solid fa-sliders" style="color: var(--accent);"></i> Time Horizon & Date Slider:</span>
+                    <div class="preset-group">
+                        <button class="preset-btn" id="btn_pre_1m" onclick="applyPresetRange('1M')">1M</button>
+                        <button class="preset-btn" id="btn_pre_3m" onclick="applyPresetRange('3M')">3M</button>
+                        <button class="preset-btn" id="btn_pre_6m" onclick="applyPresetRange('6M')">6M</button>
+                        <button class="preset-btn" id="btn_pre_1y" onclick="applyPresetRange('1Y')">1Y</button>
+                        <button class="preset-btn active" id="btn_pre_all" onclick="applyPresetRange('ALL')">ALL (400D)</button>
+                    </div>
+                </div>
+
+                <div class="slicer-dates">
+                    <div class="date-input-group">
+                        <label>From:</label>
+                        <input type="date" id="date_from_input" onchange="onDatePickerChange()">
+                    </div>
+                    <span style="color: var(--text-dim); font-size: 12px;">to</span>
+                    <div class="date-input-group">
+                        <label>To:</label>
+                        <input type="date" id="date_to_input" onchange="onDatePickerChange()">
+                    </div>
+                    <button class="reset-range-btn" onclick="applyPresetRange('ALL')">
+                        <i class="fa-solid fa-rotate-left"></i> Reset Full
+                    </button>
+                </div>
+            </div>
+
+            <!-- DUAL HANDLE RANGE SLIDER -->
+            <div class="range-slider-wrapper">
+                <div class="slider-track"></div>
+                <div class="slider-highlight" id="slider_highlight"></div>
+                <input type="range" class="range-slider-input" id="range_slider_start" min="0" max="399" value="0" oninput="onSliderDrag('start')">
+                <input type="range" class="range-slider-input" id="range_slider_end" min="0" max="399" value="399" oninput="onSliderDrag('end')">
+            </div>
+
+            <div class="slicer-meta-row">
+                <span id="slice_label_left" class="mono">--</span>
+                <span id="slice_window_duration" style="font-weight: 700; color: #fed7aa;">Viewing 400 Trading Days</span>
+                <span id="slice_label_right" class="mono">--</span>
+            </div>
+        </div>
+
+        <!-- 4-PANEL SYNCHRONIZED TRADINGVIEW CHARTS -->
+        <div class="chart-grid">
+            
+            <!-- PANEL 1: STRUCTURAL MOVING AVERAGE HEALTH -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title-wrap">
+                        <span class="chart-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">Pillar 1 & 2</span>
+                        <h4 class="chart-title">Macro Structural Moving Average Health</h4>
+                    </div>
+                    <div class="chart-legend">
+                        <div class="legend-item"><div class="legend-color" style="background: #38bdf8;"></div><span>% > 200 SMA:</span><span id="hud_200" class="hud-val" style="color: #38bdf8;">--%</span></div>
+                        <div class="legend-item"><div class="legend-color" style="background: #f59e0b;"></div><span>% > 50 SMA:</span><span id="hud_50" class="hud-val" style="color: #f59e0b;">--%</span></div>
+                        <div class="legend-item"><div class="legend-color" style="background: rgba(16, 185, 129, 0.7); height: 2px;"></div><span>Bull 70%</span></div>
+                        <div class="legend-item"><div class="legend-color" style="background: rgba(239, 68, 68, 0.7); height: 2px;"></div><span>Bear 40%</span></div>
+                    </div>
+                </div>
+                <div class="chart-container" id="chart_panel_structural"></div>
+            </div>
+
+            <!-- PANEL 2: DAILY GAINERS & 10D FLOW -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title-wrap">
+                        <span class="chart-badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);">Pillar 3</span>
+                        <h4 class="chart-title">Daily Participant Flow</h4>
+                    </div>
+                    <div class="chart-legend">
+                        <div class="legend-item"><div class="legend-color" style="background: #10b981;"></div><span>Daily Gainers:</span><span id="hud_gainers" class="hud-val" style="color: #10b981;">--%</span></div>
+                        <div class="legend-item"><div class="legend-color" style="background: #c084fc;"></div><span>10D Flow SMA:</span><span id="hud_flow10" class="hud-val" style="color: #c084fc;">--%</span></div>
+                        <div class="legend-item"><div class="legend-color" style="background: rgba(255, 255, 255, 0.3); height: 2px;"></div><span>Neutral 50%</span></div>
+                    </div>
+                </div>
+                <div class="chart-container" id="chart_panel_gainers"></div>
+            </div>
+
+            <!-- PANEL 3: VOLUME THRUST ACCUMULATION -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title-wrap">
+                        <span class="chart-badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);">Pillar 4</span>
+                        <h4 class="chart-title">Institutional Volume Thrust</h4>
+                    </div>
+                    <div class="chart-legend">
+                        <div class="legend-item"><div class="legend-color" style="background: #38bdf8;"></div><span>Up-Vol:</span><span id="hud_upvol" class="hud-val" style="color: #38bdf8;">--%</span></div>
+                        <div class="legend-item"><div class="legend-color" style="background: #e9805d;"></div><span>10D Thrust SMA:</span><span id="hud_thrust10" class="hud-val" style="color: #e9805d;">--%</span></div>
+                        <div class="legend-item"><div class="legend-color" style="background: rgba(16, 185, 129, 0.7); height: 2px;"></div><span>Accumulation 80%</span></div>
+                        <div class="legend-item"><div class="legend-color" style="background: rgba(239, 68, 68, 0.6); height: 2px;"></div><span>Outflow 40%</span></div>
+                    </div>
+                </div>
+                <div class="chart-container" id="chart_panel_vol_thrust"></div>
+            </div>
+
+            <!-- PANEL 4: COMPOSITE MARKET STRENGTH INDEX (CMSI) -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title-wrap">
+                        <span class="chart-badge" style="background: rgba(233, 128, 93, 0.15); color: #f4a261; border: 1px solid rgba(233, 128, 93, 0.3);">Unified Composite</span>
+                        <h4 class="chart-title">CMSI - Composite Market Strength Index (0 - 100)</h4>
+                    </div>
+                    <div class="chart-legend">
+                        <div class="legend-item"><div class="legend-color" style="background: #e9805d;"></div><span>CMSI:</span><span id="hud_cmsi" class="hud-val" style="color: #e9805d;">--</span></div>
+                        <div class="legend-item"><div class="legend-color" style="background: rgba(16, 185, 129, 0.7); height: 2px;"></div><span>Bullish >65</span></div>
+                        <div class="legend-item"><div class="legend-color" style="background: rgba(239, 68, 68, 0.7); height: 2px;"></div><span>Bearish <35</span></div>
+                    </div>
+                </div>
+                <div class="chart-container" id="chart_panel_cmsi"></div>
+            </div>
+
+        </div>
+
+        <!-- DIAGNOSTIC TABLE -->
+        <div class="table-card">
+            <h3><i class="fa-solid fa-table-list" style="color: var(--accent);"></i> Five-Pillar Market Breadth Diagnostic Matrix</h3>
+            <table class="matrix-table">
+                <thead>
+                    <tr>
+                        <th>Breadth Factor</th>
+                        <th>Current Readout</th>
+                        <th>1-Month Trend</th>
+                        <th>Regime Thresholds</th>
+                        <th>Strategic Interpretation & Playbook Execution</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>1. Macro Anchor (200 SMA)</strong></td>
+                        <td class="mono" id="diag_200_val">--</td>
+                        <td class="mono" id="diag_200_trend">--</td>
+                        <td>> 70% Bullish | < 40% Bearish</td>
+                        <td>Determines overarching market regime. When < 40%, broad market beta is negative; do not buy high-beta dips.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>2. Medium-Term Health (50 SMA)</strong></td>
+                        <td class="mono" id="diag_50_val">--</td>
+                        <td class="mono" id="diag_50_trend">--</td>
+                        <td>> 60% Expansion | < 40% Contraction</td>
+                        <td>Intermediate trend indicator. Bullish crossovers above 200 SMA denote robust sector-wide participation.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>3. Short-Term Velocity (20 EMA)</strong></td>
+                        <td class="mono" id="diag_20_val">--</td>
+                        <td class="mono" id="diag_20_trend">--</td>
+                        <td>> 65% Thrust | < 35% Exhaustion</td>
+                        <td>Tactical momentum pulse. When 20 EMA > 50 SMA, short-term demand zone rebounds have high follow-through odds.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>4. Daily Participant Flow (Gainers %)</strong></td>
+                        <td class="mono" id="diag_gainers_val">--</td>
+                        <td class="mono" id="diag_gainers_trend">--</td>
+                        <td>> 60% Dominance | < 40% Liquidation</td>
+                        <td>Day-to-day capital flow. A 10D SMA crossing above 50% confirms that buyers are regaining persistent control.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>5. Institutional Volume Thrust</strong></td>
+                        <td class="mono" id="diag_vol_val">--</td>
+                        <td class="mono" id="diag_vol_trend">--</td>
+                        <td>> 80% Accumulation Day</td>
+                        <td>Differentiates retail noise from institutional accumulation. 80%+ up-volume days mark decisive market bottoms.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- INITIAL DATA EMBEDDED FROM DJANGO -->
+    <script>
+        const BREADTH_DATA = {{ breadth_json|safe }};
+        let currentUniverse = 'all';
+
+        // Chart References
+        let chartStructural = null, line200 = null, line50 = null;
+        let chartGainers = null, histGainers = null, lineGainers10 = null;
+        let chartVolThrust = null, lineUpVol = null, lineVolThrust10 = null;
+        let chartCmsi = null, areaCmsi = null;
+
+        let allDates = [];
+        let isSyncing = false;
+
+        // Dark Theme Chart Config
+        const chartOptions = {
+            layout: {
+                background: { type: 'solid', color: '#141210' },
+                textColor: '#a8a29e',
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 11,
+            },
+            grid: {
+                vertLines: { color: 'rgba(255, 255, 255, 0.03)' },
+                horzLines: { color: 'rgba(255, 255, 255, 0.03)' }
+            },
+            crosshair: {
+                mode: LightweightCharts.CrosshairMode.Normal,
+                vertLine: { color: 'rgba(233, 128, 93, 0.4)', width: 1, style: 2 },
+                horzLine: { color: 'rgba(233, 128, 93, 0.4)', width: 1, style: 2 }
+            },
+            timeScale: {
+                borderColor: 'rgba(255, 255, 255, 0.08)',
+                timeVisible: true,
+                secondsVisible: false,
+                fixLeftEdge: true,
+                fixRightEdge: true
+            },
+            rightPriceScale: {
+                borderColor: 'rgba(255, 255, 255, 0.08)',
+                scaleMargins: { top: 0.08, bottom: 0.08 }
+            }
+        };
+
+        function initCharts() {
+            // 1. Structural Chart
+            const cont1 = document.getElementById('chart_panel_structural');
+            chartStructural = LightweightCharts.createChart(cont1, { ...chartOptions, height: 250 });
+            line200 = chartStructural.addLineSeries({
+                color: '#38bdf8',
+                lineWidth: 2,
+                title: '',
+                priceLineVisible: false,
+                lastValueVisible: true,
+            });
+            line50 = chartStructural.addLineSeries({
+                color: '#f59e0b',
+                lineWidth: 2,
+                title: '',
+                priceLineVisible: false,
+                lastValueVisible: true,
+            });
+
+            // Benchmark threshold lines: Set title to '' so no text blocks the graph canvas!
+            line200.createPriceLine({ price: 70, color: 'rgba(16, 185, 129, 0.45)', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: '' });
+            line200.createPriceLine({ price: 40, color: 'rgba(239, 68, 68, 0.45)', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: '' });
+
+            // 2. Daily Gainers Chart
+            const cont2 = document.getElementById('chart_panel_gainers');
+            chartGainers = LightweightCharts.createChart(cont2, { ...chartOptions, height: 250 });
+            histGainers = chartGainers.addHistogramSeries({
+                title: '',
+                base: 50,
+                priceLineVisible: false,
+                lastValueVisible: true,
+            });
+            lineGainers10 = chartGainers.addLineSeries({
+                color: '#c084fc',
+                lineWidth: 2,
+                title: '',
+                priceLineVisible: false,
+                lastValueVisible: true,
+            });
+            lineGainers10.createPriceLine({ price: 50, color: 'rgba(255, 255, 255, 0.25)', lineWidth: 1, lineStyle: 1, axisLabelVisible: true, title: '' });
+
+            // 3. Volume Thrust Chart
+            const cont3 = document.getElementById('chart_panel_vol_thrust');
+            chartVolThrust = LightweightCharts.createChart(cont3, { ...chartOptions, height: 250 });
+            lineUpVol = chartVolThrust.addLineSeries({
+                color: '#38bdf8',
+                lineWidth: 1,
+                title: '',
+                priceLineVisible: false,
+                lastValueVisible: true,
+            });
+            lineVolThrust10 = chartVolThrust.addLineSeries({
+                color: '#e9805d',
+                lineWidth: 2,
+                title: '',
+                priceLineVisible: false,
+                lastValueVisible: true,
+            });
+            lineVolThrust10.createPriceLine({ price: 80, color: 'rgba(16, 185, 129, 0.5)', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: '' });
+            lineVolThrust10.createPriceLine({ price: 40, color: 'rgba(239, 68, 68, 0.5)', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: '' });
+
+            // 4. CMSI Composite Chart
+            const cont4 = document.getElementById('chart_panel_cmsi');
+            chartCmsi = LightweightCharts.createChart(cont4, { ...chartOptions, height: 250 });
+            areaCmsi = chartCmsi.addAreaSeries({
+                topColor: 'rgba(233, 128, 93, 0.35)',
+                bottomColor: 'rgba(233, 128, 93, 0.01)',
+                lineColor: '#e9805d',
+                lineWidth: 2,
+                title: '',
+                priceLineVisible: false,
+                lastValueVisible: true,
+            });
+            areaCmsi.createPriceLine({ price: 65, color: 'rgba(16, 185, 129, 0.5)', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: '' });
+            areaCmsi.createPriceLine({ price: 35, color: 'rgba(239, 68, 68, 0.5)', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: '' });
+
+            // Synced crosshair & timeScale handler across all 4 charts
+            syncCharts([chartStructural, chartGainers, chartVolThrust, chartCmsi]);
+
+            // Setup crosshair hover listener to update HUD in legends
+            setupCrosshairHUD([chartStructural, chartGainers, chartVolThrust, chartCmsi]);
+
+            // Resize Observer
+            window.addEventListener('resize', handleResize);
+        }
+
+        function syncCharts(charts) {
+            charts.forEach((chart, i) => {
+                chart.timeScale().subscribeVisibleLogicalRangeChange(range => {
+                    if (isSyncing || !range) return;
+                    isSyncing = true;
+                    charts.forEach((otherChart, j) => {
+                        if (i !== j) {
+                            otherChart.timeScale().setVisibleLogicalRange(range);
+                        }
+                    });
+
+                    // Update slider position & date inputs when user pans/zooms on chart
+                    updateSliderFromLogicalRange(range);
+                    isSyncing = false;
+                });
+            });
+        }
+
+        function setupCrosshairHUD(charts) {
+            charts.forEach(chart => {
+                chart.subscribeCrosshairMove(param => {
+                    if (!param || !param.time || param.point === undefined) {
+                        resetHUDToLatest();
+                        return;
+                    }
+
+                    const data = BREADTH_DATA[currentUniverse];
+                    if (!data) return;
+
+                    // Match date
+                    const targetTime = param.time;
+                    const itemStruct = data.series_structural.find(d => d.time === targetTime);
+                    const itemGain = data.series_gainers.find(d => d.time === targetTime);
+                    const itemVol = data.series_vol_thrust.find(d => d.time === targetTime);
+                    const itemCmsi = data.series_cmsi.find(d => d.time === targetTime);
+
+                    if (itemStruct) {
+                        document.getElementById('hud_200').textContent = `${itemStruct.pct_200}%`;
+                        document.getElementById('hud_50').textContent = `${itemStruct.pct_50}%`;
+                    }
+                    if (itemGain) {
+                        document.getElementById('hud_gainers').textContent = `${itemGain.pct_gainers}%`;
+                        document.getElementById('hud_flow10').textContent = `${itemGain.gainers_10sma}%`;
+                    }
+                    if (itemVol) {
+                        document.getElementById('hud_upvol').textContent = `${itemVol.pct_up_vol}%`;
+                        document.getElementById('hud_thrust10').textContent = `${itemVol.vol_thrust_10sma}%`;
+                    }
+                    if (itemCmsi) {
+                        document.getElementById('hud_cmsi').textContent = `${itemCmsi.cmsi}`;
+                    }
+                });
+            });
+        }
+
+        function resetHUDToLatest() {
+            const data = BREADTH_DATA[currentUniverse];
+            if (!data) return;
+            const sum = data.summary;
+            document.getElementById('hud_200').textContent = `${sum.pct_200}%`;
+            document.getElementById('hud_50').textContent = `${sum.pct_50}%`;
+            document.getElementById('hud_gainers').textContent = `${sum.pct_gainers}%`;
+            document.getElementById('hud_flow10').textContent = `${sum.gainers_10sma}%`;
+            document.getElementById('hud_upvol').textContent = `${sum.pct_up_vol}%`;
+            document.getElementById('hud_thrust10').textContent = `${sum.vol_thrust_10sma}%`;
+            document.getElementById('hud_cmsi').textContent = `${sum.cmsi}`;
+        }
+
+        function handleResize() {
+            const containers = [
+                { id: 'chart_panel_structural', chart: chartStructural },
+                { id: 'chart_panel_gainers', chart: chartGainers },
+                { id: 'chart_panel_vol_thrust', chart: chartVolThrust },
+                { id: 'chart_panel_cmsi', chart: chartCmsi }
+            ];
+            containers.forEach(item => {
+                const el = document.getElementById(item.id);
+                if (el && item.chart) {
+                    item.chart.applyOptions({ width: el.clientWidth });
+                }
+            });
+        }
+
+        function formatShift(shift, unit = '%') {
+            const sign = shift > 0 ? '+' : '';
+            const cls = shift > 0 ? 'val-up' : (shift < 0 ? 'val-down' : 'val-neutral');
+            return `<span class="${cls}">${sign}${shift}${unit}</span>`;
+        }
+
+        function updateUI(universeKey) {
+            const data = BREADTH_DATA[universeKey];
+            if (!data) return;
+
+            const sum = data.summary;
+
+            // 1. Universe badge & title
+            document.getElementById('active_universe_label').textContent = sum.universe_name.toUpperCase();
+            document.getElementById('hero_date').innerHTML = `<i class="fa-regular fa-calendar" style="margin-right: 5px;"></i> As Of: ${sum.date_str}`;
+
+            // 2. CMSI Banner
+            document.documentElement.style.setProperty('--regime-accent', sum.regime_color);
+            const cmsiValEl = document.getElementById('cmsi_val');
+            cmsiValEl.textContent = sum.cmsi;
+            cmsiValEl.style.color = sum.regime_color;
+
+            const badgeEl = document.getElementById('regime_badge');
+            badgeEl.textContent = sum.regime_label;
+            badgeEl.style.background = `${sum.regime_color}22`;
+            badgeEl.style.color = sum.regime_color;
+            badgeEl.style.border = `1px solid ${sum.regime_color}55`;
+
+            const shiftSign = sum.cmsi_1m_shift > 0 ? '+' : '';
+            const shiftColor = sum.cmsi_1m_shift > 0 ? '#10b981' : (sum.cmsi_1m_shift < 0 ? '#ef4444' : '#f59e0b');
+            document.getElementById('cmsi_shift_pill').innerHTML = `1M Shift: <strong style="color: ${shiftColor}">${shiftSign}${sum.cmsi_1m_shift} pts</strong>`;
+
+            document.getElementById('regime_desc').textContent = sum.regime_desc;
+            document.getElementById('playbook_text').textContent = sum.playbook;
+
+            // 3. Card 1: 200 SMA
+            document.getElementById('pct_200_val').textContent = `${sum.pct_200}%`;
+            document.getElementById('count_200_val').textContent = `${sum.above_200_count} / ${sum.total_stocks} Stocks`;
+            document.getElementById('pct_200_shift').innerHTML = formatShift(sum.pct_200_1m_shift);
+            document.getElementById('bar_200_fill').style.width = `${Math.min(100, sum.pct_200)}%`;
+            const status200 = sum.pct_200 >= 60 ? 'Strong' : (sum.pct_200 >= 40 ? 'Cautious' : 'Depressed');
+            const cls200 = sum.pct_200 >= 60 ? 'val-up' : (sum.pct_200 >= 40 ? 'val-neutral' : 'val-down');
+            document.getElementById('tag_200_status').innerHTML = `<span class="${cls200}">${status200}</span>`;
+
+            // 4. Card 2: Gainers Flow
+            document.getElementById('pct_gainers_val').textContent = `${sum.pct_gainers}%`;
+            document.getElementById('adv_dec_ratio').textContent = `${sum.gainers_count} Adv / ${sum.losers_count} Dec`;
+            document.getElementById('gainers_10sma_shift').innerHTML = formatShift(sum.gainers_10sma_1m_shift);
+            document.getElementById('bar_gainers_fill').style.width = `${Math.min(100, sum.pct_gainers)}%`;
+            document.getElementById('val_gainers_10sma').textContent = `${sum.gainers_10sma}%`;
+            const statusGainers = sum.gainers_10sma >= 55 ? 'Accumulation' : (sum.gainers_10sma >= 45 ? 'Balanced' : 'Distribution');
+            const clsGainers = sum.gainers_10sma >= 55 ? 'val-up' : (sum.gainers_10sma >= 45 ? 'val-neutral' : 'val-down');
+            document.getElementById('tag_gainers_status').innerHTML = `<span class="${clsGainers}">${statusGainers}</span>`;
+
+            // 5. Card 3: Volume Thrust
+            document.getElementById('pct_up_vol_val').textContent = `${sum.pct_up_vol}%`;
+            document.getElementById('vol_thrust_10sma_val').textContent = `10D: ${sum.vol_thrust_10sma}%`;
+            document.getElementById('vol_thrust_shift').innerHTML = formatShift(sum.vol_thrust_1m_shift);
+            document.getElementById('bar_vol_fill').style.width = `${Math.min(100, sum.pct_up_vol)}%`;
+            const statusVol = sum.pct_up_vol >= 80 ? 'Heavy Inflow' : (sum.pct_up_vol >= 40 ? 'Moderate' : 'Heavy Outflow');
+            const clsVol = sum.pct_up_vol >= 80 ? 'val-up' : (sum.pct_up_vol >= 40 ? 'val-neutral' : 'val-down');
+            document.getElementById('tag_vol_status').innerHTML = `<span class="${clsVol}">${statusVol}</span>`;
+
+            // 6. Card 4: McClellan Oscillator
+            const mcSign = sum.mcclellan > 0 ? '+' : '';
+            document.getElementById('mcclellan_val').textContent = `${mcSign}${sum.mcclellan}`;
+            document.getElementById('mcclellan_shift').innerHTML = formatShift(sum.mcclellan_1m_shift, ' pts');
+            const mcNorm = Math.min(100, Math.max(0, (sum.mcclellan + 50) * 1));
+            document.getElementById('bar_mcclellan_fill').style.width = `${mcNorm}%`;
+            const mcRegime = sum.mcclellan > 20 ? 'Overbought Thrust' : (sum.mcclellan < -20 ? 'Oversold Pullback' : 'Equilibrium');
+            document.getElementById('mcclellan_regime').textContent = mcRegime;
+            const clsMc = sum.mcclellan > 0 ? 'val-up' : 'val-down';
+            document.getElementById('tag_mcclellan_status').innerHTML = `<span class="${clsMc}">${sum.mcclellan > 0 ? 'Positive Velocity' : 'Negative Velocity'}</span>`;
+
+            // 7. Diagnostic Table
+            document.getElementById('diag_200_val').innerHTML = `${sum.pct_200}% (${sum.above_200_count}/${sum.total_stocks})`;
+            document.getElementById('diag_200_trend').innerHTML = formatShift(sum.pct_200_1m_shift);
+
+            document.getElementById('diag_50_val').innerHTML = `${sum.pct_50}%`;
+            document.getElementById('diag_50_trend').innerHTML = formatShift(sum.pct_50_1m_shift);
+
+            document.getElementById('diag_20_val').innerHTML = `${sum.pct_20}%`;
+            document.getElementById('diag_20_trend').innerHTML = formatShift(sum.pct_20_1m_shift);
+
+            document.getElementById('diag_gainers_val').innerHTML = `${sum.pct_gainers}% (10D: ${sum.gainers_10sma}%)`;
+            document.getElementById('diag_gainers_trend').innerHTML = formatShift(sum.gainers_10sma_1m_shift);
+
+            document.getElementById('diag_vol_val').innerHTML = `${sum.pct_up_vol}% (10D: ${sum.vol_thrust_10sma}%)`;
+            document.getElementById('diag_vol_trend').innerHTML = formatShift(sum.vol_thrust_1m_shift);
+
+            // 8. Update Chart Series Data
+            // Panel 1: Structural
+            const data200 = data.series_structural.map(d => ({ time: d.time, value: d.pct_200 }));
+            const data50 = data.series_structural.map(d => ({ time: d.time, value: d.pct_50 }));
+            line200.setData(data200);
+            line50.setData(data50);
+
+            // Panel 2: Gainers
+            const dataGainers = data.series_gainers.map(d => ({
+                time: d.time,
+                value: d.pct_gainers,
+                color: d.pct_gainers >= 50 ? 'rgba(16, 185, 129, 0.75)' : 'rgba(239, 68, 68, 0.75)'
+            }));
+            const dataGainers10 = data.series_gainers.map(d => ({ time: d.time, value: d.gainers_10sma }));
+            histGainers.setData(dataGainers);
+            lineGainers10.setData(dataGainers10);
+
+            // Panel 3: Volume Thrust
+            const dataUpVol = data.series_vol_thrust.map(d => ({ time: d.time, value: d.pct_up_vol }));
+            const dataThrust10 = data.series_vol_thrust.map(d => ({ time: d.time, value: d.vol_thrust_10sma }));
+            lineUpVol.setData(dataUpVol);
+            lineVolThrust10.setData(dataThrust10);
+
+            // Panel 4: CMSI
+            const dataCmsi = data.series_cmsi.map(d => ({ time: d.time, value: d.cmsi }));
+            areaCmsi.setData(dataCmsi);
+
+            // Reset HUD in legend to latest values
+            resetHUDToLatest();
+
+            // Save dates list for timeline slider
+            allDates = data.series_structural.map(d => d.time);
+            
+            // Setup slider limits
+            setupDateSlider();
+
+            // Fit content across all 4 charts
+            chartStructural.timeScale().fitContent();
+            chartGainers.timeScale().fitContent();
+            chartVolThrust.timeScale().fitContent();
+            chartCmsi.timeScale().fitContent();
+        }
+
+        // ============================================================
+        // DATE SLIDER & TIMELINE SLICING LOGIC
+        // ============================================================
+        function setupDateSlider() {
+            if (!allDates || allDates.length === 0) return;
+            const maxIdx = allDates.length - 1;
+            
+            const startInput = document.getElementById('range_slider_start');
+            const endInput = document.getElementById('range_slider_end');
+            
+            startInput.max = maxIdx;
+            endInput.max = maxIdx;
+            startInput.value = 0;
+            endInput.value = maxIdx;
+
+            const fromDate = allDates[0];
+            const toDate = allDates[maxIdx];
+
+            document.getElementById('date_from_input').value = fromDate;
+            document.getElementById('date_to_input').value = toDate;
+            document.getElementById('date_from_input').min = fromDate;
+            document.getElementById('date_from_input').max = toDate;
+            document.getElementById('date_to_input').min = fromDate;
+            document.getElementById('date_to_input').max = toDate;
+
+            updateSliderVisuals(0, maxIdx);
+        }
+
+        function updateSliderVisuals(startIdx, endIdx) {
+            const total = allDates.length - 1;
+            if (total <= 0) return;
+
+            const startPct = (startIdx / total) * 100;
+            const endPct = (endIdx / total) * 100;
+
+            const highlight = document.getElementById('slider_highlight');
+            highlight.style.left = `${startPct}%`;
+            highlight.style.width = `${Math.max(0, endPct - startPct)}%`;
+
+            const startDate = allDates[startIdx];
+            const endDate = allDates[endIdx];
+
+            document.getElementById('slice_label_left').textContent = `Start: ${startDate}`;
+            document.getElementById('slice_label_right').textContent = `End: ${endDate}`;
+
+            const count = endIdx - startIdx + 1;
+            document.getElementById('slice_window_duration').textContent = `Viewing ${count} Trading Days (${startDate} → ${endDate})`;
+
+            document.getElementById('date_from_input').value = startDate;
+            document.getElementById('date_to_input').value = endDate;
+        }
+
+        function onSliderDrag(whichHandle) {
+            let startIdx = parseInt(document.getElementById('range_slider_start').value);
+            let endIdx = parseInt(document.getElementById('range_slider_end').value);
+
+            // Enforce minimum 8 trading days window
+            const minDays = 8;
+            if (whichHandle === 'start') {
+                if (startIdx > endIdx - minDays) {
+                    startIdx = Math.max(0, endIdx - minDays);
+                    document.getElementById('range_slider_start').value = startIdx;
+                }
+            } else {
+                if (endIdx < startIdx + minDays) {
+                    endIdx = Math.min(allDates.length - 1, startIdx + minDays);
+                    document.getElementById('range_slider_end').value = endIdx;
+                }
+            }
+
+            clearPresetActive();
+            updateSliderVisuals(startIdx, endIdx);
+            applyVisibleLogicalRange(startIdx, endIdx);
+        }
+
+        function applyVisibleLogicalRange(startIdx, endIdx) {
+            isSyncing = true;
+            const range = { from: startIdx, to: endIdx };
+            [chartStructural, chartGainers, chartVolThrust, chartCmsi].forEach(ch => {
+                if (ch) ch.timeScale().setVisibleLogicalRange(range);
+            });
+            setTimeout(() => { isSyncing = false; }, 50);
+        }
+
+        function updateSliderFromLogicalRange(range) {
+            if (!range || allDates.length === 0) return;
+            let startIdx = Math.max(0, Math.min(allDates.length - 1, Math.round(range.from)));
+            let endIdx = Math.max(0, Math.min(allDates.length - 1, Math.round(range.to)));
+
+            if (startIdx >= endIdx) return;
+
+            document.getElementById('range_slider_start').value = startIdx;
+            document.getElementById('range_slider_end').value = endIdx;
+            updateSliderVisuals(startIdx, endIdx);
+        }
+
+        function applyPresetRange(preset) {
+            if (!allDates || allDates.length === 0) return;
+            const maxIdx = allDates.length - 1;
+            let days = maxIdx;
+
+            if (preset === '1M') days = 22;
+            else if (preset === '3M') days = 66;
+            else if (preset === '6M') days = 130;
+            else if (preset === '1Y') days = 252;
+            else if (preset === 'ALL') days = maxIdx;
+
+            const startIdx = Math.max(0, maxIdx - days);
+            const endIdx = maxIdx;
+
+            document.getElementById('range_slider_start').value = startIdx;
+            document.getElementById('range_slider_end').value = endIdx;
+
+            updateSliderVisuals(startIdx, endIdx);
+            applyVisibleLogicalRange(startIdx, endIdx);
+
+            // Update active preset button styling
+            ['1m', '3m', '6m', '1y', 'all'].forEach(p => {
+                const btn = document.getElementById(`btn_pre_${p}`);
+                if (btn) btn.classList.toggle('active', p === preset.toLowerCase());
+            });
+        }
+
+        function clearPresetActive() {
+            ['1m', '3m', '6m', '1y', 'all'].forEach(p => {
+                const btn = document.getElementById(`btn_pre_${p}`);
+                if (btn) btn.classList.remove('active');
+            });
+        }
+
+        function onDatePickerChange() {
+            const fromVal = document.getElementById('date_from_input').value;
+            const toVal = document.getElementById('date_to_input').value;
+
+            let startIdx = allDates.findIndex(d => d >= fromVal);
+            if (startIdx === -1) startIdx = 0;
+
+            let endIdx = -1;
+            for (let i = allDates.length - 1; i >= 0; i--) {
+                if (allDates[i] <= toVal) {
+                    endIdx = i;
+                    break;
+                }
+            }
+            if (endIdx === -1 || endIdx < startIdx) endIdx = allDates.length - 1;
+
+            document.getElementById('range_slider_start').value = startIdx;
+            document.getElementById('range_slider_end').value = endIdx;
+
+            clearPresetActive();
+            updateSliderVisuals(startIdx, endIdx);
+            applyVisibleLogicalRange(startIdx, endIdx);
+        }
+
+        function switchUniverse(universeKey) {
+            currentUniverse = universeKey;
+            document.getElementById('btn_universe_all').classList.toggle('active', universeKey === 'all');
+            document.getElementById('btn_universe_nifty50').classList.toggle('active', universeKey === 'nifty50');
+            updateUI(universeKey);
+        }
+
+        // Initialize on DOM load
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            handleResize();
+            updateUI('all');
+        });
+    </script>
+</body>
+</html>

@@ -48,6 +48,7 @@ urlpatterns = [
     # Institutional Advisory & Signal Desk routes
     path('advisory/', views.advisory_view, name='advisory'),
     path('quant-terminal/', views.quant_terminal_view, name='quant_terminal'),
+    path('market-breadth/', views.market_breadth_view, name='market_breadth'),
     path('api/advisory/tune-strategy/', views.api_strategy_tune, name='api_strategy_tune'),
     path('api/advisory/ai-generate/', views.api_ai_generate_recommendation, name='api_ai_generate_recommendation'),
     path('api/advisory/audit-stock/', views.api_advisory_audit_stock, name='api_advisory_audit_stock'),

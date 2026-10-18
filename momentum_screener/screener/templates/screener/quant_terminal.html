@@ -576,7 +576,249 @@
         ::-webkit-scrollbar-thumb:hover {
             background: var(--accent);
         }
+
+        /* MARKET PULSE BADGE */
+        .market-pulse-badge {
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            color: #fbbf24;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 11.5px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            transition: all 0.2s ease;
+            font-family: 'Outfit', sans-serif;
+            text-decoration: none;
+        }
+
+        .market-pulse-badge:hover {
+            background: rgba(245, 158, 11, 0.22);
+            border-color: #f59e0b;
+            transform: translateY(-1px);
+        }
+
+        .pulse-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #f59e0b;
+            box-shadow: 0 0 8px #f59e0b;
+            display: inline-block;
+            animation: pulseGlow 2s infinite;
+        }
+
+        @keyframes pulseGlow {
+            0% { transform: scale(0.9); opacity: 0.7; }
+            50% { transform: scale(1.25); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.7; }
+        }
+
+        /* SLIDE-OVER BREADTH DRAWER */
+        .drawer-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(2px);
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .drawer-backdrop.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .breadth-drawer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 440px;
+            max-width: 92vw;
+            height: 100vh;
+            background: #141210;
+            border-left: 1px solid var(--border);
+            z-index: 101;
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            box-shadow: -10px 0 35px rgba(0, 0, 0, 0.7);
+        }
+
+        .breadth-drawer.active {
+            transform: translateX(0);
+        }
+
+        .drawer-header {
+            padding: 16px 20px;
+            background: #1c1917;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .drawer-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .drawer-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .drawer-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 16px;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+        }
+
+        .drawer-close:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .drawer-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .drawer-universe-toggle {
+            display: flex;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 3px;
+            gap: 4px;
+        }
+
+        .d-uni-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 11.5px;
+            font-weight: 600;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .d-uni-btn.active {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 2px 6px var(--accent-glow);
+        }
+
+        .drawer-kpi-box {
+            background: #1c1917;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .drawer-cmsi-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .drawer-cmsi-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 32px;
+            font-weight: 800;
+            color: #f59e0b;
+        }
+
+        .drawer-playbook {
+            background: rgba(233, 128, 93, 0.08);
+            border-left: 3px solid var(--accent);
+            border-radius: 0 6px 6px 0;
+            padding: 10px 12px;
+            font-size: 12.5px;
+            line-height: 1.5;
+            color: #fed7aa;
+        }
+
+        .drawer-ribbon-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .drawer-ribbon-item:last-child {
+            border-bottom: none;
+        }
+
+        .d-ribbon-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .d-ribbon-bar {
+            height: 5px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .d-ribbon-fill {
+            height: 100%;
+            border-radius: 3px;
+        }
+
+        .btn-open-terminal {
+            background: linear-gradient(135deg, #e9805d, #d86a47);
+            color: #fff;
+            text-decoration: none;
+            text-align: center;
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 14px var(--accent-glow);
+            transition: opacity 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn-open-terminal:hover {
+            opacity: 0.92;
+        }
     </style>
+
 </head>
 <body>
 
@@ -589,12 +831,23 @@
             </a>
             <span class="terminal-pill"><i class="fa-solid fa-terminal"></i> QUANT TERMINAL</span>
             <span class="admin-indicator"><i class="fa-solid fa-crown"></i> Admin Access</span>
+
+            <!-- MARKET PULSE TRIGGER BADGE -->
+            <button class="market-pulse-badge" id="btn_market_pulse" onclick="toggleBreadthDrawer()" title="Click to inspect Institutional Market Breadth Drawer">
+                <span class="pulse-dot" id="hdr_pulse_dot"></span>
+                <span>PULSE:</span>
+                <span id="hdr_pulse_regime" style="text-transform: uppercase;">NEUTRAL</span>
+                <span class="mono" id="hdr_pulse_cmsi" style="font-weight: 700;">CMSI --</span>
+                <span style="color: var(--text-dim);">|</span>
+                <span class="mono" id="hdr_pulse_sma">--% > 200 SMA</span>
+                <i class="fa-solid fa-angles-right" style="font-size: 10px; margin-left: 2px;"></i>
+            </button>
         </div>
         
         <div class="header-nav-links">
+            <a href="/market-breadth/" class="h-nav-btn" style="color: #34d399; border-color: rgba(16, 185, 129, 0.35); background: rgba(16, 185, 129, 0.08);"><i class="fa-solid fa-chart-line"></i> Market Breadth</a>
             <a href="/dashboard/" class="h-nav-btn"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
             <a href="/advisory/" class="h-nav-btn"><i class="fa-solid fa-crosshairs"></i> Advisory Desk</a>
-            <a href="/community/" class="h-nav-btn"><i class="fa-solid fa-bullhorn"></i> Use Cases</a>
             <a href="/logout/" class="h-nav-btn" style="color: #f87171;"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
         </div>
     </header>
@@ -761,6 +1014,99 @@
     <script>
         const STOCKS_METRICS = {{ stocks_json|safe }};
         const CHARTS_DATA = {{ charts_json|safe }};
+        const MARKET_PULSE = {{ market_pulse_json|safe }};
+        let currentPulseUniverse = 'all';
+
+        function toggleBreadthDrawer() {
+            const drawer = document.getElementById('breadth_drawer');
+            const backdrop = document.getElementById('breadth_backdrop');
+            const isActive = drawer.classList.contains('active');
+            if (isActive) {
+                closeBreadthDrawer();
+            } else {
+                drawer.classList.add('active');
+                backdrop.classList.add('active');
+                updateDrawerUI(currentPulseUniverse);
+            }
+        }
+
+        function closeBreadthDrawer() {
+            const drawer = document.getElementById('breadth_drawer');
+            const backdrop = document.getElementById('breadth_backdrop');
+            if (drawer) drawer.classList.remove('active');
+            if (backdrop) backdrop.classList.remove('active');
+        }
+
+        function setDrawerUniverse(uni) {
+            currentPulseUniverse = uni;
+            document.getElementById('d_btn_all').classList.toggle('active', uni === 'all');
+            document.getElementById('d_btn_nifty50').classList.toggle('active', uni === 'nifty50');
+            updateDrawerUI(uni);
+        }
+
+        function updateMarketPulseHeader() {
+            const sum = MARKET_PULSE[currentPulseUniverse];
+            if (!sum) return;
+
+            document.getElementById('hdr_pulse_regime').textContent = sum.regime_status === 'CHOPPY_NEUTRAL' ? 'NEUTRAL' : (sum.regime_status === 'BULL_EXPANSION' ? 'BULLISH' : 'DEFENSIVE');
+            document.getElementById('hdr_pulse_cmsi').textContent = `CMSI ${sum.cmsi}`;
+            document.getElementById('hdr_pulse_sma').textContent = `${sum.pct_200}% > 200 SMA`;
+
+            const dot = document.getElementById('hdr_pulse_dot');
+            if (dot) {
+                dot.style.background = sum.regime_color;
+                dot.style.boxShadow = `0 0 8px ${sum.regime_color}`;
+            }
+        }
+
+        function updateDrawerUI(uni) {
+            const sum = MARKET_PULSE[uni];
+            if (!sum) return;
+
+            // CMSI & Regime
+            const cmsiEl = document.getElementById('d_cmsi_val');
+            cmsiEl.textContent = sum.cmsi;
+            cmsiEl.style.color = sum.regime_color;
+
+            const badgeEl = document.getElementById('d_regime_badge');
+            badgeEl.textContent = sum.regime_label;
+            badgeEl.style.background = `${sum.regime_color}22`;
+            badgeEl.style.color = sum.regime_color;
+            badgeEl.style.border = `1px solid ${sum.regime_color}55`;
+
+            const shiftSign = sum.cmsi_1m_shift > 0 ? '+' : '';
+            const shiftColor = sum.cmsi_1m_shift > 0 ? '#10b981' : (sum.cmsi_1m_shift < 0 ? '#ef4444' : '#f59e0b');
+            document.getElementById('d_cmsi_shift').innerHTML = `1M: <strong style="color:${shiftColor}">${shiftSign}${sum.cmsi_1m_shift} pts</strong>`;
+
+            document.getElementById('d_regime_desc').textContent = sum.regime_desc;
+            document.getElementById('d_playbook_text').textContent = sum.playbook;
+
+            // Moving Averages
+            document.getElementById('d_pct_200').textContent = `${sum.pct_200}% (${sum.above_200_count}/${sum.total_stocks})`;
+            document.getElementById('d_bar_200').style.width = `${Math.min(100, sum.pct_200)}%`;
+
+            document.getElementById('d_pct_50').textContent = `${sum.pct_50}%`;
+            document.getElementById('d_bar_50').style.width = `${Math.min(100, sum.pct_50)}%`;
+
+            document.getElementById('d_pct_20').textContent = `${sum.pct_20}%`;
+            document.getElementById('d_bar_20').style.width = `${Math.min(100, sum.pct_20)}%`;
+
+            // Flow
+            document.getElementById('d_daily_gainers').textContent = `${sum.pct_gainers}%`;
+            document.getElementById('d_adv_dec').textContent = `${sum.gainers_count} Adv / ${sum.losers_count} Dec`;
+
+            document.getElementById('d_gainers_10sma').textContent = `${sum.gainers_10sma}%`;
+            const gShiftSign = sum.gainers_10sma_1m_shift > 0 ? '+' : '';
+            document.getElementById('d_flow_shift').textContent = `1M: ${gShiftSign}${sum.gainers_10sma_1m_shift}%`;
+
+            document.getElementById('d_up_vol').textContent = `${sum.pct_up_vol}%`;
+            document.getElementById('d_vol_10sma').textContent = `10D: ${sum.vol_thrust_10sma}%`;
+
+            const mcSign = sum.mcclellan > 0 ? '+' : '';
+            document.getElementById('d_mcclellan').textContent = `${mcSign}${sum.mcclellan}`;
+            const mcShiftSign = sum.mcclellan_1m_shift > 0 ? '+' : '';
+            document.getElementById('d_mcclellan_shift').textContent = `1M: ${mcShiftSign}${sum.mcclellan_1m_shift}`;
+        }
         
         let currentFilter = 'ALL';
         let currentSymbol = 'TECHM';
@@ -1194,10 +1540,134 @@
         // Initialization
         window.onload = function() {
             initTradingViewChart();
+            updateMarketPulseHeader();
             updateTabCounts();
             renderStockList();
             loadStockIntoChart('TECHM');
         };
     </script>
+
+    <!-- SLIDE-OVER BREADTH DRAWER & BACKDROP -->
+    <div class="drawer-backdrop" id="breadth_backdrop" onclick="closeBreadthDrawer()"></div>
+    <div class="breadth-drawer" id="breadth_drawer">
+        <div class="drawer-header">
+            <div class="drawer-title-wrap">
+                <i class="fa-solid fa-chart-line" style="color: #34d399; font-size: 16px;"></i>
+                <span class="drawer-title">Market Breadth & Internals</span>
+            </div>
+            <button class="drawer-close" onclick="closeBreadthDrawer()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="drawer-body">
+            <!-- UNIVERSE TOGGLE -->
+            <div class="drawer-universe-toggle">
+                <button class="d-uni-btn active" id="d_btn_all" onclick="setDrawerUniverse('all')">
+                    <i class="fa-solid fa-globe"></i> Nifty F&O (115)
+                </button>
+                <button class="d-uni-btn" id="d_btn_nifty50" onclick="setDrawerUniverse('nifty50')">
+                    <i class="fa-solid fa-building-columns"></i> Nifty 50
+                </button>
+            </div>
+
+            <!-- CMSI OVERVIEW CARD -->
+            <div class="drawer-kpi-box">
+                <div class="drawer-cmsi-header">
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Composite Strength</div>
+                        <div class="drawer-cmsi-val" id="d_cmsi_val">--</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <span class="regime-tag" id="d_regime_badge" style="display: inline-block; margin-bottom: 4px;">--</span>
+                        <div style="font-size: 11px; font-family: 'JetBrains Mono', monospace;" id="d_cmsi_shift">1M: --</div>
+                    </div>
+                </div>
+                <div style="font-size: 12.5px; color: #d6d3d1; line-height: 1.5;" id="d_regime_desc">--</div>
+            </div>
+
+            <!-- ACTIONABLE PLAYBOOK -->
+            <div class="drawer-playbook">
+                <div style="font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; color: #f4a261;">
+                    <i class="fa-solid fa-lightbulb"></i> Institutional Playbook
+                </div>
+                <span id="d_playbook_text">--</span>
+            </div>
+
+            <!-- MULTI-HORIZON MOVING AVERAGE RIBBON -->
+            <div class="drawer-kpi-box">
+                <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">
+                    Moving Average Ribbon Health
+                </div>
+
+                <div class="drawer-ribbon-item">
+                    <div class="d-ribbon-top">
+                        <span style="color: #38bdf8; font-weight: 600;">% > 200 SMA (Anchor)</span>
+                        <span class="mono" id="d_pct_200">--% (<span id="d_count_200">--</span>)</span>
+                    </div>
+                    <div class="d-ribbon-bar">
+                        <div class="d-ribbon-fill" id="d_bar_200" style="width: 0%; background: #38bdf8;"></div>
+                    </div>
+                </div>
+
+                <div class="drawer-ribbon-item">
+                    <div class="d-ribbon-top">
+                        <span style="color: #f59e0b; font-weight: 600;">% > 50 SMA (Tactical)</span>
+                        <span class="mono" id="d_pct_50">--%</span>
+                    </div>
+                    <div class="d-ribbon-bar">
+                        <div class="d-ribbon-fill" id="d_bar_50" style="width: 0%; background: #f59e0b;"></div>
+                    </div>
+                </div>
+
+                <div class="drawer-ribbon-item">
+                    <div class="d-ribbon-top">
+                        <span style="color: #34d399; font-weight: 600;">% > 20 EMA (Velocity)</span>
+                        <span class="mono" id="d_pct_20">--%</span>
+                    </div>
+                    <div class="d-ribbon-bar">
+                        <div class="d-ribbon-fill" id="d_bar_20" style="width: 0%; background: #34d399;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FLOW & THRUST METRICS -->
+            <div class="drawer-kpi-box">
+                <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">
+                    Daily Market Flow & Accumulation
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div style="background: rgba(0,0,0,0.3); padding: 8px 10px; border-radius: 6px;">
+                        <div style="font-size: 10.5px; color: var(--text-dim); text-transform: uppercase;">Daily Gainers</div>
+                        <div class="mono" id="d_daily_gainers" style="font-size: 15px; font-weight: 700; color: #fff;">--%</div>
+                        <div style="font-size: 10.5px; color: var(--text-muted);" id="d_adv_dec">-- Adv / -- Dec</div>
+                    </div>
+                    
+                    <div style="background: rgba(0,0,0,0.3); padding: 8px 10px; border-radius: 6px;">
+                        <div style="font-size: 10.5px; color: var(--text-dim); text-transform: uppercase;">10D Flow SMA</div>
+                        <div class="mono" id="d_gainers_10sma" style="font-size: 15px; font-weight: 700; color: #c084fc;">--%</div>
+                        <div style="font-size: 10.5px; color: var(--text-muted);" id="d_flow_shift">1M: --</div>
+                    </div>
+
+                    <div style="background: rgba(0,0,0,0.3); padding: 8px 10px; border-radius: 6px;">
+                        <div style="font-size: 10.5px; color: var(--text-dim); text-transform: uppercase;">Up-Volume %</div>
+                        <div class="mono" id="d_up_vol" style="font-size: 15px; font-weight: 700; color: #38bdf8;">--%</div>
+                        <div style="font-size: 10.5px; color: var(--text-muted);" id="d_vol_10sma">10D: --%</div>
+                    </div>
+
+                    <div style="background: rgba(0,0,0,0.3); padding: 8px 10px; border-radius: 6px;">
+                        <div style="font-size: 10.5px; color: var(--text-dim); text-transform: uppercase;">McClellan Osc</div>
+                        <div class="mono" id="d_mcclellan" style="font-size: 15px; font-weight: 700; color: #fbbf24;">--</div>
+                        <div style="font-size: 10.5px; color: var(--text-muted);" id="d_mcclellan_shift">1M: --</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DIRECT LINK BUTTON TO FULL TERMINAL -->
+            <a href="/market-breadth/" class="btn-open-terminal">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Full 4-Panel Breadth Terminal
+            </a>
+        </div>
+    </div>
+
 </body>
 </html>
