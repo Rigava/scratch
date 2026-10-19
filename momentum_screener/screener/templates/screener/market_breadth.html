@@ -183,7 +183,6 @@
             flex-wrap: wrap;
             gap: 20px;
             position: relative;
-            overflow: hidden;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
         }
 
@@ -195,6 +194,7 @@
             bottom: 0;
             width: 5px;
             background: var(--regime-accent, #f59e0b);
+            border-radius: 12px 0 0 12px;
         }
 
         .hero-left {
@@ -214,6 +214,14 @@
             border-radius: 10px;
             padding: 12px 20px;
             min-width: 140px;
+            position: relative;
+        }
+
+        .cmsi-label-row {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 4px;
         }
 
         .cmsi-label {
@@ -222,7 +230,6 @@
             text-transform: uppercase;
             letter-spacing: 0.8px;
             font-weight: 600;
-            margin-bottom: 4px;
         }
 
         .cmsi-value {
@@ -344,6 +351,7 @@
             flex-direction: column;
             gap: 10px;
             transition: transform 0.2s, border-color 0.2s;
+            position: relative;
         }
 
         .kpi-card:hover {
@@ -355,6 +363,12 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+        }
+
+        .kpi-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .kpi-title {
@@ -414,6 +428,138 @@
         }
 
         /* ============================================================ */
+        /* SUBTLE INSTITUTIONAL TOOLTIPS */
+        /* ============================================================ */
+        .info-tip-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+            color: var(--text-dim);
+            font-size: 11.5px;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: color 0.15s ease, background-color 0.15s ease;
+            user-select: none;
+            outline: none;
+        }
+
+        .info-tip-btn:hover, .info-tip-btn:focus {
+            color: var(--accent);
+            background: rgba(233, 128, 93, 0.12);
+        }
+
+        .tip-card {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%) translateY(5px);
+            width: 310px;
+            background: #1c1917;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 8px;
+            padding: 13px 15px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8);
+            z-index: 300;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.18s ease, transform 0.18s ease;
+            text-transform: none;
+            letter-spacing: normal;
+            text-align: left;
+            font-family: 'Outfit', sans-serif;
+            backdrop-filter: blur(8px);
+        }
+
+        .tip-card::after {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 6px;
+            border-style: solid;
+            border-color: transparent transparent #1c1917 transparent;
+        }
+
+        .info-tip-btn:hover .tip-card, .info-tip-btn:focus .tip-card {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .tip-card.tip-left {
+            left: 0;
+            transform: translateY(5px);
+        }
+        .tip-card.tip-left::after {
+            left: 12px;
+            transform: none;
+        }
+        .info-tip-btn:hover .tip-card.tip-left, .info-tip-btn:focus .tip-card.tip-left {
+            transform: translateY(0);
+        }
+
+        .tip-card.tip-right {
+            left: auto;
+            right: 0;
+            transform: translateY(5px);
+        }
+        .tip-card.tip-right::after {
+            left: auto;
+            right: 12px;
+            transform: none;
+        }
+        .info-tip-btn:hover .tip-card.tip-right, .info-tip-btn:focus .tip-card.tip-right {
+            transform: translateY(0);
+        }
+
+        .tip-title {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .tip-section {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            margin-bottom: 8px;
+        }
+
+        .tip-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .tip-sec-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .tip-sec-body {
+            font-size: 11.5px;
+            line-height: 1.5;
+            color: #d6d3d1;
+        }
+
+        .tip-sec-body strong {
+            color: #fff;
+        }
+
+        /* ============================================================ */
         /* DATE SLIDER & TIMELINE SLICER CARD */
         /* ============================================================ */
         .timeline-slicer-card {
@@ -425,6 +571,7 @@
             flex-direction: column;
             gap: 14px;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            position: relative;
         }
 
         .slicer-top-row {
@@ -440,6 +587,12 @@
             align-items: center;
             gap: 14px;
             flex-wrap: wrap;
+        }
+
+        .slicer-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .slicer-title {
@@ -633,6 +786,7 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+            position: relative;
         }
 
         .chart-header {
@@ -643,12 +797,13 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             flex-wrap: wrap;
             gap: 10px;
+            position: relative;
         }
 
         .chart-title-wrap {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .chart-badge {
@@ -782,8 +937,29 @@
         <!-- HERO BANNER -->
         <div class="hero-banner" id="hero_banner">
             <div class="hero-left">
+                <!-- CMSI SCORE BOX WITH SUBTLE TOOLTIP -->
                 <div class="cmsi-score-box">
-                    <span class="cmsi-label">Composite Breadth</span>
+                    <div class="cmsi-label-row">
+                        <span class="cmsi-label">Composite Breadth</span>
+                        <span class="info-tip-btn" tabindex="0">
+                            <i class="fa-solid fa-circle-question"></i>
+                            <div class="tip-card tip-left">
+                                <div class="tip-title"><i class="fa-solid fa-compass" style="color: #e9805d;"></i> Composite Market Strength Index (CMSI)</div>
+                                <div class="tip-section">
+                                    <div class="tip-sec-label"><i class="fa-solid fa-calculator"></i> Methodology</div>
+                                    <div class="tip-sec-body">A multi-factor weighted synthesis: <strong>25%</strong> (200 SMA) + <strong>25%</strong> (50 SMA) + <strong>20%</strong> (20 EMA) + <strong>15%</strong> (10D Gainers Flow) + <strong>15%</strong> (10D Volume Thrust). Scaled 0 to 100.</div>
+                                </div>
+                                <div class="tip-section">
+                                    <div class="tip-sec-label"><i class="fa-solid fa-lightbulb"></i> Inference & Execution</div>
+                                    <div class="tip-sec-body">
+                                        • <strong>&gt;65 (Bull Expansion)</strong>: Broad risk-on market; trade breakouts with full position sizing.<br>
+                                        • <strong>35–65 (Neutral / Rotation)</strong>: Selective environment; focus on Demand Rebounds with 50-70% size.<br>
+                                        • <strong>&lt;35 (Distribution)</strong>: High cascade failure risk; raise cash and tighten stops.
+                                    </div>
+                                </div>
+                            </div>
+                        </span>
+                    </div>
                     <span class="cmsi-value" id="cmsi_val">--</span>
                     <span class="cmsi-scale">Scale 0 - 100</span>
                 </div>
@@ -808,10 +984,31 @@
 
         <!-- 4 KPI SUMMARY CARDS -->
         <div class="kpi-grid">
+            
             <!-- CARD 1: LONG TERM 200 SMA -->
             <div class="kpi-card">
                 <div class="kpi-header">
-                    <span class="kpi-title"><i class="fa-solid fa-compass"></i> Macro Trend (> 200 SMA)</span>
+                    <div class="kpi-title-wrap">
+                        <span class="kpi-title"><i class="fa-solid fa-compass"></i> Macro Trend (> 200 SMA)</span>
+                        <span class="info-tip-btn" tabindex="0">
+                            <i class="fa-solid fa-circle-question"></i>
+                            <div class="tip-card tip-left">
+                                <div class="tip-title"><i class="fa-solid fa-compass" style="color: #38bdf8;"></i> Macro Anchor (% &gt; 200 SMA)</div>
+                                <div class="tip-section">
+                                    <div class="tip-sec-label"><i class="fa-solid fa-calculator"></i> Methodology</div>
+                                    <div class="tip-sec-body">Percentage of universe equities closing above their 200-day Simple Moving Average (<code>Close &gt; SMA 200</code>). Tracks long-term structural health.</div>
+                                </div>
+                                <div class="tip-section">
+                                    <div class="tip-sec-label"><i class="fa-solid fa-lightbulb"></i> Inference & Execution</div>
+                                    <div class="tip-sec-body">
+                                        • <strong>&gt;70% (Bullish)</strong>: Overarching beta is positive; dips into demand zones offer high win-rates.<br>
+                                        • <strong>40%–70% (Selective)</strong>: Two-speed market; strong sector rotation.<br>
+                                        • <strong>&lt;40% (Depressed)</strong>: Macro distribution drag; breakouts fail easily. Avoid high-beta swing longs.
+                                    </div>
+                                </div>
+                            </div>
+                        </span>
+                    </div>
                     <span class="kpi-sub" id="pct_200_shift">-- 1M</span>
                 </div>
                 <div class="kpi-body">
@@ -830,7 +1027,26 @@
             <!-- CARD 2: DAILY GAINERS & FLOW -->
             <div class="kpi-card">
                 <div class="kpi-header">
-                    <span class="kpi-title"><i class="fa-solid fa-wave-square"></i> Daily Advance Flow</span>
+                    <div class="kpi-title-wrap">
+                        <span class="kpi-title"><i class="fa-solid fa-wave-square"></i> Daily Advance Flow</span>
+                        <span class="info-tip-btn" tabindex="0">
+                            <i class="fa-solid fa-circle-question"></i>
+                            <div class="tip-card tip-left">
+                                <div class="tip-title"><i class="fa-solid fa-wave-square" style="color: #10b981;"></i> Daily Participant Flow & 10D SMA</div>
+                                <div class="tip-section">
+                                    <div class="tip-sec-label"><i class="fa-solid fa-calculator"></i> Methodology</div>
+                                    <div class="tip-sec-body">Measures the percentage of universe stocks advancing each session (<code>Close &gt; Prev Close</code>) and its smoothed 10-day moving average.</div>
+                                </div>
+                                <div class="tip-section">
+                                    <div class="tip-sec-label"><i class="fa-solid fa-lightbulb"></i> Inference & Execution</div>
+                                    <div class="tip-sec-body">
+                                        • <strong>10D SMA &gt; 55%</strong>: Sustained breadth thrust confirming institutional buying expansion.<br>
+                                        • <strong>10D SMA &lt; 45%</strong>: Persistent selling pressure. If index hits new highs while gainers decline, a sharp divergence correction looms.
+                                    </div>
+                                </div>
+                            </div>
+                        </span>
+                    </div>
                     <span class="kpi-sub" id="gainers_10sma_shift">-- 1M</span>
                 </div>
                 <div class="kpi-body">
@@ -849,7 +1065,26 @@
             <!-- CARD 3: VOLUME THRUST -->
             <div class="kpi-card">
                 <div class="kpi-header">
-                    <span class="kpi-title"><i class="fa-solid fa-bolt"></i> Volume Thrust %</span>
+                    <div class="kpi-title-wrap">
+                        <span class="kpi-title"><i class="fa-solid fa-bolt"></i> Volume Thrust %</span>
+                        <span class="info-tip-btn" tabindex="0">
+                            <i class="fa-solid fa-circle-question"></i>
+                            <div class="tip-card tip-right">
+                                <div class="tip-title"><i class="fa-solid fa-bolt" style="color: #f59e0b;"></i> Volume Thrust & Capital Commitment</div>
+                                <div class="tip-section">
+                                    <div class="tip-sec-label"><i class="fa-solid fa-calculator"></i> Methodology</div>
+                                    <div class="tip-sec-body">Percentage of total universe trading turnover committed to advancing equities: <code>(Up Volume / Total Volume) * 100</code>.</div>
+                                </div>
+                                <div class="tip-section">
+                                    <div class="tip-sec-label"><i class="fa-solid fa-lightbulb"></i> Inference & Execution</div>
+                                    <div class="tip-sec-body">
+                                        • <strong>&ge; 80% (Thrust Day)</strong>: Massive institutional buying commitment. Historical marker of major market bottoms.<br>
+                                        • <strong>&lt; 40%</strong>: Heavy institutional liquidation. Differentiates true accumulation from light-volume retail bounces.
+                                    </div>
+                                </div>
+                            </div>
+                        </span>
+                    </div>
                     <span class="kpi-sub" id="vol_thrust_shift">-- 1M</span>
                 </div>
                 <div class="kpi-body">
@@ -868,7 +1103,26 @@
             <!-- CARD 4: MCCLELLAN OSCILLATOR -->
             <div class="kpi-card">
                 <div class="kpi-header">
-                    <span class="kpi-title"><i class="fa-solid fa-gauge"></i> McClellan Oscillator</span>
+                    <div class="kpi-title-wrap">
+                        <span class="kpi-title"><i class="fa-solid fa-gauge"></i> McClellan Oscillator</span>
+                        <span class="info-tip-btn" tabindex="0">
+                            <i class="fa-solid fa-circle-question"></i>
+                            <div class="tip-card tip-right">
+                                <div class="tip-title"><i class="fa-solid fa-gauge" style="color: #c084fc;"></i> McClellan Breadth Oscillator</div>
+                                <div class="tip-section">
+                                    <div class="tip-sec-label"><i class="fa-solid fa-calculator"></i> Methodology</div>
+                                    <div class="tip-sec-body">The difference between 19-day and 39-day exponential moving averages (EMA) of daily net advancing equities (<code>Adv - Dec</code>).</div>
+                                </div>
+                                <div class="tip-section">
+                                    <div class="tip-sec-label"><i class="fa-solid fa-lightbulb"></i> Inference & Execution</div>
+                                    <div class="tip-sec-body">
+                                        • <strong>&lt; -20 (Oversold)</strong>: Breadth exhaustion; high-probability window for demand zone mean-reversions.<br>
+                                        • <strong>&gt; +30 (Overbought)</strong>: Powerful thrust; look to trail profits rather than adding new breakout risk.
+                                    </div>
+                                </div>
+                            </div>
+                        </span>
+                    </div>
                     <span class="kpi-sub" id="mcclellan_shift">-- 1M</span>
                 </div>
                 <div class="kpi-body">
@@ -891,7 +1145,24 @@
         <div class="timeline-slicer-card">
             <div class="slicer-top-row">
                 <div class="slicer-left">
-                    <span class="slicer-title"><i class="fa-solid fa-sliders" style="color: var(--accent);"></i> Time Horizon & Date Slider:</span>
+                    <div class="slicer-title-wrap">
+                        <span class="slicer-title"><i class="fa-solid fa-sliders" style="color: var(--accent);"></i> Time Horizon & Date Slider:</span>
+                        <span class="info-tip-btn" tabindex="0">
+                            <i class="fa-solid fa-circle-question"></i>
+                            <div class="tip-card tip-left">
+                                <div class="tip-title"><i class="fa-solid fa-sliders" style="color: var(--accent);"></i> Multi-Timeframe Slicing</div>
+                                <div class="tip-section">
+                                    <div class="tip-sec-label"><i class="fa-solid fa-calculator"></i> Methodology</div>
+                                    <div class="tip-sec-body">Dual-handle timeline scrubber allowing slice inspection from 8 days to 400 trading sessions across all synchronized chart panels.</div>
+                                </div>
+                                <div class="tip-section">
+                                    <div class="tip-sec-label"><i class="fa-solid fa-lightbulb"></i> Inference & Execution</div>
+                                    <div class="tip-sec-body">Use <strong>1M/3M</strong> to analyze tactical flow inflections; use <strong>1Y/ALL</strong> to verify whether intermediate rallies are structurally breaking long-term 200 SMA distribution cycles.</div>
+                                </div>
+                            </div>
+                        </span>
+                    </div>
+                    
                     <div class="preset-group">
                         <button class="preset-btn" id="btn_pre_1m" onclick="applyPresetRange('1M')">1M</button>
                         <button class="preset-btn" id="btn_pre_3m" onclick="applyPresetRange('3M')">3M</button>
@@ -941,6 +1212,24 @@
                     <div class="chart-title-wrap">
                         <span class="chart-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">Pillar 1 & 2</span>
                         <h4 class="chart-title">Macro Structural Moving Average Health</h4>
+                        <span class="info-tip-btn" tabindex="0">
+                            <i class="fa-solid fa-circle-question"></i>
+                            <div class="tip-card tip-left">
+                                <div class="tip-title"><i class="fa-solid fa-chart-line" style="color: #38bdf8;"></i> Moving Average Structural Breadth</div>
+                                <div class="tip-section">
+                                    <div class="tip-sec-label"><i class="fa-solid fa-calculator"></i> Methodology</div>
+                                    <div class="tip-sec-body">Tracks % stocks above <strong>200 SMA</strong> (Macro Anchor in blue) and % stocks above <strong>50 SMA</strong> (Intermediate Trend in amber).</div>
+                                </div>
+                                <div class="tip-section">
+                                    <div class="tip-sec-label"><i class="fa-solid fa-lightbulb"></i> Inference & Execution</div>
+                                    <div class="tip-sec-body">
+                                        • <strong>Bull Zone (&gt;70%)</strong>: Broad-based trend expansion.<br>
+                                        • <strong>Golden Cross</strong>: When 50 SMA crosses above 200 SMA, systemic rally conviction confirms.<br>
+                                        • <strong>Bear Drag (&lt;40%)</strong>: Widespread structural breakdown; expect high failure rate on breakout patterns.
+                                    </div>
+                                </div>
+                            </div>
+                        </span>
                     </div>
                     <div class="chart-legend">
                         <div class="legend-item"><div class="legend-color" style="background: #38bdf8;"></div><span>% > 200 SMA:</span><span id="hud_200" class="hud-val" style="color: #38bdf8;">--%</span></div>
@@ -958,6 +1247,23 @@
                     <div class="chart-title-wrap">
                         <span class="chart-badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);">Pillar 3</span>
                         <h4 class="chart-title">Daily Participant Flow</h4>
+                        <span class="info-tip-btn" tabindex="0">
+                            <i class="fa-solid fa-circle-question"></i>
+                            <div class="tip-card tip-left">
+                                <div class="tip-title"><i class="fa-solid fa-wave-square" style="color: #10b981;"></i> Participant Flow Dynamics</div>
+                                <div class="tip-section">
+                                    <div class="tip-sec-label"><i class="fa-solid fa-calculator"></i> Methodology</div>
+                                    <div class="tip-sec-body">Daily gainer histogram plotted against the 50% equilibrium line, smoothed by a purple 10-day moving average.</div>
+                                </div>
+                                <div class="tip-section">
+                                    <div class="tip-sec-label"><i class="fa-solid fa-lightbulb"></i> Inference & Execution</div>
+                                    <div class="tip-sec-body">
+                                        • <strong>Persistent Flow (&gt;50%)</strong>: Buyers retain control; favorable for short-term swing trading.<br>
+                                        • <strong>Exhaustion Divergence</strong>: Consecutive red histogram bars while indices grind up signals an impending market top.
+                                    </div>
+                                </div>
+                            </div>
+                        </span>
                     </div>
                     <div class="chart-legend">
                         <div class="legend-item"><div class="legend-color" style="background: #10b981;"></div><span>Daily Gainers:</span><span id="hud_gainers" class="hud-val" style="color: #10b981;">--%</span></div>
@@ -974,6 +1280,23 @@
                     <div class="chart-title-wrap">
                         <span class="chart-badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);">Pillar 4</span>
                         <h4 class="chart-title">Institutional Volume Thrust</h4>
+                        <span class="info-tip-btn" tabindex="0">
+                            <i class="fa-solid fa-circle-question"></i>
+                            <div class="tip-card tip-left">
+                                <div class="tip-title"><i class="fa-solid fa-bolt" style="color: #f59e0b;"></i> Volume Capital Commitment</div>
+                                <div class="tip-section">
+                                    <div class="tip-sec-label"><i class="fa-solid fa-calculator"></i> Methodology</div>
+                                    <div class="tip-sec-body">Daily % of trading turnover in advancing stocks (blue) and 10-day volume thrust SMA (orange) evaluated against the 80% institutional accumulation line.</div>
+                                </div>
+                                <div class="tip-section">
+                                    <div class="tip-sec-label"><i class="fa-solid fa-lightbulb"></i> Inference & Execution</div>
+                                    <div class="tip-sec-body">
+                                        • <strong>Clusters of &ge;80% Days</strong>: Indicates true institutional accumulation. Confirming signal that a bottom is established.<br>
+                                        • <strong>Rallies on &lt;40% Up-Volume</strong>: Retail short-covering without large money backing. Treat with caution.
+                                    </div>
+                                </div>
+                            </div>
+                        </span>
                     </div>
                     <div class="chart-legend">
                         <div class="legend-item"><div class="legend-color" style="background: #38bdf8;"></div><span>Up-Vol:</span><span id="hud_upvol" class="hud-val" style="color: #38bdf8;">--%</span></div>
@@ -991,6 +1314,23 @@
                     <div class="chart-title-wrap">
                         <span class="chart-badge" style="background: rgba(233, 128, 93, 0.15); color: #f4a261; border: 1px solid rgba(233, 128, 93, 0.3);">Unified Composite</span>
                         <h4 class="chart-title">CMSI - Composite Market Strength Index (0 - 100)</h4>
+                        <span class="info-tip-btn" tabindex="0">
+                            <i class="fa-solid fa-circle-question"></i>
+                            <div class="tip-card tip-left">
+                                <div class="tip-title"><i class="fa-solid fa-compass" style="color: #e9805d;"></i> Unified Macro Regime Index</div>
+                                <div class="tip-section">
+                                    <div class="tip-sec-label"><i class="fa-solid fa-calculator"></i> Methodology</div>
+                                    <div class="tip-sec-body">Synthesizes all 5 pillars into a master 0–100 momentum curve with benchmark regime boundaries at 65 (Bullish) and 35 (Bearish).</div>
+                                </div>
+                                <div class="tip-section">
+                                    <div class="tip-sec-label"><i class="fa-solid fa-lightbulb"></i> Inference & Execution</div>
+                                    <div class="tip-sec-body">
+                                        • <strong>Rising CMSI (&gt;50)</strong>: Systemic risk is low; increase equity exposure and hold swing winners longer.<br>
+                                        • <strong>Falling CMSI (&lt;35)</strong>: High risk of widespread breakdown traps; tighten stops and focus on capital protection.
+                                    </div>
+                                </div>
+                            </div>
+                        </span>
                     </div>
                     <div class="chart-legend">
                         <div class="legend-item"><div class="legend-color" style="background: #e9805d;"></div><span>CMSI:</span><span id="hud_cmsi" class="hud-val" style="color: #e9805d;">--</span></div>

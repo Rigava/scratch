@@ -230,26 +230,39 @@ def compute_universe_breadth(universe_filter='all'):
         'series_cmsi': series_cmsi
     }
 
-def get_market_breadth_payload():
+def clear_market_breadth_cache():
+    """Explicitly clears the in-memory market breadth cache."""
+    global _BREADTH_CACHE
+    _BREADTH_CACHE.clear()
+
+def get_market_breadth_payload(force_refresh=False):
     """
     Returns precomputed breadth payloads for both 'all' and 'nifty50' universes.
+    Automatically checks fo_historical_dump.json file modification time (mtime),
+    invalidating and recomputing immediately whenever data is synced on disk.
     """
     global _BREADTH_CACHE
-    if 'payloads' not in _BREADTH_CACHE:
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    dump_path = os.path.join(base_dir, 'data', 'fo_historical_dump.json')
+    current_mtime = os.path.getmtime(dump_path) if os.path.exists(dump_path) else 0
+
+    if force_refresh or 'payloads' not in _BREADTH_CACHE or _BREADTH_CACHE.get('mtime') != current_mtime:
         all_data = compute_universe_breadth('all')
         nifty50_data = compute_universe_breadth('nifty50')
         _BREADTH_CACHE['payloads'] = {
             'all': all_data,
             'nifty50': nifty50_data
         }
+        _BREADTH_CACHE['mtime'] = current_mtime
     return _BREADTH_CACHE['payloads']
 
-def get_market_pulse_summary():
+def get_market_pulse_summary(force_refresh=False):
     """
     Returns quick summary metrics for the Quant Terminal header and Drawer.
     """
-    payloads = get_market_breadth_payload()
+    payloads = get_market_breadth_payload(force_refresh=force_refresh)
     return {
         'all': payloads['all']['summary'] if payloads and 'all' in payloads else {},
         'nifty50': payloads['nifty50']['summary'] if payloads and 'nifty50' in payloads else {}
     }
+

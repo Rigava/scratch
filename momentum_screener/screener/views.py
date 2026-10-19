@@ -1292,6 +1292,12 @@ def admin_sync_data_dump(request):
         with open(db_path, 'w', encoding='utf-8') as f:
             json.dump(existing_dump, f)
 
+        try:
+            from .market_breadth_service import clear_market_breadth_cache
+            clear_market_breadth_cache()
+        except Exception:
+            pass
+
     return JsonResponse({
         'status': 'success',
         'message': 'Successfully completed offline historical simulation sync.',
@@ -3432,7 +3438,8 @@ def quant_terminal_view(request):
     from .quant_service import get_quant_terminal_payload, NpEncoder
     from .market_breadth_service import get_market_pulse_summary
     records, chart_data_payload = get_quant_terminal_payload()
-    market_pulse = get_market_pulse_summary()
+    force_refresh = request.GET.get('refresh') == '1'
+    market_pulse = get_market_pulse_summary(force_refresh=force_refresh)
 
     context = {
         'stocks_json': json.dumps(records, cls=NpEncoder),
@@ -3458,7 +3465,8 @@ def market_breadth_view(request):
     from .market_breadth_service import get_market_breadth_payload
     from .quant_service import NpEncoder
 
-    breadth_payload = get_market_breadth_payload()
+    force_refresh = request.GET.get('refresh') == '1'
+    breadth_payload = get_market_breadth_payload(force_refresh=force_refresh)
 
     context = {
         'breadth_json': json.dumps(breadth_payload, cls=NpEncoder),
