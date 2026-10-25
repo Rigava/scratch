@@ -817,6 +817,337 @@
         .btn-open-terminal:hover {
             opacity: 0.92;
         }
+
+        /* GOD'S EYE BADGE IN HEADER */
+        .gods-eye-badge {
+            background: linear-gradient(135deg, rgba(233, 128, 93, 0.15), rgba(216, 106, 71, 0.25));
+            border: 1px solid rgba(233, 128, 93, 0.4);
+            color: #fed7aa;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 11.5px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            transition: all 0.2s ease;
+            font-family: 'Outfit', sans-serif;
+            text-decoration: none;
+        }
+        .gods-eye-badge:hover {
+            background: linear-gradient(135deg, rgba(233, 128, 93, 0.3), rgba(216, 106, 71, 0.4));
+            border-color: #e9805d;
+            color: #fff;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 10px rgba(233, 128, 93, 0.3);
+        }
+
+        /* DOMINO CASCADE FILTER BAR */
+        .domino-cascade-bar {
+            background: rgba(28, 25, 23, 0.75);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .domino-title-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 10.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+        .domino-help-btn {
+            font-size: 10.5px;
+            color: var(--accent);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: color 0.2s;
+        }
+        .domino-help-btn:hover {
+            color: #fff;
+            text-decoration: underline;
+        }
+        .domino-segments {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+        }
+        .domino-seg {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 6px 8px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 2px;
+            transition: all 0.18s ease;
+            color: var(--text-muted);
+            text-align: left;
+        }
+        .domino-seg:hover {
+            border-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-1px);
+        }
+        .domino-seg.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px var(--accent), 0 3px 10px rgba(0, 0, 0, 0.4);
+        }
+        .domino-seg.seg-danger.active {
+            border-color: #ef4444;
+            box-shadow: 0 0 0 1px #ef4444, 0 3px 10px rgba(239, 68, 68, 0.25);
+            background: rgba(239, 68, 68, 0.12);
+        }
+        .domino-seg.seg-trigger.active {
+            border-color: #10b981;
+            box-shadow: 0 0 0 1px #10b981, 0 3px 10px rgba(16, 185, 129, 0.25);
+            background: rgba(16, 185, 129, 0.12);
+        }
+        .domino-seg.seg-neutral.active {
+            border-color: #94a3b8;
+            box-shadow: 0 0 0 1px #94a3b8, 0 3px 10px rgba(148, 163, 184, 0.25);
+            background: rgba(148, 163, 184, 0.12);
+        }
+        .domino-seg-header {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .domino-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .dot-danger { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
+        .dot-trigger { background: #10b981; box-shadow: 0 0 6px #10b981; }
+        .dot-neutral { background: #94a3b8; box-shadow: 0 0 6px #94a3b8; }
+        .domino-count-row {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .domino-count {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #fff;
+        }
+        .domino-pct {
+            font-size: 10px;
+            color: var(--text-dim);
+        }
+
+        /* GOD'S EYE MODAL */
+        .gods-eye-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.78);
+            backdrop-filter: blur(5px);
+            z-index: 200;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .gods-eye-backdrop.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .gods-eye-modal {
+            background: #141210;
+            border: 1px solid rgba(233, 128, 93, 0.4);
+            border-radius: 12px;
+            width: 860px;
+            max-width: 95vw;
+            max-height: 88vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(233, 128, 93, 0.15);
+            transform: scale(0.96);
+            transition: transform 0.25s ease;
+        }
+        .gods-eye-backdrop.active .gods-eye-modal {
+            transform: scale(1);
+        }
+        .gods-eye-header {
+            padding: 16px 20px;
+            background: #1c1917;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .gods-eye-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+        }
+        .gods-eye-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex-grow: 1;
+            font-size: 13.5px;
+            line-height: 1.65;
+            color: #d6d3d1;
+        }
+        .gods-eye-kpis {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+            background: #1c1917;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        .gods-eye-kpi-item {
+            text-align: center;
+        }
+        .gods-eye-kpi-label {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .gods-eye-kpi-val {
+            font-size: 18px;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 2px;
+        }
+        .gods-eye-actions {
+            padding: 14px 20px;
+            background: #1c1917;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            gap: 12px;
+        }
+        .btn-modal-action {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            border: 1px solid var(--border);
+        }
+        .btn-copy-linkedin {
+            background: #0a66c2;
+            color: #fff;
+            border-color: #0a66c2;
+        }
+        .btn-copy-linkedin:hover {
+            background: #084e96;
+        }
+        .btn-publish-community {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+        .btn-publish-community:hover {
+            opacity: 0.9;
+        }
+        .btn-generate-ai {
+            background: transparent;
+            color: #fed7aa;
+            border-color: rgba(233, 128, 93, 0.4);
+        }
+        .btn-generate-ai:hover {
+            background: rgba(233, 128, 93, 0.15);
+            color: #fff;
+        }
+        .btn-close-modal {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 16px;
+            cursor: pointer;
+            padding: 4px;
+        }
+        .btn-close-modal:hover {
+            color: #fff;
+        }
+        .gods-eye-toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #1c1917;
+            border: 1px solid var(--accent);
+            color: #fff;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            z-index: 300;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.25s ease;
+            pointer-events: none;
+        }
+        .gods-eye-toast.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .article-text-container {
+            white-space: pre-wrap;
+            background: #0f172a;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 13.5px;
+            line-height: 1.7;
+        }
+        .editorial-section-hdr {
+            color: var(--accent);
+            font-size: 13.5px;
+            font-weight: 800;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            margin-top: 18px;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid rgba(233, 128, 93, 0.25);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
     </style>
 
 </head>
@@ -841,6 +1172,12 @@
                 <span style="color: var(--text-dim);">|</span>
                 <span class="mono" id="hdr_pulse_sma">--% > 200 SMA</span>
                 <i class="fa-solid fa-angles-right" style="font-size: 10px; margin-left: 2px;"></i>
+            </button>
+
+            <!-- GOD'S EYE EDITORIAL BUTTON -->
+            <button class="gods-eye-badge" id="btn_gods_eye_hdr" onclick="openGodsEyeModal()" title="View God's Eye Daily Market Briefing & LinkedIn Desk">
+                <span class="pulse-dot" style="background: #e9805d; box-shadow: 0 0 8px #e9805d;"></span>
+                <span>👁️ GOD'S EYE BRIEF</span>
             </button>
         </div>
         
@@ -976,6 +1313,39 @@
                     <span style="font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;" id="list_count">115 Stocks</span>
                 </div>
                 
+                <!-- DOMINO CASCADE RISK BAR (1-CLICK FILTER) -->
+                <div class="domino-cascade-bar">
+                    <div class="domino-title-row">
+                        <span class="domino-title"><i class="fa-solid fa-cubes-stacked" style="color: var(--accent);"></i> Domino Cascade Levels (115)</span>
+                        <button class="domino-help-btn" onclick="openGodsEyeModal()" title="View full God's Eye market explanation">
+                            <i class="fa-solid fa-eye"></i> God's Eye Desk
+                        </button>
+                    </div>
+                    <div class="domino-segments">
+                        <button class="domino-seg seg-danger" id="dom_danger" onclick="toggleDominoFilter('downside_danger', this)" title="Click to filter 65 stocks hovering near breakdown danger line">
+                            <span class="domino-seg-label"><span class="domino-dot dot-danger"></span> Danger Line</span>
+                            <div class="domino-count-row">
+                                <span class="domino-count" id="dom_cnt_danger">65</span>
+                                <span class="domino-pct" id="dom_pct_danger">(56.5%)</span>
+                            </div>
+                        </button>
+                        <button class="domino-seg seg-trigger" id="dom_trigger" onclick="toggleDominoFilter('upside_trigger', this)" title="Click to filter 39 stocks hovering near upside trigger line">
+                            <span class="domino-seg-label"><span class="domino-dot dot-trigger"></span> Trigger Line</span>
+                            <div class="domino-count-row">
+                                <span class="domino-count" id="dom_cnt_trigger">39</span>
+                                <span class="domino-pct" id="dom_pct_trigger">(33.9%)</span>
+                            </div>
+                        </button>
+                        <button class="domino-seg seg-neutral" id="dom_neutral" onclick="toggleDominoFilter('neutral_midzone', this)" title="Click to filter 11 stocks trading safely in the neutral mid-zone">
+                            <span class="domino-seg-label"><span class="domino-dot dot-neutral"></span> Mid-Zone</span>
+                            <div class="domino-count-row">
+                                <span class="domino-count" id="dom_cnt_neutral">11</span>
+                                <span class="domino-pct" id="dom_pct_neutral">(9.6%)</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- FILTER TABS -->
                 <div class="filter-tabs">
                     <button class="filter-tab active" id="tab_all" onclick="setFilter('ALL', this)">All (115)</button>
@@ -1015,7 +1385,11 @@
         const STOCKS_METRICS = {{ stocks_json|safe }};
         const CHARTS_DATA = {{ charts_json|safe }};
         const MARKET_PULSE = {{ market_pulse_json|safe }};
+        const DOMINO_COUNTS = {{ domino_counts_json|safe }};
+        const DOMINO_SYMBOLS = {{ domino_symbols_json|safe }};
+        let LATEST_BRIEFING = {{ latest_briefing_json|safe }};
         let currentPulseUniverse = 'all';
+        let currentDominoFilter = null;
 
         function toggleBreadthDrawer() {
             const drawer = document.getElementById('breadth_drawer');
@@ -1488,6 +1862,12 @@
                 // Search filter
                 if (searchVal && !s.symbol.includes(searchVal)) return false;
                 
+                // Domino cascade risk filter (Option 2)
+                if (currentDominoFilter) {
+                    const allowedSymbols = DOMINO_SYMBOLS[currentDominoFilter] || [];
+                    if (!allowedSymbols.includes(s.symbol)) return false;
+                }
+
                 // Category tab filter
                 if (currentFilter === 'SUPPLY_BREAKOUT') return s.is_breakout || (s.category && s.category.includes('Breakout'));
                 if (currentFilter === 'RUNNERS_5Y') return s.struct_label === 'Expansion Runner';
@@ -1537,9 +1917,297 @@
             `).join('');
         }
 
+        // Domino Cascade 1-Click Filter (Option 2)
+        function initDominoCascadeUI() {
+            if (!DOMINO_COUNTS) return;
+            const dCnt = document.getElementById('dom_cnt_danger');
+            const dPct = document.getElementById('dom_pct_danger');
+            const tCnt = document.getElementById('dom_cnt_trigger');
+            const tPct = document.getElementById('dom_pct_trigger');
+            const nCnt = document.getElementById('dom_cnt_neutral');
+            const nPct = document.getElementById('dom_pct_neutral');
+
+            const total = DOMINO_COUNTS.total || 115;
+            const danger = DOMINO_COUNTS.downside_danger ?? 65;
+            const trigger = DOMINO_COUNTS.upside_trigger ?? 39;
+            const neutral = DOMINO_COUNTS.neutral_midzone ?? 11;
+
+            if (dCnt) dCnt.textContent = danger;
+            if (dPct) dPct.textContent = `(${((danger / total) * 100).toFixed(1)}%)`;
+            if (tCnt) tCnt.textContent = trigger;
+            if (tPct) tPct.textContent = `(${((trigger / total) * 100).toFixed(1)}%)`;
+            if (nCnt) nCnt.textContent = neutral;
+            if (nPct) nPct.textContent = `(${((neutral / total) * 100).toFixed(1)}%)`;
+        }
+
+        function toggleDominoFilter(bucket, btnEl) {
+            if (currentDominoFilter === bucket) {
+                currentDominoFilter = null;
+                btnEl.classList.remove('active');
+            } else {
+                currentDominoFilter = bucket;
+                document.querySelectorAll('.domino-seg').forEach(el => el.classList.remove('active'));
+                btnEl.classList.add('active');
+            }
+            renderStockList(true);
+        }
+
+        // God's Eye Modal & AI Social Desk (Option 1)
+        function openGodsEyeModal() {
+            const backdrop = document.getElementById('gods_eye_backdrop');
+            if (backdrop) {
+                backdrop.classList.add('active');
+                if (LATEST_BRIEFING) {
+                    populateGodsEyeModal(LATEST_BRIEFING);
+                } else {
+                    fetchLatestGodsEyeBrief();
+                }
+            }
+        }
+
+        function closeGodsEyeModal(event) {
+            if (event && event.target && event.target.id !== 'gods_eye_backdrop') {
+                return;
+            }
+            const backdrop = document.getElementById('gods_eye_backdrop');
+            if (backdrop) backdrop.classList.remove('active');
+        }
+
+        // Helper to format editorial HTML with color-coded badges and styled section headers
+        function formatEditorialHtml(text) {
+            if (!text) return '';
+            let html = text;
+
+            // Strip any rogue ### or ** if present
+            html = html.replace(/^[ \t]*#{1,6}[ \t]*/gm, '');
+            html = html.replace(/\*\*(.*?)\*\*/g, '$1');
+            html = html.replace(/\*(.*?)\*/g, '$1');
+
+            // Convert section headings (ALL-CAPS lines like "MARKET HEALTH PULSE") into styled header blocks
+            html = html.replace(/^([A-Z0-9\s,&–\?':\-]{4,60})$/gm, function(match) {
+                const clean = match.trim();
+                if (clean === 'QUESTION OF THE DAY' || clean.startsWith('#')) return match;
+                return `<div class="editorial-section-hdr">${clean}</div>`;
+            });
+
+            // Color-code the structural strength tags
+            html = html.replace(/\[Expansion Runner\]/gi, '<span class="badge-dna badge-runner"><i class="fa-solid fa-bolt"></i> Expansion Runner</span>');
+            html = html.replace(/\[Safe D&S Anchor\]/gi, '<span class="badge-dna badge-anchor"><i class="fa-solid fa-shield"></i> Safe D&S Anchor</span>');
+            html = html.replace(/\[High Falling-Zone Risk\]/gi, '<span class="badge-dna badge-trap"><i class="fa-solid fa-triangle-exclamation"></i> High Falling-Zone Risk</span>');
+            html = html.replace(/\[Mean-Reversion Oscillating\]/gi, '<span class="badge-dna badge-revert"><i class="fa-solid fa-arrows-rotate"></i> Mean-Reversion Oscillating</span>');
+            html = html.replace(/\[Transitional Neutral\]/gi, '<span class="badge-dna badge-neutral"><i class="fa-solid fa-chart-line"></i> Transitional Neutral</span>');
+            html = html.replace(/\[Moderate Integrity \/ Transitional\]/gi, '<span class="badge-dna badge-neutral"><i class="fa-solid fa-chart-line"></i> Transitional Neutral</span>');
+
+            return html;
+        }
+
+        function populateGodsEyeModal(data) {
+            if (!data) return;
+            const headlineEl = document.getElementById('modal_headline');
+            const metaEl = document.getElementById('modal_brief_meta');
+            const contentEl = document.getElementById('modal_article_content');
+            const statusPill = document.getElementById('gods_eye_status_pill');
+            const pulseEl = document.getElementById('modal_pulse_regime');
+            const dangerEl = document.getElementById('modal_danger_val');
+            const triggerEl = document.getElementById('modal_trigger_val');
+            const neutralEl = document.getElementById('modal_neutral_val');
+            const pubBtn = document.getElementById('btn_publish_brief');
+
+            if (headlineEl && data.headline) headlineEl.textContent = data.headline;
+            if (metaEl && data.session_date) {
+                metaEl.textContent = `As of ${data.session_date_formatted || data.session_date} • 115 Total F&O Stocks Tracked`;
+            }
+            if (contentEl && data.article_markdown) {
+                contentEl.innerHTML = formatEditorialHtml(data.article_markdown);
+            }
+
+            if (pulseEl) pulseEl.textContent = data.regime_status || 'NEUTRAL';
+            if (dangerEl) {
+                const d = data.downside_danger_count ?? 65;
+                dangerEl.textContent = `${d} (${((d/115)*100).toFixed(1)}%)`;
+            }
+            if (triggerEl) {
+                const t = data.upside_trigger_count ?? 39;
+                triggerEl.textContent = `${t} (${((t/115)*100).toFixed(1)}%)`;
+            }
+            if (neutralEl) {
+                const n = data.neutral_midzone_count ?? 11;
+                neutralEl.textContent = `${n} (${((n/115)*100).toFixed(1)}%)`;
+            }
+
+            if (statusPill) {
+                if (data.is_published) {
+                    statusPill.textContent = 'Published to Summary Desk';
+                    statusPill.style.background = 'rgba(16, 185, 129, 0.15)';
+                    statusPill.style.color = '#34d399';
+                    statusPill.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+                } else {
+                    statusPill.textContent = 'Draft Briefing';
+                    statusPill.style.background = 'rgba(245, 158, 11, 0.15)';
+                    statusPill.style.color = '#fbbf24';
+                    statusPill.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+                }
+            }
+
+            if (pubBtn) {
+                if (data.is_published) {
+                    pubBtn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Published</span>';
+                    pubBtn.style.background = 'rgba(16, 185, 129, 0.2)';
+                    pubBtn.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+                    pubBtn.style.color = '#34d399';
+                } else {
+                    pubBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> <span>Publish to Summary</span>';
+                    pubBtn.style.background = 'var(--accent)';
+                    pubBtn.style.borderColor = 'var(--accent)';
+                    pubBtn.style.color = '#fff';
+                }
+            }
+        }
+
+        async function fetchLatestGodsEyeBrief() {
+            try {
+                const res = await fetch('/api/gods-eye/latest/');
+                const data = await res.json();
+                if (data.status === 'success' && data.briefing) {
+                    LATEST_BRIEFING = data.briefing;
+                    populateGodsEyeModal(LATEST_BRIEFING);
+                }
+            } catch (err) {
+                console.error("Failed to fetch latest briefing:", err);
+            }
+        }
+
+        async function generateGodsEyeBrief(force = false) {
+            const btn = document.getElementById('btn_regenerate_ai');
+            const originalHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Analyzing with Gemini...</span>';
+                btn.disabled = true;
+            }
+
+            try {
+                const res = await fetch('/api/admin/gods-eye/generate/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken') || ''
+                    },
+                    body: JSON.stringify({ force: force })
+                });
+                const data = await res.json();
+                if (data.status === 'success' && data.briefing) {
+                    LATEST_BRIEFING = data.briefing;
+                    populateGodsEyeModal(LATEST_BRIEFING);
+                    showToast('✨ Market Intelligence Editorial Generated via Gemini!');
+                } else {
+                    showToast('⚠️ Generation failed: ' + (data.message || 'Unknown error'));
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('❌ Failed to connect to AI service');
+            } finally {
+                if (btn) {
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }
+            }
+        }
+
+        async function publishGodsEyeBrief() {
+            if (!LATEST_BRIEFING || !LATEST_BRIEFING.id) {
+                showToast('⚠️ No briefing available to publish');
+                return;
+            }
+            const btn = document.getElementById('btn_publish_brief');
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Publishing...</span>';
+                btn.disabled = true;
+            }
+
+            try {
+                const res = await fetch('/api/admin/gods-eye/publish/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken') || ''
+                    },
+                    body: JSON.stringify({ briefing_id: LATEST_BRIEFING.id })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    LATEST_BRIEFING.is_published = true;
+                    populateGodsEyeModal(LATEST_BRIEFING);
+                    showToast('🚀 Briefing Published to Market Breadth Summary Desk!');
+                } else {
+                    showToast('⚠️ ' + (data.message || 'Publication failed'));
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('❌ Publication failed');
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        function copyLinkedInPost() {
+            if (!LATEST_BRIEFING || !LATEST_BRIEFING.article_markdown) {
+                showToast('⚠️ No article content to copy');
+                return;
+            }
+            const text = LATEST_BRIEFING.article_markdown;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('📋 Copied full LinkedIn article to clipboard!');
+                }).catch(() => {
+                    fallbackCopy(text);
+                });
+            } else {
+                fallbackCopy(text);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast('📋 Copied full LinkedIn article to clipboard!');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('gods_eye_toast');
+            const msgEl = document.getElementById('toast_msg');
+            if (!toast) return;
+            if (msgEl) msgEl.textContent = msg;
+            toast.classList.add('active');
+            setTimeout(() => {
+                toast.classList.remove('active');
+            }, 3200);
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
         // Initialization
         window.onload = function() {
             initTradingViewChart();
+            initDominoCascadeUI();
             updateMarketPulseHeader();
             updateTabCounts();
             renderStockList();
@@ -1662,11 +2330,89 @@
                 </div>
             </div>
 
+            <!-- GOD'S EYE BRIEFING MODAL TRIGGER IN DRAWER -->
+            <button onclick="openGodsEyeModal()" class="btn-open-terminal" style="margin-bottom: 8px; background: rgba(233, 128, 93, 0.15); border-color: rgba(233, 128, 93, 0.4); color: #fed7aa; cursor: pointer;">
+                <i class="fa-solid fa-eye"></i> Open God's Eye Market Briefing
+            </button>
+
             <!-- DIRECT LINK BUTTON TO FULL TERMINAL -->
             <a href="/market-breadth/" class="btn-open-terminal">
                 <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Full 4-Panel Breadth Terminal
             </a>
         </div>
+    </div>
+
+    <!-- GOD'S EYE MODAL & TOAST -->
+    <div class="gods-eye-backdrop" id="gods_eye_backdrop" onclick="closeGodsEyeModal(event)">
+        <div class="gods-eye-modal" onclick="event.stopPropagation()">
+            <div class="gods-eye-header">
+                <div class="gods-eye-title">
+                    <i class="fa-solid fa-eye" style="color: var(--accent); font-size: 18px;"></i>
+                    <span>God's Eye Market Intelligence & Daily Editorial</span>
+                    <span id="gods_eye_status_pill" style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);">
+                        Draft Briefing
+                    </span>
+                </div>
+                <button class="btn-close-modal" onclick="closeGodsEyeModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="gods-eye-body" id="gods_eye_body">
+                <!-- KPI SUMMARY BAR -->
+                <div class="gods-eye-kpis">
+                    <div class="gods-eye-kpi-item">
+                        <div class="gods-eye-kpi-label">Market Pulse</div>
+                        <div class="gods-eye-kpi-val" id="modal_pulse_regime" style="color: #fbbf24;">NEUTRAL</div>
+                    </div>
+                    <div class="gods-eye-kpi-item">
+                        <div class="gods-eye-kpi-label">Downside Danger</div>
+                        <div class="gods-eye-kpi-val" id="modal_danger_val" style="color: #ef4444;">65 (56.5%)</div>
+                    </div>
+                    <div class="gods-eye-kpi-item">
+                        <div class="gods-eye-kpi-label">Upside Trigger</div>
+                        <div class="gods-eye-kpi-val" id="modal_trigger_val" style="color: #10b981;">39 (33.9%)</div>
+                    </div>
+                    <div class="gods-eye-kpi-item">
+                        <div class="gods-eye-kpi-label">Neutral Mid-Zone</div>
+                        <div class="gods-eye-kpi-val" id="modal_neutral_val" style="color: #94a3b8;">11 (9.6%)</div>
+                    </div>
+                </div>
+
+                <!-- HEADLINE & DATE -->
+                <div style="margin-bottom: 14px;">
+                    <h2 id="modal_headline" style="font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 4px;">
+                        Market Stood at Critical Crossroads as 65 Stocks Hovered Near Breakdown Danger Line
+                    </h2>
+                    <div style="font-size: 11.5px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;" id="modal_brief_meta">
+                        As of October 16, 2026 • 115 Total F&O Stocks Tracked
+                    </div>
+                </div>
+
+                <!-- EDITORIAL ARTICLE CONTAINER -->
+                <div class="article-text-container" id="modal_article_content">Loading briefing...</div>
+            </div>
+
+            <div class="gods-eye-actions">
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-modal-action btn-generate-ai" id="btn_regenerate_ai" onclick="generateGodsEyeBrief(true)">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> <span>Regenerate (Gemini)</span>
+                    </button>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-modal-action btn-copy-linkedin" onclick="copyLinkedInPost()">
+                        <i class="fa-brands fa-linkedin"></i> <span>Copy for LinkedIn</span>
+                    </button>
+                    <button class="btn-modal-action btn-publish-community" id="btn_publish_brief" onclick="publishGodsEyeBrief()">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> <span>Publish to Market Breadth Summary</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div class="gods-eye-toast" id="gods_eye_toast">
+        <i class="fa-solid fa-circle-check" style="color: #10b981;"></i>
+        <span id="toast_msg">Copied to clipboard!</span>
     </div>
 
 </body>

@@ -3311,7 +3311,7 @@ const App = (function() {
                     }
 
                     syncStatusDiv.style.color = 'var(--color-safe)';
-                    syncStatusDiv.innerHTML = `<i class="fa-solid fa-circle-check"></i> Sync complete! Synced ${totalSyncCount} candles across ${totalUpdatedTickers} tickers.`;
+                    syncStatusDiv.innerHTML = `<i class="fa-solid fa-circle-check"></i> Sync complete! Synced ${totalSyncCount} candles across ${totalUpdatedTickers} tickers.<br><button type="button" onclick="window.runGodsEyeFromAdmin(event)" style="margin-top:8px; background:linear-gradient(135deg, #e9805d, #d86a47); color:#fff; border:none; padding:5px 12px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-eye"></i> Run God's Eye Analysis Now</button>`;
 
                     // If current mode is simulation, reload data to reflect the changes
                     if (state.dataSource === 'simulation') {

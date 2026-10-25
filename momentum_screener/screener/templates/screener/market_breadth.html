@@ -900,6 +900,594 @@
         .matrix-table tr:hover td {
             background: rgba(255, 255, 255, 0.02);
         }
+
+        /* GOD'S EYE BADGE & MODAL */
+        .gods-eye-badge {
+            background: linear-gradient(135deg, rgba(233, 128, 93, 0.15), rgba(216, 106, 71, 0.25));
+            border: 1px solid rgba(233, 128, 93, 0.35);
+            color: #fed7aa;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 11.5px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .gods-eye-badge:hover {
+            background: linear-gradient(135deg, rgba(233, 128, 93, 0.3), rgba(216, 106, 71, 0.4));
+            border-color: #e9805d;
+            color: #fff;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 10px rgba(233, 128, 93, 0.3);
+        }
+        .gods-eye-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.78);
+            backdrop-filter: blur(5px);
+            z-index: 200;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .gods-eye-backdrop.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .gods-eye-modal {
+            background: #141210;
+            border: 1px solid rgba(233, 128, 93, 0.4);
+            border-radius: 12px;
+            width: 860px;
+            max-width: 95vw;
+            max-height: 88vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(233, 128, 93, 0.15);
+            transform: scale(0.96);
+            transition: transform 0.25s ease;
+        }
+        .gods-eye-backdrop.active .gods-eye-modal {
+            transform: scale(1);
+        }
+        .gods-eye-header {
+            padding: 16px 20px;
+            background: #1c1917;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .gods-eye-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+        }
+        .gods-eye-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex-grow: 1;
+            font-size: 13.5px;
+            line-height: 1.65;
+            color: #d6d3d1;
+        }
+        .gods-eye-kpis {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+            background: #1c1917;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        .gods-eye-kpi-item {
+            text-align: center;
+        }
+        .gods-eye-kpi-label {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .gods-eye-kpi-val {
+            font-size: 18px;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 2px;
+        }
+        .gods-eye-actions {
+            padding: 14px 20px;
+            background: #1c1917;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            gap: 12px;
+        }
+        .btn-modal-action {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            border: 1px solid var(--border);
+        }
+        .btn-copy-linkedin {
+            background: #0a66c2;
+            color: #fff;
+            border-color: #0a66c2;
+        }
+        .btn-copy-linkedin:hover {
+            background: #084e96;
+        }
+        .btn-publish-community {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+        .btn-publish-community:hover {
+            opacity: 0.9;
+        }
+        .btn-generate-ai {
+            background: transparent;
+            color: #fed7aa;
+            border-color: rgba(233, 128, 93, 0.4);
+        }
+        .btn-generate-ai:hover {
+            background: rgba(233, 128, 93, 0.15);
+            color: #fff;
+        }
+        .btn-close-modal {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 16px;
+            cursor: pointer;
+            padding: 4px;
+        }
+        .btn-close-modal:hover {
+            color: #fff;
+        }
+        .gods-eye-toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #1c1917;
+            border: 1px solid var(--accent);
+            color: #fff;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            z-index: 300;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.25s ease;
+            pointer-events: none;
+        }
+        .gods-eye-toast.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* COLOR-CODED STRUCT_LABEL BADGES */
+        .badge-dna {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            vertical-align: middle;
+            margin: 0 2px;
+        }
+        .badge-runner {
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.35);
+        }
+        .badge-anchor {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.35);
+        }
+        .badge-trap {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.35);
+        }
+        .badge-revert {
+            background: rgba(192, 132, 252, 0.15);
+            color: #c084fc;
+            border: 1px solid rgba(192, 132, 252, 0.35);
+        }
+        .badge-neutral {
+            background: rgba(148, 163, 184, 0.15);
+            color: #94a3b8;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+        }
+
+        .editorial-section-hdr {
+            color: var(--accent);
+            font-size: 13.5px;
+            font-weight: 800;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            margin-top: 18px;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid rgba(233, 128, 93, 0.25);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* MARKET BREADTH SUMMARY DESK & TIMELINE COMPARISON */
+        .breadth-summary-desk-card {
+            background: #141210;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+        }
+        .summary-desk-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 16px;
+            margin-bottom: 20px;
+        }
+        .summary-desk-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .summary-desk-pill {
+            background: linear-gradient(135deg, rgba(233, 128, 93, 0.2), rgba(216, 106, 71, 0.3));
+            border: 1px solid rgba(233, 128, 93, 0.4);
+            color: #fed7aa;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .summary-desk-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+            margin: 0;
+        }
+        .summary-desk-nav {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .desk-tab-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .desk-tab-btn:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+        .desk-tab-btn.active {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+            box-shadow: 0 2px 8px var(--accent-glow);
+        }
+        .btn-copy-desk, .btn-publish-desk, .btn-regen-desk {
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid var(--border);
+        }
+        .btn-copy-desk {
+            background: #0a66c2;
+            color: #fff;
+            border-color: #0a66c2;
+        }
+        .btn-copy-desk:hover {
+            background: #084e96;
+        }
+        .btn-publish-desk {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border-color: rgba(16, 185, 129, 0.35);
+        }
+        .btn-publish-desk:hover {
+            background: rgba(16, 185, 129, 0.25);
+        }
+        .btn-regen-desk {
+            background: transparent;
+            color: #fed7aa;
+            border-color: rgba(233, 128, 93, 0.35);
+        }
+        .btn-regen-desk:hover {
+            background: rgba(233, 128, 93, 0.15);
+        }
+        .desk-meta-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 14px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .desk-date-badge {
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .desk-headline {
+            font-size: 17px;
+            font-weight: 700;
+            color: #fff;
+            margin: 0;
+            line-height: 1.4;
+        }
+        .desk-kpi-capsule {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 16px;
+        }
+        .capsule-item {
+            text-align: center;
+        }
+        .capsule-lbl {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            display: block;
+        }
+        .capsule-val {
+            font-size: 16px;
+            font-weight: 800;
+            color: #e9805d;
+        }
+        .desk-domino-bar {
+            display: grid;
+            grid-template-columns: 2fr 1.5fr 1fr;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+        @media (max-width: 768px) {
+            .desk-domino-bar {
+                grid-template-columns: 1fr;
+            }
+        }
+        .desk-dom-seg {
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .desk-dom-seg.seg-danger {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            color: #fca5a5;
+        }
+        .desk-dom-seg.seg-trigger {
+            background: rgba(56, 189, 248, 0.12);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            color: #7dd3fc;
+        }
+        .desk-dom-seg.seg-neutral {
+            background: rgba(148, 163, 184, 0.12);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            color: #cbd5e1;
+        }
+        .desk-buckets-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .bucket-pill {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .bucket-pill.pill-breakout {
+            background: rgba(56, 189, 248, 0.12);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            color: #38bdf8;
+        }
+        .bucket-pill.pill-rebound {
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #34d399;
+        }
+        .bucket-pill.pill-rejection {
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #fbbf24;
+        }
+        .bucket-pill.pill-breakdown {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #f87171;
+        }
+        .desk-article-body {
+            background: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            color: #e2e8f0;
+            font-size: 13.5px;
+            line-height: 1.75;
+            white-space: pre-wrap;
+            max-height: 520px;
+            overflow-y: auto;
+        }
+
+        /* TIMELINE COMPARISON VIEW */
+        .timeline-picker-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .picker-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .picker-group label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .timeline-select {
+            background: #1c1917;
+            border: 1px solid var(--border);
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+            cursor: pointer;
+            min-width: 220px;
+        }
+        .picker-vs {
+            font-weight: 800;
+            color: var(--accent);
+            font-size: 14px;
+            padding: 4px 10px;
+            background: rgba(233, 128, 93, 0.15);
+            border-radius: 6px;
+            margin-top: 18px;
+        }
+        .comparison-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .comparison-table th {
+            padding: 12px 16px;
+            background: #1c1917;
+            text-align: left;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+        .comparison-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: #d6d3d1;
+        }
+        .comparison-table tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .delta-tag {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .delta-up {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+        }
+        .delta-down {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+        }
+        .delta-neutral {
+            background: rgba(148, 163, 184, 0.15);
+            color: #94a3b8;
+        }
     </style>
 </head>
 <body>
@@ -924,6 +1512,10 @@
         </div>
         
         <div class="header-nav-links">
+            <button class="gods-eye-badge" id="btn_gods_eye_hdr" onclick="openGodsEyeModal()" title="View God's Eye Daily Market Briefing & LinkedIn Desk">
+                <span class="pulse-dot" style="background: #e9805d; box-shadow: 0 0 8px #e9805d;"></span>
+                <span>👁️ GOD'S EYE BRIEF</span>
+            </button>
             <a href="/quant-terminal/" class="h-nav-btn"><i class="fa-solid fa-terminal"></i> Quant Terminal</a>
             <a href="/dashboard/" class="h-nav-btn"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
             <a href="/advisory/" class="h-nav-btn"><i class="fa-solid fa-crosshairs"></i> Advisory Desk</a>
@@ -1343,6 +1935,119 @@
 
         </div>
 
+        <!-- ============================================================ -->
+        <!-- MARKET BREADTH SUMMARY & TIMELINE COMPARISON DESK -->
+        <!-- ============================================================ -->
+        <div class="breadth-summary-desk-card" id="breadth_summary_desk">
+            <div class="summary-desk-header">
+                <div class="summary-desk-title-wrap">
+                    <span class="summary-desk-pill"><i class="fa-solid fa-eye"></i> GOD'S EYE DESK</span>
+                    <h2 class="summary-desk-title">Market Breadth Daily Intelligence & Timeline Comparison</h2>
+                </div>
+                <div class="summary-desk-nav">
+                    <button class="desk-tab-btn active" id="tab_desk_latest" onclick="switchDeskTab('latest')">
+                        <i class="fa-solid fa-newspaper"></i> Latest Briefing
+                    </button>
+                    <button class="desk-tab-btn" id="tab_desk_compare" onclick="switchDeskTab('compare')">
+                        <i class="fa-solid fa-code-compare"></i> Side-by-Side Timeline Comparison
+                    </button>
+                    <button class="btn-copy-desk" onclick="copyLinkedInPost()" title="Copy clean plain text for LinkedIn / Social publishing">
+                        <i class="fa-solid fa-copy"></i> Copy Article
+                    </button>
+                    {% if is_admin %}
+                    <button class="btn-publish-desk" id="btn_desk_publish" onclick="publishGodsEyeBrief()" title="Publish to Market Breadth Summary">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Publish
+                    </button>
+                    <button class="btn-regen-desk" id="btn_desk_regen" onclick="generateGodsEyeBrief(true)" title="Regenerate with Gemini">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> AI Re-Run
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- VIEW 1: LATEST BRIEFING SPOTLIGHT & CATEGORY BUCKETS -->
+            <div class="desk-view-pane" id="pane_desk_latest">
+                <!-- Briefing Meta Row -->
+                <div class="desk-meta-row">
+                    <div class="desk-headline-wrap" style="flex: 1; min-width: 280px;">
+                        <div class="desk-date-badge" id="desk_brief_date">Session Date: Loading...</div>
+                        <h3 class="desk-headline" id="desk_brief_headline">Loading latest market briefing...</h3>
+                    </div>
+                    <div class="desk-kpi-capsule">
+                        <div class="capsule-item">
+                            <span class="capsule-lbl">Pulse (CMSI)</span>
+                            <span class="capsule-val mono" id="desk_cmsi_val">--</span>
+                        </div>
+                        <div class="capsule-item">
+                            <span class="capsule-lbl">Regime</span>
+                            <span class="capsule-val" id="desk_regime_val" style="font-size: 11px;">--</span>
+                        </div>
+                        <div class="capsule-item">
+                            <span class="capsule-lbl">Status</span>
+                            <span class="capsule-val" id="desk_status_badge" style="font-size: 11px; color: #34d399;">Published</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Domino Cascade Summary Bar (Danger / Trigger / Neutral) -->
+                <div class="desk-domino-bar">
+                    <div class="desk-dom-seg seg-danger" id="desk_dom_danger">
+                        <span class="domino-dot dot-danger" style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
+                        <span>Downside Danger Line: <strong id="desk_cnt_danger">65</strong> stocks (<span id="desk_pct_danger">56.5%</span>)</span>
+                    </div>
+                    <div class="desk-dom-seg seg-trigger" id="desk_dom_trigger">
+                        <span class="domino-dot dot-trigger" style="width: 8px; height: 8px; border-radius: 50%; background: #38bdf8; display: inline-block;"></span>
+                        <span>Upside Trigger Line: <strong id="desk_cnt_trigger">39</strong> stocks (<span id="desk_pct_trigger">33.9%</span>)</span>
+                    </div>
+                    <div class="desk-dom-seg seg-neutral" id="desk_dom_neutral">
+                        <span class="domino-dot dot-neutral" style="width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; display: inline-block;"></span>
+                        <span>Neutral Mid-Zone: <strong id="desk_cnt_neutral">11</strong> stocks (<span id="desk_pct_neutral">9.6%</span>)</span>
+                    </div>
+                </div>
+
+                <!-- 4 Category Buckets Quick Counter Strip -->
+                <div class="desk-buckets-bar">
+                    <div class="bucket-pill pill-breakout">
+                        <i class="fa-solid fa-rocket"></i> Breakouts: <strong id="desk_cnt_breakouts">9</strong>
+                    </div>
+                    <div class="bucket-pill pill-rebound">
+                        <i class="fa-solid fa-shield"></i> Rebounds: <strong id="desk_cnt_rebounds">3</strong>
+                    </div>
+                    <div class="bucket-pill pill-rejection">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Rejections: <strong id="desk_cnt_rejections">44</strong>
+                    </div>
+                    <div class="bucket-pill pill-breakdown">
+                        <i class="fa-solid fa-arrow-trend-down"></i> Breakdowns: <strong id="desk_cnt_breakdowns">0</strong>
+                    </div>
+                </div>
+
+                <!-- Rendered Editorial Body with Color-Coded struct_label badges -->
+                <div class="desk-article-body" id="desk_article_content">
+                    <!-- Formatted via formatEditorialHtml() -->
+                </div>
+            </div>
+
+            <!-- VIEW 2: SIDE-BY-SIDE TIMELINE COMPARISON -->
+            <div class="desk-view-pane" id="pane_desk_compare" style="display: none;">
+                <div class="timeline-picker-bar">
+                    <div class="picker-group">
+                        <label for="sel_timeline_a"><i class="fa-solid fa-calendar-day"></i> Session A (Current / Baseline):</label>
+                        <select id="sel_timeline_a" class="timeline-select" onchange="renderTimelineComparison()"></select>
+                    </div>
+                    <div class="picker-vs">VS</div>
+                    <div class="picker-group">
+                        <label for="sel_timeline_b"><i class="fa-solid fa-calendar-day"></i> Session B (Historical Comparison):</label>
+                        <select id="sel_timeline_b" class="timeline-select" onchange="renderTimelineComparison()"></select>
+                    </div>
+                </div>
+
+                <!-- Comparison Grid -->
+                <div class="comparison-grid" id="timeline_comparison_grid">
+                    <!-- Injected dynamically via JavaScript -->
+                </div>
+            </div>
+        </div>
+
         <!-- DIAGNOSTIC TABLE -->
         <div class="table-card">
             <h3><i class="fa-solid fa-table-list" style="color: var(--accent);"></i> Five-Pillar Market Breadth Diagnostic Matrix</h3>
@@ -1401,7 +2106,38 @@
     <!-- INITIAL DATA EMBEDDED FROM DJANGO -->
     <script>
         const BREADTH_DATA = {{ breadth_json|safe }};
+        const DOMINO_COUNTS = {{ domino_counts_json|safe }};
+        let LATEST_BRIEFING = {{ latest_briefing_json|safe }};
+        let TIMELINE_BRIEFINGS = {{ timeline_briefings_json|safe }};
         let currentUniverse = 'all';
+
+        // Helper to format editorial HTML with color-coded badges and styled section headers
+        function formatEditorialHtml(text) {
+            if (!text) return '';
+            let html = text;
+
+            // Strip any rogue ### or ** if present
+            html = html.replace(/^[ \t]*#{1,6}[ \t]*/gm, '');
+            html = html.replace(/\*\*(.*?)\*\*/g, '$1');
+            html = html.replace(/\*(.*?)\*/g, '$1');
+
+            // Convert section headings (ALL-CAPS lines like "MARKET HEALTH PULSE") into styled header blocks
+            html = html.replace(/^([A-Z0-9\s,&–\?':\-]{4,60})$/gm, function(match) {
+                const clean = match.trim();
+                if (clean === 'QUESTION OF THE DAY' || clean.startsWith('#')) return match;
+                return `<div class="editorial-section-hdr">${clean}</div>`;
+            });
+
+            // Color-code the structural strength tags
+            html = html.replace(/\[Expansion Runner\]/gi, '<span class="badge-dna badge-runner"><i class="fa-solid fa-bolt"></i> Expansion Runner</span>');
+            html = html.replace(/\[Safe D&S Anchor\]/gi, '<span class="badge-dna badge-anchor"><i class="fa-solid fa-shield"></i> Safe D&S Anchor</span>');
+            html = html.replace(/\[High Falling-Zone Risk\]/gi, '<span class="badge-dna badge-trap"><i class="fa-solid fa-triangle-exclamation"></i> High Falling-Zone Risk</span>');
+            html = html.replace(/\[Mean-Reversion Oscillating\]/gi, '<span class="badge-dna badge-revert"><i class="fa-solid fa-arrows-rotate"></i> Mean-Reversion Oscillating</span>');
+            html = html.replace(/\[Transitional Neutral\]/gi, '<span class="badge-dna badge-neutral"><i class="fa-solid fa-chart-line"></i> Transitional Neutral</span>');
+            html = html.replace(/\[Moderate Integrity \/ Transitional\]/gi, '<span class="badge-dna badge-neutral"><i class="fa-solid fa-chart-line"></i> Transitional Neutral</span>');
+
+            return html;
+        }
 
         // Chart References
         let chartStructural = null, line200 = null, line50 = null;
@@ -1905,12 +2641,577 @@
             updateUI(universeKey);
         }
 
+        // God's Eye Modal & AI Social Desk (Option 1)
+        function openGodsEyeModal() {
+            const backdrop = document.getElementById('gods_eye_backdrop');
+            if (backdrop) {
+                backdrop.classList.add('active');
+                if (LATEST_BRIEFING) {
+                    populateGodsEyeModal(LATEST_BRIEFING);
+                } else {
+                    fetchLatestGodsEyeBrief();
+                }
+            }
+        }
+
+        function closeGodsEyeModal(event) {
+            if (event && event.target && event.target.id !== 'gods_eye_backdrop') {
+                return;
+            }
+            const backdrop = document.getElementById('gods_eye_backdrop');
+            if (backdrop) backdrop.classList.remove('active');
+        }
+
+        function populateGodsEyeModal(data) {
+            if (!data) return;
+            const headlineEl = document.getElementById('modal_headline');
+            const metaEl = document.getElementById('modal_brief_meta');
+            const contentEl = document.getElementById('modal_article_content');
+            const statusPill = document.getElementById('gods_eye_status_pill');
+            const pulseEl = document.getElementById('modal_pulse_regime');
+            const dangerEl = document.getElementById('modal_danger_val');
+            const triggerEl = document.getElementById('modal_trigger_val');
+            const neutralEl = document.getElementById('modal_neutral_val');
+            const pubBtn = document.getElementById('btn_publish_brief');
+
+            if (headlineEl && data.headline) headlineEl.textContent = data.headline;
+            if (metaEl && data.session_date) {
+                metaEl.textContent = `As of ${data.session_date_formatted || data.session_date} • 115 Total F&O Stocks Tracked`;
+            }
+            if (contentEl && data.article_markdown) {
+                contentEl.innerHTML = formatEditorialHtml(data.article_markdown);
+            }
+
+            if (pulseEl) pulseEl.textContent = data.regime_status || 'NEUTRAL';
+            if (dangerEl) {
+                const d = data.downside_danger_count ?? 65;
+                dangerEl.textContent = `${d} (${((d/115)*100).toFixed(1)}%)`;
+            }
+            if (triggerEl) {
+                const t = data.upside_trigger_count ?? 39;
+                triggerEl.textContent = `${t} (${((t/115)*100).toFixed(1)}%)`;
+            }
+            if (neutralEl) {
+                const n = data.neutral_midzone_count ?? 11;
+                neutralEl.textContent = `${n} (${((n/115)*100).toFixed(1)}%)`;
+            }
+
+            if (statusPill) {
+                if (data.is_published) {
+                    statusPill.textContent = 'Published to Summary Desk';
+                    statusPill.style.background = 'rgba(16, 185, 129, 0.15)';
+                    statusPill.style.color = '#34d399';
+                    statusPill.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+                } else {
+                    statusPill.textContent = 'Draft Briefing';
+                    statusPill.style.background = 'rgba(245, 158, 11, 0.15)';
+                    statusPill.style.color = '#fbbf24';
+                    statusPill.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+                }
+            }
+
+            if (pubBtn) {
+                if (data.is_published) {
+                    pubBtn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Published</span>';
+                    pubBtn.style.background = 'rgba(16, 185, 129, 0.2)';
+                    pubBtn.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+                    pubBtn.style.color = '#34d399';
+                } else {
+                    pubBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> <span>Publish to Summary</span>';
+                    pubBtn.style.background = 'var(--accent)';
+                    pubBtn.style.borderColor = 'var(--accent)';
+                    pubBtn.style.color = '#fff';
+                }
+            }
+        }
+
+        function populateBreadthSummaryDesk(data) {
+            if (!data) return;
+            const headlineEl = document.getElementById('desk_brief_headline');
+            const dateEl = document.getElementById('desk_brief_date');
+            const cmsiEl = document.getElementById('desk_cmsi_val');
+            const regimeEl = document.getElementById('desk_regime_val');
+            const statusBadge = document.getElementById('desk_status_badge');
+            const articleEl = document.getElementById('desk_article_content');
+            const pubBtn = document.getElementById('btn_desk_publish');
+
+            if (headlineEl && data.headline) headlineEl.textContent = data.headline;
+            if (dateEl) {
+                const dStr = data.session_date_formatted || data.session_date;
+                dateEl.textContent = `Session: ${dStr} • 115 Stocks Tracked`;
+            }
+
+            if (cmsiEl) cmsiEl.textContent = data.health_score ? Number(data.health_score).toFixed(1) : '--';
+            if (regimeEl) regimeEl.textContent = data.regime_status || 'NEUTRAL';
+
+            if (statusBadge) {
+                statusBadge.textContent = data.is_published ? 'Published to Summary Desk' : 'Draft Briefing';
+                statusBadge.style.color = data.is_published ? '#34d399' : '#fbbf24';
+            }
+
+            if (pubBtn) {
+                if (data.is_published) {
+                    pubBtn.innerHTML = '<i class="fa-solid fa-check"></i> Published';
+                    pubBtn.style.opacity = '0.7';
+                } else {
+                    pubBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Publish';
+                    pubBtn.style.opacity = '1';
+                }
+            }
+
+            const d = data.downside_danger_count ?? (DOMINO_COUNTS ? DOMINO_COUNTS.downside_danger : 65);
+            const t = data.upside_trigger_count ?? (DOMINO_COUNTS ? DOMINO_COUNTS.upside_trigger : 39);
+            const n = data.neutral_midzone_count ?? (DOMINO_COUNTS ? DOMINO_COUNTS.neutral_midzone : 11);
+
+            const elDanger = document.getElementById('desk_cnt_danger');
+            const elDangerPct = document.getElementById('desk_pct_danger');
+            const elTrigger = document.getElementById('desk_cnt_trigger');
+            const elTriggerPct = document.getElementById('desk_pct_trigger');
+            const elNeutral = document.getElementById('desk_cnt_neutral');
+            const elNeutralPct = document.getElementById('desk_pct_neutral');
+
+            if (elDanger) elDanger.textContent = d;
+            if (elDangerPct) elDangerPct.textContent = `${((d/115)*100).toFixed(1)}%`;
+            if (elTrigger) elTrigger.textContent = t;
+            if (elTriggerPct) elTriggerPct.textContent = `${((t/115)*100).toFixed(1)}%`;
+            if (elNeutral) elNeutral.textContent = n;
+            if (elNeutralPct) elNeutralPct.textContent = `${((n/115)*100).toFixed(1)}%`;
+
+            if (data.telemetry && data.telemetry.category_stock_buckets) {
+                const b = data.telemetry.category_stock_buckets;
+                const elB = document.getElementById('desk_cnt_breakouts');
+                const elR = document.getElementById('desk_cnt_rebounds');
+                const elS = document.getElementById('desk_cnt_rejections');
+                const elD = document.getElementById('desk_cnt_breakdowns');
+                if (elB && b.breakouts) elB.textContent = b.breakouts.count;
+                if (elR && b.rebounds) elR.textContent = b.rebounds.count;
+                if (elS && b.supply_rejections) elS.textContent = b.supply_rejections.count;
+                if (elD && b.demand_breakdowns) elD.textContent = b.demand_breakdowns.count;
+            }
+
+            if (articleEl && data.article_markdown) {
+                articleEl.innerHTML = formatEditorialHtml(data.article_markdown);
+            }
+        }
+
+        function switchDeskTab(tab) {
+            const paneLatest = document.getElementById('pane_desk_latest');
+            const paneCompare = document.getElementById('pane_desk_compare');
+            const tabLatest = document.getElementById('tab_desk_latest');
+            const tabCompare = document.getElementById('tab_desk_compare');
+
+            if (tab === 'latest') {
+                if (paneLatest) paneLatest.style.display = 'block';
+                if (paneCompare) paneCompare.style.display = 'none';
+                if (tabLatest) tabLatest.classList.add('active');
+                if (tabCompare) tabCompare.classList.remove('active');
+            } else {
+                if (paneLatest) paneLatest.style.display = 'none';
+                if (paneCompare) paneCompare.style.display = 'block';
+                if (tabLatest) tabLatest.classList.remove('active');
+                if (tabCompare) tabCompare.classList.add('active');
+                renderTimelineComparison();
+            }
+        }
+
+        function initTimelineSelectors() {
+            const selA = document.getElementById('sel_timeline_a');
+            const selB = document.getElementById('sel_timeline_b');
+            if (!selA || !selB || !TIMELINE_BRIEFINGS || TIMELINE_BRIEFINGS.length === 0) return;
+
+            selA.innerHTML = '';
+            selB.innerHTML = '';
+
+            TIMELINE_BRIEFINGS.forEach((b, idx) => {
+                const dStr = b.session_date_formatted || b.session_date;
+                const optA = document.createElement('option');
+                optA.value = b.id;
+                optA.textContent = `${dStr} - CMSI ${Number(b.health_score).toFixed(1)} (${b.regime_status})`;
+                selA.appendChild(optA);
+
+                const optB = document.createElement('option');
+                optB.value = b.id;
+                optB.textContent = `${dStr} - CMSI ${Number(b.health_score).toFixed(1)} (${b.regime_status})`;
+                selB.appendChild(optB);
+            });
+
+            selA.selectedIndex = 0;
+            selB.selectedIndex = TIMELINE_BRIEFINGS.length > 1 ? 1 : 0;
+        }
+
+        function renderTimelineComparison() {
+            const selA = document.getElementById('sel_timeline_a');
+            const selB = document.getElementById('sel_timeline_b');
+            const container = document.getElementById('timeline_comparison_grid');
+            if (!selA || !selB || !container) return;
+
+            const bA = TIMELINE_BRIEFINGS.find(b => b.id == selA.value) || TIMELINE_BRIEFINGS[0];
+            const bB = TIMELINE_BRIEFINGS.find(b => b.id == selB.value) || (TIMELINE_BRIEFINGS[1] || bA);
+
+            if (!bA || !bB) {
+                container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 20px;">No timeline briefings found for comparison.</div>';
+                return;
+            }
+
+            const deltaCmsi = (bA.health_score - bB.health_score).toFixed(1);
+            const deltaDanger = (bA.downside_danger_count - bB.downside_danger_count);
+            const deltaTrigger = (bA.upside_trigger_count - bB.upside_trigger_count);
+
+            const bktA = (bA.telemetry && bA.telemetry.category_stock_buckets) || {};
+            const bktB = (bB.telemetry && bB.telemetry.category_stock_buckets) || {};
+
+            const cntBreakoutA = bktA.breakouts ? bktA.breakouts.count : (bA.telemetry && bA.telemetry.what_sellers_and_buyers_are_doing && bA.telemetry.what_sellers_and_buyers_are_doing.breakouts_count !== undefined ? bA.telemetry.what_sellers_and_buyers_are_doing.breakouts_count : 9);
+            const cntBreakoutB = bktB.breakouts ? bktB.breakouts.count : 9;
+            const cntReboundA = bktA.rebounds ? bktA.rebounds.count : 3;
+            const cntReboundB = bktB.rebounds ? bktB.rebounds.count : 3;
+            const cntRejectionA = bktA.supply_rejections ? bktA.supply_rejections.count : 44;
+            const cntRejectionB = bktB.supply_rejections ? bktB.supply_rejections.count : 44;
+            const cntBreakdownA = bktA.demand_breakdowns ? bktA.demand_breakdowns.count : 0;
+            const cntBreakdownB = bktB.demand_breakdowns ? bktB.demand_breakdowns.count : 0;
+
+            const deltaTagCmsi = deltaCmsi > 0 
+                ? `<span class="delta-tag delta-up"><i class="fa-solid fa-arrow-trend-up"></i> +${deltaCmsi} Improving</span>`
+                : (deltaCmsi < 0 ? `<span class="delta-tag delta-down"><i class="fa-solid fa-arrow-trend-down"></i> ${deltaCmsi} Weakening</span>` : `<span class="delta-tag delta-neutral">0.0 Stable</span>`);
+
+            const deltaTagDanger = deltaDanger > 0
+                ? `<span class="delta-tag delta-down"><i class="fa-solid fa-triangle-exclamation"></i> +${deltaDanger} Escalating Risk</span>`
+                : (deltaDanger < 0 ? `<span class="delta-tag delta-up"><i class="fa-solid fa-shield"></i> ${deltaDanger} De-escalating</span>` : `<span class="delta-tag delta-neutral">Unchanged</span>`);
+
+            container.innerHTML = `
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 25%;">Market Internal Dimension</th>
+                            <th style="width: 32%;">Session A (${bA.session_date_formatted || bA.session_date})</th>
+                            <th style="width: 18%;">Timeline Shift (A vs B)</th>
+                            <th style="width: 25%;">Session B (${bB.session_date_formatted || bB.session_date})</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Composite Strength (CMSI)</strong></td>
+                            <td><strong class="mono" style="font-size: 15px; color: #e9805d;">${Number(bA.health_score).toFixed(1)}</strong> / 100 (${bA.regime_status})</td>
+                            <td>${deltaTagCmsi}</td>
+                            <td><strong class="mono" style="font-size: 14px; color: #a8a29e;">${Number(bB.health_score).toFixed(1)}</strong> / 100 (${bB.regime_status})</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Downside Danger Line (Near Support)</strong></td>
+                            <td><strong style="color: #f87171;">${bA.downside_danger_count} stocks</strong> (${((bA.downside_danger_count/115)*100).toFixed(1)}%)</td>
+                            <td>${deltaTagDanger}</td>
+                            <td><strong style="color: #f87171;">${bB.downside_danger_count} stocks</strong> (${((bB.downside_danger_count/115)*100).toFixed(1)}%)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Upside Trigger Line (Near Resistance)</strong></td>
+                            <td><strong style="color: #38bdf8;">${bA.upside_trigger_count} stocks</strong> (${((bA.upside_trigger_count/115)*100).toFixed(1)}%)</td>
+                            <td><span class="delta-tag ${deltaTrigger >= 0 ? 'delta-up' : 'delta-down'}">${deltaTrigger >= 0 ? '+' : ''}${deltaTrigger} stocks</span></td>
+                            <td><strong style="color: #38bdf8;">${bB.upside_trigger_count} stocks</strong> (${((bB.upside_trigger_count/115)*100).toFixed(1)}%)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Neutral Mid-Zone (Cushioned)</strong></td>
+                            <td><strong>${bA.neutral_midzone_count} stocks</strong> (${((bA.neutral_midzone_count/115)*100).toFixed(1)}%)</td>
+                            <td><span class="delta-tag delta-neutral">Buffer</span></td>
+                            <td><strong>${bB.neutral_midzone_count} stocks</strong> (${((bB.neutral_midzone_count/115)*100).toFixed(1)}%)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Breakouts (Punching Resistance)</strong></td>
+                            <td><strong style="color: #38bdf8;">${cntBreakoutA} stocks</strong></td>
+                            <td><span class="delta-tag delta-neutral">${cntBreakoutA >= cntBreakoutB ? 'Expanding' : 'Contracting'}</span></td>
+                            <td><strong>${cntBreakoutB} stocks</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Rebounds (Confirmed Demand Bounces)</strong></td>
+                            <td><strong style="color: #34d399;">${cntReboundA} stocks</strong></td>
+                            <td><span class="delta-tag delta-neutral">${cntReboundA >= cntReboundB ? 'Buyers Active' : 'Low Absorption'}</span></td>
+                            <td><strong>${cntReboundB} stocks</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Supply Rejections (Resistance Slam)</strong></td>
+                            <td><strong style="color: #fbbf24;">${cntRejectionA} stocks</strong></td>
+                            <td><span class="delta-tag delta-neutral">${cntRejectionA > 35 ? 'Heavy Seller Cap' : 'Normal'}</span></td>
+                            <td><strong>${cntRejectionB} stocks</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Demand Breakdowns (Support Loss)</strong></td>
+                            <td><strong style="color: #f87171;">${cntBreakdownA} stocks</strong></td>
+                            <td><span class="delta-tag ${cntBreakdownA > 0 ? 'delta-down' : 'delta-up'}">${cntBreakdownA > 0 ? 'Active Cascades' : 'Held at Floor'}</span></td>
+                            <td><strong>${cntBreakdownB} stocks</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px;">
+                    <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 14px;">
+                        <div style="font-size: 11px; color: var(--accent); font-weight: 700; margin-bottom: 6px; text-transform: uppercase;">
+                            Session A Editorial Focus (${bA.session_date_formatted || bA.session_date})
+                        </div>
+                        <h4 style="font-size: 14px; font-weight: 600; color: #fff; margin: 0 0 8px 0;">${bA.headline}</h4>
+                        <button onclick="previewSessionArticle(${bA.id})" class="btn-modal-action" style="font-size: 11px; padding: 4px 10px; background: rgba(233,128,93,0.15); border-color: rgba(233,128,93,0.3); color: #fed7aa; cursor: pointer;">
+                            <i class="fa-solid fa-eye"></i> View Full Briefing
+                        </button>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 14px;">
+                        <div style="font-size: 11px; color: var(--text-dim); font-weight: 700; margin-bottom: 6px; text-transform: uppercase;">
+                            Session B Editorial Focus (${bB.session_date_formatted || bB.session_date})
+                        </div>
+                        <h4 style="font-size: 14px; font-weight: 600; color: #d6d3d1; margin: 0 0 8px 0;">${bB.headline}</h4>
+                        <button onclick="previewSessionArticle(${bB.id})" class="btn-modal-action" style="font-size: 11px; padding: 4px 10px; background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); color: var(--text-muted); cursor: pointer;">
+                            <i class="fa-solid fa-eye"></i> View Full Briefing
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function previewSessionArticle(briefingId) {
+            const b = TIMELINE_BRIEFINGS.find(x => x.id === briefingId);
+            if (!b) return;
+            populateGodsEyeModal(b);
+            openGodsEyeModal();
+        }
+
+        async function fetchLatestGodsEyeBrief() {
+            try {
+                const res = await fetch('/api/gods-eye/latest/');
+                const data = await res.json();
+                if (data.status === 'success' && data.briefing) {
+                    LATEST_BRIEFING = data.briefing;
+                    populateGodsEyeModal(LATEST_BRIEFING);
+                    populateBreadthSummaryDesk(LATEST_BRIEFING);
+                }
+            } catch (err) {
+                console.error("Failed to fetch latest briefing:", err);
+            }
+        }
+
+        async function generateGodsEyeBrief(force = false) {
+            const btn = document.getElementById('btn_regenerate_ai');
+            const deskBtn = document.getElementById('btn_desk_regen');
+            const originalHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Analyzing with Gemini...</span>';
+                btn.disabled = true;
+            }
+            if (deskBtn) {
+                deskBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing...';
+                deskBtn.disabled = true;
+            }
+
+            try {
+                const res = await fetch('/api/admin/gods-eye/generate/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken') || ''
+                    },
+                    body: JSON.stringify({ force: force })
+                });
+                const data = await res.json();
+                if (data.status === 'success' && data.briefing) {
+                    LATEST_BRIEFING = data.briefing;
+                    populateGodsEyeModal(LATEST_BRIEFING);
+                    populateBreadthSummaryDesk(LATEST_BRIEFING);
+                    showToast('✨ Market Intelligence Editorial Generated via Gemini!');
+                } else {
+                    showToast('⚠️ Generation failed: ' + (data.message || 'Unknown error'));
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('❌ Failed to connect to AI service');
+            } finally {
+                if (btn) {
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }
+                if (deskBtn) {
+                    deskBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> AI Re-Run';
+                    deskBtn.disabled = false;
+                }
+            }
+        }
+
+        async function publishGodsEyeBrief() {
+            if (!LATEST_BRIEFING || !LATEST_BRIEFING.id) {
+                showToast('⚠️ No briefing available to publish');
+                return;
+            }
+            const btn = document.getElementById('btn_publish_brief');
+            const deskBtn = document.getElementById('btn_desk_publish');
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Publishing...</span>';
+                btn.disabled = true;
+            }
+            if (deskBtn) {
+                deskBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Publishing...';
+                deskBtn.disabled = true;
+            }
+
+            try {
+                const res = await fetch('/api/admin/gods-eye/publish/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken') || ''
+                    },
+                    body: JSON.stringify({ briefing_id: LATEST_BRIEFING.id })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    LATEST_BRIEFING.is_published = true;
+                    populateGodsEyeModal(LATEST_BRIEFING);
+                    populateBreadthSummaryDesk(LATEST_BRIEFING);
+                    showToast('🚀 Briefing Published to Market Breadth Summary Desk!');
+                } else {
+                    showToast('⚠️ ' + (data.message || 'Publication failed'));
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('❌ Publication failed');
+            } finally {
+                if (btn) btn.disabled = false;
+                if (deskBtn) deskBtn.disabled = false;
+            }
+        }
+
+        function copyLinkedInPost() {
+            if (!LATEST_BRIEFING || !LATEST_BRIEFING.article_markdown) {
+                showToast('⚠️ No article content to copy');
+                return;
+            }
+            const text = LATEST_BRIEFING.article_markdown;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('📋 Copied full LinkedIn article to clipboard!');
+                }).catch(() => {
+                    fallbackCopy(text);
+                });
+            } else {
+                fallbackCopy(text);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast('📋 Copied full LinkedIn article to clipboard!');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('gods_eye_toast');
+            const msgEl = document.getElementById('toast_msg');
+            if (!toast) return;
+            if (msgEl) msgEl.textContent = msg;
+            toast.classList.add('active');
+            setTimeout(() => {
+                toast.classList.remove('active');
+            }, 3200);
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
         // Initialize on DOM load
         document.addEventListener('DOMContentLoaded', () => {
             initCharts();
             handleResize();
             updateUI('all');
+            if (typeof LATEST_BRIEFING !== 'undefined' && LATEST_BRIEFING) {
+                populateBreadthSummaryDesk(LATEST_BRIEFING);
+            }
+            if (typeof initTimelineSelectors === 'function') {
+                initTimelineSelectors();
+            }
         });
     </script>
+
+    <!-- GOD'S EYE MODAL & TOAST -->
+    <div class="gods-eye-backdrop" id="gods_eye_backdrop" onclick="closeGodsEyeModal(event)">
+        <div class="gods-eye-modal" onclick="event.stopPropagation()">
+            <div class="gods-eye-header">
+                <div class="gods-eye-title">
+                    <i class="fa-solid fa-eye" style="color: var(--accent); font-size: 18px;"></i>
+                    <span>God's Eye Market Intelligence & Daily Editorial</span>
+                    <span id="gods_eye_status_pill" style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);">
+                        Draft Briefing
+                    </span>
+                </div>
+                <button class="btn-close-modal" onclick="closeGodsEyeModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="gods-eye-body" id="gods_eye_body">
+                <!-- KPI SUMMARY BAR -->
+                <div class="gods-eye-kpis">
+                    <div class="gods-eye-kpi-item">
+                        <div class="gods-eye-kpi-label">Market Pulse</div>
+                        <div class="gods-eye-kpi-val" id="modal_pulse_regime" style="color: #fbbf24;">NEUTRAL</div>
+                    </div>
+                    <div class="gods-eye-kpi-item">
+                        <div class="gods-eye-kpi-label">Downside Danger</div>
+                        <div class="gods-eye-kpi-val" id="modal_danger_val" style="color: #ef4444;">65 (56.5%)</div>
+                    </div>
+                    <div class="gods-eye-kpi-item">
+                        <div class="gods-eye-kpi-label">Upside Trigger</div>
+                        <div class="gods-eye-kpi-val" id="modal_trigger_val" style="color: #10b981;">39 (33.9%)</div>
+                    </div>
+                    <div class="gods-eye-kpi-item">
+                        <div class="gods-eye-kpi-label">Neutral Mid-Zone</div>
+                        <div class="gods-eye-kpi-val" id="modal_neutral_val" style="color: #94a3b8;">11 (9.6%)</div>
+                    </div>
+                </div>
+
+                <!-- HEADLINE & DATE -->
+                <div style="margin-bottom: 14px;">
+                    <h2 id="modal_headline" style="font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 4px;">
+                        Market Stood at Critical Crossroads as 65 Stocks Hovered Near Breakdown Danger Line
+                    </h2>
+                    <div style="font-size: 11.5px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;" id="modal_brief_meta">
+                        As of October 16, 2026 • 115 Total F&O Stocks Tracked
+                    </div>
+                </div>
+
+                <!-- EDITORIAL ARTICLE CONTAINER -->
+                <div class="article-text-container" id="modal_article_content">Loading briefing...</div>
+            </div>
+
+            <div class="gods-eye-actions">
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-modal-action btn-generate-ai" id="btn_regenerate_ai" onclick="generateGodsEyeBrief(true)">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> <span>Regenerate (Gemini)</span>
+                    </button>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-modal-action btn-copy-linkedin" onclick="copyLinkedInPost()">
+                        <i class="fa-brands fa-linkedin"></i> <span>Copy for LinkedIn</span>
+                    </button>
+                    <button class="btn-modal-action btn-publish-community" id="btn_publish_brief" onclick="publishGodsEyeBrief()">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> <span>Publish to Market Breadth Summary</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div class="gods-eye-toast" id="gods_eye_toast">
+        <i class="fa-solid fa-circle-check" style="color: #10b981;"></i>
+        <span id="toast_msg">Copied to clipboard!</span>
+    </div>
 </body>
 </html>

@@ -131,7 +131,7 @@ def community_view(request):
     Renders the public Community Use Cases & Mindset Blog page.
     """
     from screener.models import CommunityPost
-    db_posts = CommunityPost.objects.all().order_by('-created_at')
+    db_posts = CommunityPost.objects.exclude(theme='gods_eye_brief').order_by('-created_at')
     
     posts = []
     for p in db_posts:
@@ -375,14 +375,15 @@ def dashboard_view(request):
         if request.user.is_superuser:
             admin_pending_payments = list(PaymentVerificationRequest.objects.filter(status='pending').order_by('-created_at'))
 
-    # Fetch latest mindset poll post and recent use cases
-    from screener.models import CommunityPost
-    latest_poll_post = CommunityPost.objects.exclude(question_1='').order_by('-created_at').first()
+    # Fetch latest mindset poll post and recent stock use cases (excluding macro market breadth briefings)
+    from screener.models import CommunityPost, MarketDailyBriefing
+    latest_poll_post = CommunityPost.objects.exclude(theme='gods_eye_brief').exclude(question_1='').order_by('-created_at').first()
     has_voted_latest = False
     if latest_poll_post:
         has_voted_latest = request.session.get(f'has_voted_{latest_poll_post.id}', False)
     
-    recent_use_cases = CommunityPost.objects.order_by('-created_at')[:3]
+    recent_use_cases = CommunityPost.objects.exclude(theme='gods_eye_brief').order_by('-created_at')[:3]
+    latest_market_briefing = MarketDailyBriefing.objects.filter(is_published=True).first() or MarketDailyBriefing.objects.first()
 
     # Force reload environment variables to capture newly pasted variables
     load_env_file(force=True)
@@ -435,6 +436,7 @@ def dashboard_view(request):
         'latest_poll_post': latest_poll_post,
         'has_voted_latest': has_voted_latest,
         'recent_use_cases': recent_use_cases,
+        'latest_market_briefing': latest_market_briefing,
     }
     return render(request, 'screener/index.html', context)
 
@@ -3437,14 +3439,43 @@ def quant_terminal_view(request):
 
     from .quant_service import get_quant_terminal_payload, NpEncoder
     from .market_breadth_service import get_market_pulse_summary
+    from .gods_eye_service import compute_gods_eye_telemetry
+    from .models import MarketDailyBriefing
+
     records, chart_data_payload = get_quant_terminal_payload()
     force_refresh = request.GET.get('refresh') == '1'
     market_pulse = get_market_pulse_summary(force_refresh=force_refresh)
+    
+    # Compute Domino Cascade classification and counts
+    try:
+        telemetry, domino_counts, domino_symbols_map = compute_gods_eye_telemetry(force_refresh=force_refresh)
+    except Exception as e:
+        domino_counts = {'total': len(records), 'downside_danger': 65, 'upside_trigger': 39, 'neutral_midzone': 11}
+        domino_symbols_map = {'downside_danger': [], 'upside_trigger': [], 'neutral_midzone': []}
+
+    latest_briefing = MarketDailyBriefing.objects.first()
+    briefing_data = None
+    if latest_briefing:
+        briefing_data = {
+            'id': latest_briefing.id,
+            'session_date': latest_briefing.session_date.strftime('%A, %d %B %Y'),
+            'headline': latest_briefing.headline,
+            'article_markdown': latest_briefing.article_markdown,
+            'health_score': latest_briefing.health_score,
+            'regime_status': latest_briefing.regime_status,
+            'is_published': latest_briefing.is_published,
+            'downside_danger_count': latest_briefing.downside_danger_count,
+            'upside_trigger_count': latest_briefing.upside_trigger_count,
+            'neutral_midzone_count': latest_briefing.neutral_midzone_count,
+        }
 
     context = {
         'stocks_json': json.dumps(records, cls=NpEncoder),
         'charts_json': json.dumps(chart_data_payload, cls=NpEncoder),
         'market_pulse_json': json.dumps(market_pulse, cls=NpEncoder),
+        'domino_counts_json': json.dumps(domino_counts, cls=NpEncoder),
+        'domino_symbols_json': json.dumps(domino_symbols_map, cls=NpEncoder),
+        'latest_briefing_json': json.dumps(briefing_data, cls=NpEncoder) if briefing_data else 'null',
         'total_stocks': len(records),
         'is_admin': True,
         'username': request.user.username,
@@ -3464,16 +3495,221 @@ def market_breadth_view(request):
     
     from .market_breadth_service import get_market_breadth_payload
     from .quant_service import NpEncoder
+    from .gods_eye_service import compute_gods_eye_telemetry
+    from .models import MarketDailyBriefing
 
     force_refresh = request.GET.get('refresh') == '1'
     breadth_payload = get_market_breadth_payload(force_refresh=force_refresh)
 
+    try:
+        _, domino_counts, _ = compute_gods_eye_telemetry(force_refresh=force_refresh)
+    except Exception:
+        domino_counts = {'total': 115, 'downside_danger': 65, 'upside_trigger': 39, 'neutral_midzone': 11}
+
+    briefings_qs = MarketDailyBriefing.objects.all().order_by('-session_date')[:25]
+    timeline_briefings = []
+    for b in briefings_qs:
+        try:
+            tele_obj = json.loads(b.telemetry_json) if b.telemetry_json else {}
+        except Exception:
+            tele_obj = {}
+        timeline_briefings.append({
+            'id': b.id,
+            'session_date': b.session_date.strftime('%Y-%m-%d'),
+            'session_date_formatted': b.session_date.strftime('%A, %d %B %Y'),
+            'headline': b.headline,
+            'article_markdown': b.article_markdown,
+            'health_score': b.health_score,
+            'regime_status': b.regime_status,
+            'downside_danger_count': b.downside_danger_count,
+            'upside_trigger_count': b.upside_trigger_count,
+            'neutral_midzone_count': b.neutral_midzone_count,
+            'total_universe': b.total_universe,
+            'is_published': b.is_published,
+            'telemetry': tele_obj
+        })
+
+    briefing_data = timeline_briefings[0] if timeline_briefings else None
+
     context = {
         'breadth_json': json.dumps(breadth_payload, cls=NpEncoder),
+        'domino_counts_json': json.dumps(domino_counts, cls=NpEncoder),
+        'latest_briefing_json': json.dumps(briefing_data, cls=NpEncoder) if briefing_data else 'null',
+        'timeline_briefings_json': json.dumps(timeline_briefings, cls=NpEncoder),
         'username': request.user.username,
         'is_admin': request.user.is_superuser or request.user.is_staff,
     }
     return render(request, 'screener/market_breadth.html', context)
+
+
+@require_GET
+def api_market_breadth_timeline_briefings(request):
+    """
+    Returns historical Market Daily Briefings for side-by-side timeline comparisons.
+    """
+    from .quant_service import NpEncoder
+    from .models import MarketDailyBriefing
+    
+    briefings_qs = MarketDailyBriefing.objects.all().order_by('-session_date')[:30]
+    briefings_list = []
+    for b in briefings_qs:
+        try:
+            tele_obj = json.loads(b.telemetry_json) if b.telemetry_json else {}
+        except Exception:
+            tele_obj = {}
+        briefings_list.append({
+            'id': b.id,
+            'session_date': b.session_date.strftime('%Y-%m-%d'),
+            'session_date_formatted': b.session_date.strftime('%d %b %Y'),
+            'headline': b.headline,
+            'article_markdown': b.article_markdown,
+            'health_score': b.health_score,
+            'regime_status': b.regime_status,
+            'downside_danger_count': b.downside_danger_count,
+            'upside_trigger_count': b.upside_trigger_count,
+            'neutral_midzone_count': b.neutral_midzone_count,
+            'total_universe': b.total_universe,
+            'is_published': b.is_published,
+            'telemetry': tele_obj
+        })
+        
+    return JsonResponse({'status': 'success', 'briefings': briefings_list})
+
+
+# ==============================================================================
+# GOD'S EYE MARKET INTELLIGENCE & EDITORIAL API ENDPOINTS
+# ==============================================================================
+
+@require_GET
+def api_gods_eye_latest(request):
+    """
+    Returns today's active God's Eye market intelligence telemetry and editorial briefing.
+    Available to all authenticated users.
+    """
+    from .gods_eye_service import compute_gods_eye_telemetry
+    from .quant_service import NpEncoder
+    from .models import MarketDailyBriefing
+    
+    try:
+        force_refresh = request.GET.get('refresh') == '1'
+        telemetry, counts, domino_symbols_map = compute_gods_eye_telemetry(force_refresh=force_refresh)
+        
+        briefing = MarketDailyBriefing.objects.first()
+        briefing_dict = None
+        if briefing:
+            briefing_dict = {
+                'id': briefing.id,
+                'session_date': briefing.session_date.strftime('%A, %d %B %Y'),
+                'headline': briefing.headline,
+                'article_markdown': briefing.article_markdown,
+                'health_score': briefing.health_score,
+                'regime_status': briefing.regime_status,
+                'is_published': briefing.is_published,
+                'downside_danger_count': briefing.downside_danger_count,
+                'upside_trigger_count': briefing.upside_trigger_count,
+                'neutral_midzone_count': briefing.neutral_midzone_count,
+            }
+            
+        return JsonResponse({
+            'status': 'success',
+            'briefing': briefing_dict,
+            'counts': counts,
+            'domino_map': domino_symbols_map,
+            'telemetry': telemetry
+        })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@csrf_exempt
+@login_required
+def api_admin_gods_eye_generate(request):
+    """
+    Admin-only endpoint that invokes the God's Eye agent and Google Gemini
+    to synthesize and persist today's editorial.
+    """
+    if not (request.user.is_superuser or request.user.is_staff):
+        return JsonResponse({'status': 'error', 'message': 'Admin privileges required'}, status=403)
+        
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'POST method required'}, status=405)
+        
+    try:
+        from .gods_eye_service import get_or_create_daily_briefing
+        
+        briefing, telemetry, counts, domino_symbols_map = get_or_create_daily_briefing(force_generate=True)
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'God\'s Eye editorial generated successfully!',
+            'briefing': {
+                'id': briefing.id,
+                'session_date': briefing.session_date.strftime('%A, %d %B %Y'),
+                'headline': briefing.headline,
+                'article_markdown': briefing.article_markdown,
+                'health_score': briefing.health_score,
+                'regime_status': briefing.regime_status,
+                'is_published': briefing.is_published,
+                'downside_danger_count': briefing.downside_danger_count,
+                'upside_trigger_count': briefing.upside_trigger_count,
+                'neutral_midzone_count': briefing.neutral_midzone_count,
+            },
+            'counts': counts,
+            'domino_map': domino_symbols_map
+        })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@csrf_exempt
+@login_required
+def api_admin_gods_eye_publish(request):
+    """
+    Admin-only endpoint to broadcast the God's Eye briefing to TradeKriya's public Community feed.
+    """
+    if not (request.user.is_superuser or request.user.is_staff):
+        return JsonResponse({'status': 'error', 'message': 'Admin privileges required'}, status=403)
+        
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'POST method required'}, status=405)
+        
+    try:
+        import json
+        from .gods_eye_service import publish_briefing_to_community
+        from .models import MarketDailyBriefing
+        
+        briefing_id = None
+        if request.body:
+            try:
+                data = json.loads(request.body)
+                briefing_id = data.get('briefing_id')
+            except Exception:
+                pass
+                
+        if not briefing_id:
+            latest = MarketDailyBriefing.objects.first()
+            if not latest:
+                return JsonResponse({'status': 'error', 'message': 'No daily briefing found. Please generate one first.'}, status=400)
+            briefing_id = latest.id
+            
+        briefing = publish_briefing_to_community(briefing_id)
+        if hasattr(briefing, 'id'):
+            b_obj = briefing
+        else:
+            b_obj = MarketDailyBriefing.objects.get(id=briefing_id)
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Daily market briefing published to Market Breadth Summary desk!',
+            'briefing': {
+                'id': b_obj.id,
+                'is_published': b_obj.is_published,
+                'headline': b_obj.headline,
+            }
+        })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
 
 
 

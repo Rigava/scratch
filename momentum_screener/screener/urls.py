@@ -54,4 +54,11 @@ urlpatterns = [
     path('api/advisory/audit-stock/', views.api_advisory_audit_stock, name='api_advisory_audit_stock'),
     path('api/advisory/recommendation/<int:rec_id>/action/', views.api_recommendation_status_action, name='api_recommendation_status_action'),
     path('api/advisory/recommendation/create/', views.api_recommendation_manual_create, name='api_recommendation_manual_create'),
+
+    # God's Eye Market Intelligence & Editorial routes
+    path('api/gods-eye/latest/', views.api_gods_eye_latest, name='api_gods_eye_latest'),
+    path('api/admin/gods-eye/generate/', views.api_admin_gods_eye_generate, name='api_admin_gods_eye_generate'),
+    path('api/admin/gods-eye/publish/', views.api_admin_gods_eye_publish, name='api_admin_gods_eye_publish'),
+    path('api/market-breadth/timeline-briefings/', views.api_market_breadth_timeline_briefings, name='api_market_breadth_timeline_briefings'),
 ]
+

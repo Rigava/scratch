@@ -686,8 +686,10 @@
                     <div class="config-group" style="border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 15px; margin-top: 15px;">
                         <strong style="font-size: 11px; text-transform: uppercase; color: var(--accent-indigo); display: block; margin-bottom: 8px;"><i class="fa-solid fa-user-shield"></i> Admin Controls</strong>
                         <button id="btn-admin-sync-dump" class="primary-btn" style="width: 100%; font-size: 11px; padding: 10px; margin: 0; background: linear-gradient(135deg, var(--accent-indigo), #5850ec); border: none; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; border-radius: var(--border-radius-sm); color: #fff; font-weight: 600; margin-bottom: 8px;"><i class="fa-solid fa-database"></i> Sync Data Dump</button>
+                        <button id="btn-admin-gods-eye" onclick="window.runGodsEyeFromAdmin(event)" class="primary-btn" style="width: 100%; font-size: 11px; padding: 10px; margin: 0; background: linear-gradient(135deg, #e9805d, #d86a47); border: none; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; border-radius: var(--border-radius-sm); color: #fff; font-weight: 600; margin-bottom: 8px;"><i class="fa-solid fa-eye"></i> Run God's Eye Agent</button>
                         <button id="btn-sidebar-admin-stats" class="secondary-btn" style="width: 100%; font-size: 11px; padding: 9px 10px; margin: 0; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; cursor: pointer; border-radius: var(--border-radius-sm); font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 10px;"><i class="fa-solid fa-chart-pie"></i> Screener Stats & CSV</button>
                         <div id="admin-sync-status" style="margin-top: 8px; font-size: 11px; color: var(--text-secondary); text-align: center; font-weight: 500;"></div>
+                        <div id="admin-gods-eye-status" style="margin-top: 8px; font-size: 11px; color: var(--text-secondary); text-align: center; font-weight: 500;"></div>
                     </div>
 
                     <!-- Admin User Management Panel -->
@@ -956,6 +958,49 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+                {% endif %}
+
+                <!-- Market Breadth Daily Intelligence Briefing (Macro Summary) -->
+                {% if latest_market_briefing %}
+                <div class="market-breadth-briefing-card glass-card" style="margin-top: 24px; padding: 20px; border-left: 4px solid var(--accent-orange); background: rgba(233, 128, 93, 0.04); border-radius: var(--border-radius-md); font-family: var(--font-stack);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px; margin-bottom: 14px;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                <span class="badge" style="background: rgba(233, 128, 93, 0.2); color: #fed7aa; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 4px;">
+                                    <i class="fa-solid fa-eye"></i> Market Breadth Intelligence
+                                </span>
+                                <span style="font-size: 11px; color: var(--text-muted);">{{ latest_market_briefing.session_date|date:"l, d F Y" }}</span>
+                            </div>
+                            <h2 style="font-size: 16px; font-weight: 700; color: #fff; margin: 0; line-height: 1.4;">{{ latest_market_briefing.headline }}</h2>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="text-align: right;">
+                                <span style="font-size: 10px; color: var(--text-muted); display: block; text-transform: uppercase;">Health Pulse</span>
+                                <span style="font-size: 16px; font-weight: 800; color: {% if latest_market_briefing.health_score >= 60 %}#34d399{% elif latest_market_briefing.health_score <= 35 %}#f87171{% else %}#fbbf24{% endif %};">CMSI {{ latest_market_briefing.health_score|floatformat:1 }}</span>
+                            </div>
+                            <a href="{% url 'screener:market_breadth' %}" class="primary-btn" style="padding: 6px 14px; font-size: 12px; background: linear-gradient(135deg, #e9805d, #c76543); border: none; text-decoration: none; border-radius: 6px; font-weight: 600; color: #fff; display: inline-flex; align-items: center; gap: 6px;">
+                                Timeline Comparison <i class="fa-solid fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Domino Cascade Distribution Strip -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+                        <span style="font-size: 11.5px; padding: 4px 10px; border-radius: 4px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #fca5a5; font-weight: 600;">
+                            🔴 Danger Line: {{ latest_market_briefing.downside_danger_count }} Stocks (56.5%)
+                        </span>
+                        <span style="font-size: 11.5px; padding: 4px 10px; border-radius: 4px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.25); color: #7dd3fc; font-weight: 600;">
+                            🔵 Trigger Line: {{ latest_market_briefing.upside_trigger_count }} Stocks (33.9%)
+                        </span>
+                        <span style="font-size: 11.5px; padding: 4px 10px; border-radius: 4px; background: rgba(148, 163, 184, 0.12); border: 1px solid rgba(148, 163, 184, 0.25); color: #cbd5e1; font-weight: 600;">
+                            ⚪ Mid-Zone: {{ latest_market_briefing.neutral_midzone_count }} Stocks (9.6%)
+                        </span>
+                    </div>
+
+                    <p style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.6; margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                        {{ latest_market_briefing.article_markdown|linebreaksbr }}
+                    </p>
                 </div>
                 {% endif %}
 
@@ -2704,6 +2749,108 @@
             });
         }
     });
+    // God's Eye Market Agent Handlers
+    window.runGodsEyeFromAdmin = async function(e) {
+        if (e && e.preventDefault) e.preventDefault();
+        const btn = document.getElementById('btn-admin-gods-eye');
+        const statusDiv = document.getElementById('admin-gods-eye-status');
+        const originalHtml = btn ? btn.innerHTML : '';
+
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating with Gemini...';
+        }
+        if (statusDiv) {
+            statusDiv.style.color = '#fed7aa';
+            statusDiv.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing market breadth, S/R screeners, and domino levels with Gemini...';
+        }
+
+        try {
+            const getCookie = (name) => {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            };
+
+            const response = await fetch('/api/admin/gods-eye/generate/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken') || ''
+                },
+                body: JSON.stringify({ force: true })
+            });
+
+            const data = await response.json();
+            if (response.ok && data.status === 'success' && data.briefing) {
+                const b = data.briefing;
+                const c = data.counts || {};
+                window._lastGodsEyeMarkdown = b.article_markdown;
+                if (statusDiv) {
+                    statusDiv.style.color = '#34d399';
+                    statusDiv.innerHTML = `
+                        <div style="background: rgba(233, 128, 93, 0.12); border: 1px solid rgba(233, 128, 93, 0.35); border-radius: 6px; padding: 10px; text-align: left; margin-top: 8px;">
+                            <div style="font-weight: 700; color: #fff; font-size: 11px; margin-bottom: 3px;">
+                                <i class="fa-solid fa-circle-check" style="color: #10b981;"></i> God's Eye Briefing Ready
+                            </div>
+                            <div style="font-size: 10.5px; color: #fed7aa; margin-bottom: 5px; line-height: 1.3;">${b.headline}</div>
+                            <div style="font-size: 9.5px; color: var(--text-secondary); margin-bottom: 8px; font-family: monospace;">
+                                🔴 ${c.downside_danger || 65} Danger | 🟢 ${c.upside_trigger || 39} Trigger | ⚪ ${c.neutral_midzone || 11} Neutral (${c.total || 115})
+                            </div>
+                            <div style="display: flex; gap: 6px;">
+                                <a href="/quant-terminal/" target="_blank" style="background: #e9805d; color: #fff; padding: 3px 8px; border-radius: 4px; font-size: 10px; text-decoration: none; font-weight: 600;">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Terminal
+                                </a>
+                                <button type="button" onclick="window.copyGodsEyePostFromAdmin(this)" style="background: #0a66c2; color: #fff; border: none; padding: 3px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; font-weight: 600;">
+                                    <i class="fa-brands fa-linkedin"></i> Copy Post
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                throw new Error(data.message || 'Generation failed');
+            }
+        } catch (err) {
+            console.error(err);
+            if (statusDiv) {
+                statusDiv.style.color = 'var(--color-knife)';
+                statusDiv.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Error: ${err.message}`;
+            }
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        }
+    };
+
+    window.copyGodsEyePostFromAdmin = async function(btn) {
+        if (!window._lastGodsEyeMarkdown) return;
+        try {
+            await navigator.clipboard.writeText(window._lastGodsEyeMarkdown);
+            if (btn) {
+                const orig = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+                btn.style.background = '#10b981';
+                setTimeout(() => {
+                    btn.innerHTML = orig;
+                    btn.style.background = '#0a66c2';
+                }, 2000);
+            }
+        } catch (err) {
+            alert('Failed to copy. Please visit Quant Terminal to copy.');
+        }
+    };
     </script>
 
 </body>
