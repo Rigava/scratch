@@ -40,18 +40,33 @@ CRITICAL FORMATTING RULES (STRICTLY ENFORCED):
 
 4. CATEGORY BUCKETS & STRUCTURAL STRENGTH (MANDATORY SECTION):
    - Include a dedicated section titled: CATEGORY BUCKETS & STRUCTURAL STRENGTH
+   - START WITH THE COLOR LEGEND FOR STRUCTURAL STRENGTH:
+     STRUCTURAL STRENGTH COLOR LEGEND:
+     🔵 Cyan: Expansion Runner (Sustained trend continuation / momentum leader)
+     🟢 Green: Safe Demand & Supply Anchor (High integrity buying floor / safe structure)
+     🔴 Red: High Falling-Zone Risk (Overextended or vulnerable to sharp distribution)
+     🟡 Amber: Mean-Reversion Oscillating (Range-bound or swing oscillator, e.g. INFY)
+     ⚪ Slate: Transitional Neutral (Consolidating / neutral structure)
+
+   - DO NOT show the structural tags explicitly (do NOT append "[Mean-Reversion Oscillating]" or "[Expansion Runner]" after the stock name).
+   - INSTEAD, place the color badge directly before the stock symbol using its color emoji:
+     • 🔵 SYMBOL (Price, DayChange%)
+     • 🟡 SYMBOL (Price, DayChange%)
+     • 🟢 SYMBOL (Price, DayChange%)
+     • 🔴 SYMBOL (Price, DayChange%)
+     • ⚪ SYMBOL (Price, DayChange%)
    - Group the stocks into the 4 buckets provided in the telemetry:
      BREAKOUTS (Stocks punching through overhead resistance)
      REBOUNDS (Stocks bouncing cleanly off support floors)
      SUPPLY REJECTIONS (Stocks slammed by overhead sellers)
      DEMAND BREAKDOWNS (Stocks breaking below critical support)
-   - For each stock, format it cleanly with its structural strength in brackets:
-     • SYMBOL (Price, DayChange%) - [struct_label]
-     Example:
-     • TECHM (₹1,514.10, +1.85%) - [Expansion Runner]
-     • APOLLOTYRE (₹485.20, +0.92%) - [Safe D&S Anchor]
-     • BHEL (₹248.50, -2.15%) - [High Falling-Zone Risk]
-     • WIPRO (₹189.84, -0.30%) - [Mean-Reversion Oscillating]
+   - Examples:
+     BREAKOUTS (Stocks punching through overhead resistance)
+     • 🟢 DRREDDY (₹1,222.00, -1.37%)
+     • 🟡 INFY (₹1,154.00, +0.06%)
+     • 🟡 WIPRO (₹189.84, -0.30%)
+     • 🔴 BATAINDIA (₹634.95, -0.24%)
+     • 🔵 COFORGE (₹1,905.00, -0.20%)
    - If a bucket has 0 confirmed stocks today (e.g. Demand Breakdowns), explicitly state:
      • 0 confirmed breakdowns today (with 65 stocks hovering on the Downside Danger Line watch).
 
@@ -168,15 +183,42 @@ def compute_gods_eye_telemetry(force_refresh=False):
     breakdown_stocks = df_stocks[df_stocks['category'].str.contains('Breakdown', case=False, na=False) | (df_stocks['close'] < df_stocks['demand_floor'])]
 
     def format_stock_summary(row):
+        struct_label = str(row['struct_label'])
+        color_emoji = {
+            'Expansion Runner': '🔵',
+            'Safe D&S Anchor': '🟢',
+            'High Falling-Zone Risk': '🔴',
+            'Mean-Reversion Oscillating': '🟡',
+            'Transitional Neutral': '⚪'
+        }.get(struct_label, '⚪')
+        color_name = {
+            'Expansion Runner': 'cyan',
+            'Safe D&S Anchor': 'green',
+            'High Falling-Zone Risk': 'red',
+            'Mean-Reversion Oscillating': 'amber',
+            'Transitional Neutral': 'slate'
+        }.get(struct_label, 'slate')
         return {
             "symbol": str(row['symbol']),
             "price": f"₹{row['close']:,.2f}",
             "change": f"{row['change_pct']:+.2f}%",
-            "struct_label": str(row['struct_label']),
+            "struct_label": struct_label,
+            "color_name": color_name,
+            "color_emoji": color_emoji,
+            "formatted_display": f"{color_emoji} {row['symbol']} (₹{row['close']:,.2f}, {row['change_pct']:+.2f}%)",
             "safety_score": float(row['safety_score']) if pd.notnull(row['safety_score']) else 50.0
         }
 
+    structural_legend = {
+        "cyan": {"emoji": "🔵", "label": "Expansion Runner", "meaning": "Sustained trend continuation / momentum leader"},
+        "green": {"emoji": "🟢", "label": "Safe D&S Anchor", "meaning": "High integrity buying floor / safe structure"},
+        "red": {"emoji": "🔴", "label": "High Falling-Zone Risk", "meaning": "Overextended or vulnerable to sharp distribution"},
+        "amber": {"emoji": "🟡", "label": "Mean-Reversion Oscillating", "meaning": "Range-bound or swing oscillator, e.g. INFY"},
+        "slate": {"emoji": "⚪", "label": "Transitional Neutral", "meaning": "Consolidating / neutral structure"}
+    }
+
     category_buckets = {
+        "color_legend": structural_legend,
         "breakouts": {
             "count": len(breakout_stocks),
             "description": "Stocks punching through overhead resistance",
