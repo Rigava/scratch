@@ -3943,6 +3943,10 @@ const App = (function() {
 
         if (tabOrb) {
             tabOrb.addEventListener('click', () => {
+                if (typeof window.switchDashboardTab === 'function') {
+                    window.switchDashboardTab('orb');
+                    return;
+                }
                 deactivateAllTabs();
                 tabOrb.classList.add('active');
                 tabOrb.style.background = 'rgba(255,255,255,0.05)';
@@ -3950,8 +3954,11 @@ const App = (function() {
                 
                 if (orbViewCard) {
                     orbViewCard.classList.remove('hidden');
+                    orbViewCard.style.display = 'block';
                 }
-                loadIdxOrbScreenerDashboard();
+                if (typeof window.loadIdxOrbScreenerDashboard === 'function') {
+                    window.loadIdxOrbScreenerDashboard();
+                }
             });
         }
 
@@ -4503,8 +4510,12 @@ const App = (function() {
 
                 let btBadge = `<span style="color: var(--text-dim); font-size: 10px;">--</span>`;
                 if (s.has_backtest) {
-                    btBadge = `<span style="font-size: 10px; font-weight: 700; color: #34d399; background: rgba(52, 211, 153, 0.12); padding: 2px 6px; border-radius: 4px;" title="Total PnL: ₹${s.bt_pnl.toLocaleString()}">
-                        ${s.bt_win_rate}% Win • +₹${Math.round(s.bt_pnl / 1000)}k
+                    const pnlSign = s.bt_pnl >= 0 ? '+' : '';
+                    const pnlColor = s.bt_pnl >= 0 ? '#34d399' : '#f87171';
+                    const pnlBg = s.bt_pnl >= 0 ? 'rgba(52, 211, 153, 0.12)' : 'rgba(239, 68, 68, 0.12)';
+                    const pnlVal = Math.abs(s.bt_pnl) >= 1000 ? `${pnlSign}₹${(s.bt_pnl / 1000).toFixed(1)}k` : `${pnlSign}₹${Math.round(s.bt_pnl)}`;
+                    btBadge = `<span style="font-size: 10px; font-weight: 700; color: ${pnlColor}; background: ${pnlBg}; padding: 2px 6px; border-radius: 4px;" title="Trades: ${s.bt_trades || 0} | Total PnL: ₹${(s.bt_pnl || 0).toLocaleString()}">
+                        ${s.bt_win_rate}% Win • ${pnlVal}
                     </span>`;
                 }
 
@@ -5059,7 +5070,7 @@ const App = (function() {
             const matchesStatus = filterStatus === 'all' || 
                                   (filterStatus === 'safe' && stock.status === 'Safe') || 
                                   (filterStatus === 'knife' && stock.status === 'Knife');
-filterPerf === 'all' || 
+            const matchesPerf = filterPerf === 'all' || 
                                 (filterPerf === 'kinematics-failure' && stock.current.kinematics && stock.current.kinematics.regime === 'STRUCTURAL_FAILURE') ||
                                 (filterPerf === 'kinematics-ignition' && stock.current.kinematics && stock.current.kinematics.regime === 'MOMENTUM_ACCELERATION') ||
                                 (filterPerf === 'kinematics-reversal' && stock.current.kinematics && stock.current.kinematics.regime === 'TREND_REVERSAL') ||

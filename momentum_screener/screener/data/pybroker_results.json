@@ -1,0 +1,3331 @@
+{
+  "raw_rules": {
+    "metrics": {
+      "trade_count": 1539,
+      "initial_market_value": 1000000.0,
+      "end_market_value": 1404656.98,
+      "total_pnl": 414496.18999999994,
+      "unrealized_pnl": -9839.209999999963,
+      "total_return_pct": 41.44961899999999,
+      "total_profit": 1230140.62,
+      "total_loss": -815644.4299999999,
+      "total_fees": 2542.22,
+      "max_drawdown": -79391.06999999983,
+      "max_drawdown_pct": -5.620420943395443,
+      "max_drawdown_date": "2026-10-08 00:00:00",
+      "win_rate": 38.8816644993498,
+      "loss_rate": 61.118335500650204,
+      "winning_trades": 598,
+      "losing_trades": 940,
+      "avg_pnl": 269.3282586094866,
+      "avg_return_pct": 0.11933073424301496,
+      "avg_trade_bars": 1.0,
+      "avg_profit": 2057.091337792642,
+      "avg_profit_pct": 1.1911892797319932,
+      "avg_winning_trade_bars": 1.0,
+      "avg_loss": -867.7068404255318,
+      "avg_loss_pct": -0.5647644539614561,
+      "avg_losing_trade_bars": 1.0,
+      "largest_win": 15274.67,
+      "largest_win_pct": 6.41,
+      "largest_win_bars": 1,
+      "largest_loss": -14536.08,
+      "largest_loss_pct": -6.41,
+      "largest_loss_bars": 1,
+      "max_wins": 12,
+      "max_losses": 18,
+      "sharpe": 0.13894062924893866,
+      "sortino": 0.24525665757757034,
+      "profit_factor": 1.487795733644424,
+      "ulcer_index": 0.9627325992834488,
+      "upi": 0.07293797481495427,
+      "equity_r2": 0.9476594764300089,
+      "std_error": 133592.17401149418
+    },
+    "symbols": {
+      "ADANIENT": {
+        "trades": 251,
+        "win_rate": 39.44,
+        "total_pnl": 22613.9,
+        "avg_win": 1122.18,
+        "avg_loss": -582.12,
+        "stopped_out": 89,
+        "held_eod": 99
+      },
+      "ADANIPORTS": {
+        "trades": 245,
+        "win_rate": 40.82,
+        "total_pnl": 58550.86,
+        "avg_win": 1237.12,
+        "avg_loss": -449.39,
+        "stopped_out": 80,
+        "held_eod": 100
+      },
+      "AMBUJACEM": {
+        "trades": 248,
+        "win_rate": 37.1,
+        "total_pnl": -20175.02,
+        "avg_win": 751.15,
+        "avg_loss": -572.31,
+        "stopped_out": 93,
+        "held_eod": 92
+      },
+      "APOLLOHOSP": {
+        "trades": 251,
+        "win_rate": 37.45,
+        "total_pnl": -5413.4,
+        "avg_win": 813.18,
+        "avg_loss": -521.35,
+        "stopped_out": 94,
+        "held_eod": 94
+      },
+      "APOLLOTYRE": {
+        "trades": 251,
+        "win_rate": 38.25,
+        "total_pnl": -30516.8,
+        "avg_win": 942.59,
+        "avg_loss": -780.68,
+        "stopped_out": 91,
+        "held_eod": 96
+      },
+      "ASHOKLEY": {
+        "trades": 251,
+        "win_rate": 39.84,
+        "total_pnl": -9172.87,
+        "avg_win": 1009.65,
+        "avg_loss": -729.39,
+        "stopped_out": 82,
+        "held_eod": 100
+      },
+      "ASIANPAINT": {
+        "trades": 250,
+        "win_rate": 40.4,
+        "total_pnl": 54855.14,
+        "avg_win": 1376.35,
+        "avg_loss": -564.81,
+        "stopped_out": 87,
+        "held_eod": 101
+      },
+      "AUBANK": {
+        "trades": 251,
+        "win_rate": 39.84,
+        "total_pnl": 83954.39,
+        "avg_win": 1938.13,
+        "avg_loss": -727.54,
+        "stopped_out": 91,
+        "held_eod": 100
+      },
+      "AXISBANK": {
+        "trades": 222,
+        "win_rate": 37.39,
+        "total_pnl": 14712.86,
+        "avg_win": 1179.69,
+        "avg_loss": -598.57,
+        "stopped_out": 80,
+        "held_eod": 83
+      },
+      "BAJAJ-AUTO": {
+        "trades": 251,
+        "win_rate": 41.83,
+        "total_pnl": 79590.76,
+        "avg_win": 1502.36,
+        "avg_loss": -535.32,
+        "stopped_out": 89,
+        "held_eod": 105
+      },
+      "BAJAJFINSV": {
+        "trades": 246,
+        "win_rate": 40.65,
+        "total_pnl": 78105.42,
+        "avg_win": 1667.56,
+        "avg_loss": -607.2,
+        "stopped_out": 78,
+        "held_eod": 100
+      },
+      "BAJFINANCE": {
+        "trades": 251,
+        "win_rate": 41.83,
+        "total_pnl": 119186.27,
+        "avg_win": 1953.11,
+        "avg_loss": -588.29,
+        "stopped_out": 82,
+        "held_eod": 105
+      },
+      "BALRAMCHIN": {
+        "trades": 243,
+        "win_rate": 32.51,
+        "total_pnl": -2683.84,
+        "avg_win": 304.61,
+        "avg_loss": -163.1,
+        "stopped_out": 95,
+        "held_eod": 79
+      },
+      "BANDHANBNK": {
+        "trades": 244,
+        "win_rate": 38.93,
+        "total_pnl": -537.99,
+        "avg_win": 64.14,
+        "avg_loss": -44.51,
+        "stopped_out": 81,
+        "held_eod": 95
+      },
+      "BANKBARODA": {
+        "trades": 243,
+        "win_rate": 38.27,
+        "total_pnl": 2470.83,
+        "avg_win": 57.62,
+        "avg_loss": -19.25,
+        "stopped_out": 81,
+        "held_eod": 93
+      },
+      "BATAINDIA": {
+        "trades": 224,
+        "win_rate": 33.93,
+        "total_pnl": -2193.05,
+        "avg_win": 49.26,
+        "avg_loss": -40.12,
+        "stopped_out": 87,
+        "held_eod": 76
+      },
+      "BEL": {
+        "trades": 243,
+        "win_rate": 41.15,
+        "total_pnl": 1381.08,
+        "avg_win": 32.83,
+        "avg_loss": -13.3,
+        "stopped_out": 86,
+        "held_eod": 100
+      },
+      "BHARTIARTL": {
+        "trades": 226,
+        "win_rate": 38.94,
+        "total_pnl": 1968.5,
+        "avg_win": 45.33,
+        "avg_loss": -14.64,
+        "stopped_out": 80,
+        "held_eod": 88
+      },
+      "BHEL": {
+        "trades": 243,
+        "win_rate": 40.33,
+        "total_pnl": 1514.77,
+        "avg_win": 51.67,
+        "avg_loss": -24.48,
+        "stopped_out": 83,
+        "held_eod": 98
+      },
+      "BOSCHLTD": {
+        "trades": 28,
+        "win_rate": 39.29,
+        "total_pnl": 2707.99,
+        "avg_win": 535.23,
+        "avg_loss": -187.03,
+        "stopped_out": 13,
+        "held_eod": 11
+      },
+      "BPCL": {
+        "trades": 243,
+        "win_rate": 39.09,
+        "total_pnl": 535.55,
+        "avg_win": 34.73,
+        "avg_loss": -18.68,
+        "stopped_out": 88,
+        "held_eod": 95
+      },
+      "BRITANNIA": {
+        "trades": 243,
+        "win_rate": 39.51,
+        "total_pnl": -1042.69,
+        "avg_win": 65.27,
+        "avg_loss": -49.72,
+        "stopped_out": 83,
+        "held_eod": 96
+      },
+      "CANBK": {
+        "trades": 243,
+        "win_rate": 41.98,
+        "total_pnl": 1222.22,
+        "avg_win": 55.3,
+        "avg_loss": -31.33,
+        "stopped_out": 87,
+        "held_eod": 102
+      },
+      "CHOLAFIN": {
+        "trades": 243,
+        "win_rate": 36.21,
+        "total_pnl": 1617.62,
+        "avg_win": 70.07,
+        "avg_loss": -29.35,
+        "stopped_out": 86,
+        "held_eod": 88
+      },
+      "CIPLA": {
+        "trades": 210,
+        "win_rate": 36.67,
+        "total_pnl": 221.35,
+        "avg_win": 33.89,
+        "avg_loss": -17.95,
+        "stopped_out": 78,
+        "held_eod": 77
+      },
+      "COALINDIA": {
+        "trades": 198,
+        "win_rate": 36.87,
+        "total_pnl": 1237.65,
+        "avg_win": 41.58,
+        "avg_loss": -14.38,
+        "stopped_out": 74,
+        "held_eod": 73
+      },
+      "COFORGE": {
+        "trades": 243,
+        "win_rate": 39.92,
+        "total_pnl": 3297.51,
+        "avg_win": 87.17,
+        "avg_loss": -35.33,
+        "stopped_out": 90,
+        "held_eod": 97
+      },
+      "CONCOR": {
+        "trades": 242,
+        "win_rate": 37.19,
+        "total_pnl": -2569.17,
+        "avg_win": 15.91,
+        "avg_loss": -26.32,
+        "stopped_out": 90,
+        "held_eod": 90
+      },
+      "CUMMINSIND": {
+        "trades": 243,
+        "win_rate": 39.51,
+        "total_pnl": -476.58,
+        "avg_win": 75.59,
+        "avg_loss": -52.61,
+        "stopped_out": 85,
+        "held_eod": 96
+      },
+      "DABUR": {
+        "trades": 229,
+        "win_rate": 35.81,
+        "total_pnl": -2861.88,
+        "avg_win": 9.11,
+        "avg_loss": -24.55,
+        "stopped_out": 83,
+        "held_eod": 82
+      },
+      "DEEPAKNTR": {
+        "trades": 239,
+        "win_rate": 33.47,
+        "total_pnl": -1432.35,
+        "avg_win": 35.72,
+        "avg_loss": -26.98,
+        "stopped_out": 79,
+        "held_eod": 80
+      },
+      "DIVISLAB": {
+        "trades": 243,
+        "win_rate": 42.39,
+        "total_pnl": 2757.24,
+        "avg_win": 95.29,
+        "avg_loss": -50.41,
+        "stopped_out": 82,
+        "held_eod": 103
+      },
+      "DLF": {
+        "trades": 243,
+        "win_rate": 40.33,
+        "total_pnl": -158.31,
+        "avg_win": 31.08,
+        "avg_loss": -22.1,
+        "stopped_out": 91,
+        "held_eod": 98
+      },
+      "DRREDDY": {
+        "trades": 232,
+        "win_rate": 40.95,
+        "total_pnl": -638.9,
+        "avg_win": 29.25,
+        "avg_loss": -24.95,
+        "stopped_out": 67,
+        "held_eod": 95
+      },
+      "EICHERMOT": {
+        "trades": 243,
+        "win_rate": 39.92,
+        "total_pnl": -316.06,
+        "avg_win": 81.89,
+        "avg_loss": -56.57,
+        "stopped_out": 78,
+        "held_eod": 97
+      },
+      "ESCORTS": {
+        "trades": 243,
+        "win_rate": 38.68,
+        "total_pnl": -1318.75,
+        "avg_win": 55.16,
+        "avg_loss": -43.65,
+        "stopped_out": 77,
+        "held_eod": 94
+      },
+      "EXIDEIND": {
+        "trades": 241,
+        "win_rate": 38.17,
+        "total_pnl": -1913.01,
+        "avg_win": 15.46,
+        "avg_loss": -22.39,
+        "stopped_out": 86,
+        "held_eod": 92
+      },
+      "FEDERALBNK": {
+        "trades": 239,
+        "win_rate": 43.93,
+        "total_pnl": 1151.51,
+        "avg_win": 22.22,
+        "avg_loss": -8.82,
+        "stopped_out": 83,
+        "held_eod": 105
+      },
+      "GLENMARK": {
+        "trades": 243,
+        "win_rate": 41.56,
+        "total_pnl": 868.14,
+        "avg_win": 37.71,
+        "avg_loss": -20.71,
+        "stopped_out": 79,
+        "held_eod": 101
+      },
+      "GNFC": {
+        "trades": 240,
+        "win_rate": 41.25,
+        "total_pnl": 654.07,
+        "avg_win": 16.45,
+        "avg_loss": -6.91,
+        "stopped_out": 77,
+        "held_eod": 99
+      },
+      "GODREJPROP": {
+        "trades": 243,
+        "win_rate": 40.74,
+        "total_pnl": 1663.76,
+        "avg_win": 50.99,
+        "avg_loss": -23.5,
+        "stopped_out": 90,
+        "held_eod": 99
+      },
+      "GRASIM": {
+        "trades": 243,
+        "win_rate": 41.98,
+        "total_pnl": 1201.8,
+        "avg_win": 35.85,
+        "avg_loss": -17.41,
+        "stopped_out": 78,
+        "held_eod": 102
+      },
+      "HAL": {
+        "trades": 243,
+        "win_rate": 46.09,
+        "total_pnl": 1871.06,
+        "avg_win": 62.24,
+        "avg_loss": -38.93,
+        "stopped_out": 80,
+        "held_eod": 112
+      },
+      "HAVELLS": {
+        "trades": 238,
+        "win_rate": 37.39,
+        "total_pnl": -206.22,
+        "avg_win": 19.51,
+        "avg_loss": -13.04,
+        "stopped_out": 83,
+        "held_eod": 89
+      },
+      "HCLTECH": {
+        "trades": 242,
+        "win_rate": 35.95,
+        "total_pnl": -700.79,
+        "avg_win": 19.97,
+        "avg_loss": -15.73,
+        "stopped_out": 89,
+        "held_eod": 87
+      },
+      "HDFCBANK": {
+        "trades": 164,
+        "win_rate": 40.24,
+        "total_pnl": 62.27,
+        "avg_win": 11.85,
+        "avg_loss": -7.35,
+        "stopped_out": 64,
+        "held_eod": 66
+      },
+      "HDFCLIFE": {
+        "trades": 241,
+        "win_rate": 38.59,
+        "total_pnl": -173.47,
+        "avg_win": 9.84,
+        "avg_loss": -7.35,
+        "stopped_out": 96,
+        "held_eod": 93
+      },
+      "HEROMOTOCO": {
+        "trades": 243,
+        "win_rate": 40.33,
+        "total_pnl": 374.33,
+        "avg_win": 67.88,
+        "avg_loss": -43.3,
+        "stopped_out": 64,
+        "held_eod": 98
+      },
+      "HINDALCO": {
+        "trades": 243,
+        "win_rate": 40.74,
+        "total_pnl": 8.08,
+        "avg_win": 11.94,
+        "avg_loss": -8.15,
+        "stopped_out": 89,
+        "held_eod": 99
+      },
+      "HINDUNILVR": {
+        "trades": 224,
+        "win_rate": 35.27,
+        "total_pnl": 23.52,
+        "avg_win": 24.54,
+        "avg_loss": -13.21,
+        "stopped_out": 83,
+        "held_eod": 79
+      },
+      "ICICIBANK": {
+        "trades": 158,
+        "win_rate": 35.44,
+        "total_pnl": 604.04,
+        "avg_win": 25.76,
+        "avg_loss": -8.22,
+        "stopped_out": 62,
+        "held_eod": 56
+      },
+      "IDFCFIRSTB": {
+        "trades": 239,
+        "win_rate": 36.4,
+        "total_pnl": -882.87,
+        "avg_win": 4.02,
+        "avg_loss": -8.11,
+        "stopped_out": 88,
+        "held_eod": 87
+      },
+      "IGL": {
+        "trades": 243,
+        "win_rate": 35.39,
+        "total_pnl": -314.6,
+        "avg_win": 4.99,
+        "avg_loss": -4.74,
+        "stopped_out": 92,
+        "held_eod": 86
+      },
+      "INDHOTEL": {
+        "trades": 239,
+        "win_rate": 41.0,
+        "total_pnl": 409.99,
+        "avg_win": 15.76,
+        "avg_loss": -8.05,
+        "stopped_out": 79,
+        "held_eod": 98
+      },
+      "INDUSINDBK": {
+        "trades": 243,
+        "win_rate": 37.86,
+        "total_pnl": 74.16,
+        "avg_win": 17.58,
+        "avg_loss": -10.22,
+        "stopped_out": 96,
+        "held_eod": 92
+      },
+      "INDUSTOWER": {
+        "trades": 243,
+        "win_rate": 39.09,
+        "total_pnl": 54.27,
+        "avg_win": 13.68,
+        "avg_loss": -8.41,
+        "stopped_out": 82,
+        "held_eod": 95
+      },
+      "INFY": {
+        "trades": 243,
+        "win_rate": 34.57,
+        "total_pnl": -714.64,
+        "avg_win": 21.33,
+        "avg_loss": -15.77,
+        "stopped_out": 88,
+        "held_eod": 84
+      },
+      "IOC": {
+        "trades": 239,
+        "win_rate": 40.17,
+        "total_pnl": -649.11,
+        "avg_win": 7.4,
+        "avg_loss": -9.5,
+        "stopped_out": 80,
+        "held_eod": 96
+      },
+      "IRCTC": {
+        "trades": 192,
+        "win_rate": 35.42,
+        "total_pnl": -313.54,
+        "avg_win": 11.29,
+        "avg_loss": -8.72,
+        "stopped_out": 73,
+        "held_eod": 68
+      },
+      "ITC": {
+        "trades": 168,
+        "win_rate": 33.33,
+        "total_pnl": -861.59,
+        "avg_win": 8.01,
+        "avg_loss": -11.7,
+        "stopped_out": 67,
+        "held_eod": 56
+      },
+      "JINDALSTEL": {
+        "trades": 243,
+        "win_rate": 39.09,
+        "total_pnl": -388.67,
+        "avg_win": 14.63,
+        "avg_loss": -12.02,
+        "stopped_out": 87,
+        "held_eod": 95
+      },
+      "JSWSTEEL": {
+        "trades": 243,
+        "win_rate": 38.68,
+        "total_pnl": -203.26,
+        "avg_win": 13.18,
+        "avg_loss": -9.68,
+        "stopped_out": 99,
+        "held_eod": 94
+      },
+      "KOTAKBANK": {
+        "trades": 217,
+        "win_rate": 40.09,
+        "total_pnl": 6066.54,
+        "avg_win": 86.63,
+        "avg_loss": -11.31,
+        "stopped_out": 75,
+        "held_eod": 87
+      },
+      "LICHSGFIN": {
+        "trades": 229,
+        "win_rate": 40.17,
+        "total_pnl": 641.05,
+        "avg_win": 18.99,
+        "avg_loss": -8.07,
+        "stopped_out": 79,
+        "held_eod": 92
+      },
+      "LT": {
+        "trades": 243,
+        "win_rate": 37.45,
+        "total_pnl": 76.24,
+        "avg_win": 40.47,
+        "avg_loss": -23.73,
+        "stopped_out": 93,
+        "held_eod": 91
+      },
+      "LUPIN": {
+        "trades": 242,
+        "win_rate": 37.6,
+        "total_pnl": 210.34,
+        "avg_win": 24.84,
+        "avg_loss": -13.58,
+        "stopped_out": 99,
+        "held_eod": 91
+      },
+      "M&M": {
+        "trades": 243,
+        "win_rate": 38.68,
+        "total_pnl": 723.85,
+        "avg_win": 44.36,
+        "avg_loss": -23.13,
+        "stopped_out": 90,
+        "held_eod": 94
+      },
+      "MARUTI": {
+        "trades": 243,
+        "win_rate": 38.68,
+        "total_pnl": 1357.1,
+        "avg_win": 148.4,
+        "avg_loss": -84.51,
+        "stopped_out": 77,
+        "held_eod": 94
+      },
+      "METROPOLIS": {
+        "trades": 243,
+        "win_rate": 33.33,
+        "total_pnl": 31.07,
+        "avg_win": 12.35,
+        "avg_loss": -5.98,
+        "stopped_out": 91,
+        "held_eod": 81
+      },
+      "MFSL": {
+        "trades": 243,
+        "win_rate": 38.68,
+        "total_pnl": 260.28,
+        "avg_win": 22.85,
+        "avg_loss": -12.67,
+        "stopped_out": 87,
+        "held_eod": 94
+      },
+      "MGL": {
+        "trades": 243,
+        "win_rate": 38.27,
+        "total_pnl": -181.73,
+        "avg_win": 21.3,
+        "avg_loss": -14.42,
+        "stopped_out": 79,
+        "held_eod": 93
+      },
+      "MPHASIS": {
+        "trades": 243,
+        "win_rate": 35.39,
+        "total_pnl": -501.78,
+        "avg_win": 40.72,
+        "avg_loss": -25.5,
+        "stopped_out": 80,
+        "held_eod": 86
+      },
+      "MRF": {
+        "trades": 12,
+        "win_rate": 37.5,
+        "total_pnl": 14250.0,
+        "avg_win": 2250.0,
+        "avg_loss": -950.0,
+        "stopped_out": 7,
+        "held_eod": 5
+      },
+      "MUTHOOTFIN": {
+        "trades": 243,
+        "win_rate": 41.56,
+        "total_pnl": 430.64,
+        "avg_win": 43.26,
+        "avg_loss": -27.74,
+        "stopped_out": 93,
+        "held_eod": 101
+      },
+      "NATIONALUM": {
+        "trades": 243,
+        "win_rate": 41.56,
+        "total_pnl": -61.66,
+        "avg_win": 8.08,
+        "avg_loss": -6.18,
+        "stopped_out": 88,
+        "held_eod": 101
+      },
+      "NAVINFLUOR": {
+        "trades": 243,
+        "win_rate": 44.44,
+        "total_pnl": 4132.02,
+        "avg_win": 99.76,
+        "avg_loss": -49.2,
+        "stopped_out": 83,
+        "held_eod": 108
+      },
+      "NESTLEIND": {
+        "trades": 227,
+        "win_rate": 36.12,
+        "total_pnl": 128.01,
+        "avg_win": 16.15,
+        "avg_loss": -8.25,
+        "stopped_out": 87,
+        "held_eod": 82
+      },
+      "NIFTY IT": {
+        "trades": 12,
+        "win_rate": 37.5,
+        "total_pnl": 14250.0,
+        "avg_win": 2250.0,
+        "avg_loss": -950.0,
+        "stopped_out": 7,
+        "held_eod": 5
+      },
+      "NTPC": {
+        "trades": 214,
+        "win_rate": 39.25,
+        "total_pnl": -464.89,
+        "avg_win": 4.51,
+        "avg_loss": -6.49,
+        "stopped_out": 67,
+        "held_eod": 84
+      },
+      "OBEROIRLTY": {
+        "trades": 243,
+        "win_rate": 36.63,
+        "total_pnl": 165.14,
+        "avg_win": 26.55,
+        "avg_loss": -14.27,
+        "stopped_out": 87,
+        "held_eod": 89
+      },
+      "OFSS": {
+        "trades": 243,
+        "win_rate": 38.27,
+        "total_pnl": 2112.71,
+        "avg_win": 148.66,
+        "avg_loss": -78.09,
+        "stopped_out": 88,
+        "held_eod": 93
+      },
+      "ONGC": {
+        "trades": 212,
+        "win_rate": 36.32,
+        "total_pnl": -409.62,
+        "avg_win": 3.57,
+        "avg_loss": -5.07,
+        "stopped_out": 75,
+        "held_eod": 77
+      },
+      "PERSISTENT": {
+        "trades": 243,
+        "win_rate": 39.51,
+        "total_pnl": 69.51,
+        "avg_win": 86.73,
+        "avg_loss": -56.17,
+        "stopped_out": 85,
+        "held_eod": 96
+      },
+      "PETRONET": {
+        "trades": 238,
+        "win_rate": 42.44,
+        "total_pnl": -241.45,
+        "avg_win": 4.72,
+        "avg_loss": -5.24,
+        "stopped_out": 83,
+        "held_eod": 101
+      },
+      "PFC": {
+        "trades": 240,
+        "win_rate": 37.08,
+        "total_pnl": -369.73,
+        "avg_win": 5.81,
+        "avg_loss": -5.87,
+        "stopped_out": 90,
+        "held_eod": 89
+      },
+      "PIDILITIND": {
+        "trades": 226,
+        "win_rate": 36.28,
+        "total_pnl": 122.06,
+        "avg_win": 18.59,
+        "avg_loss": -9.74,
+        "stopped_out": 87,
+        "held_eod": 82
+      },
+      "PNB": {
+        "trades": 242,
+        "win_rate": 42.15,
+        "total_pnl": -180.69,
+        "avg_win": 3.24,
+        "avg_loss": -3.65,
+        "stopped_out": 75,
+        "held_eod": 102
+      },
+      "POLYCAB": {
+        "trades": 243,
+        "win_rate": 45.68,
+        "total_pnl": 1504.24,
+        "avg_win": 100.77,
+        "avg_loss": -73.34,
+        "stopped_out": 62,
+        "held_eod": 111
+      },
+      "POWERGRID": {
+        "trades": 230,
+        "win_rate": 30.87,
+        "total_pnl": -307.24,
+        "avg_win": 3.13,
+        "avg_loss": -3.33,
+        "stopped_out": 100,
+        "held_eod": 71
+      },
+      "RECLTD": {
+        "trades": 241,
+        "win_rate": 37.76,
+        "total_pnl": -299.58,
+        "avg_win": 6.69,
+        "avg_loss": -6.06,
+        "stopped_out": 85,
+        "held_eod": 91
+      },
+      "RELIANCE": {
+        "trades": 203,
+        "win_rate": 37.44,
+        "total_pnl": 190.28,
+        "avg_win": 17.35,
+        "avg_loss": -8.89,
+        "stopped_out": 76,
+        "held_eod": 76
+      },
+      "SAIL": {
+        "trades": 243,
+        "win_rate": 39.92,
+        "total_pnl": -862.79,
+        "avg_win": 2.66,
+        "avg_loss": -7.68,
+        "stopped_out": 74,
+        "held_eod": 97
+      },
+      "SBILIFE": {
+        "trades": 235,
+        "win_rate": 33.19,
+        "total_pnl": -388.66,
+        "avg_win": 17.1,
+        "avg_loss": -10.97,
+        "stopped_out": 97,
+        "held_eod": 78
+      },
+      "SBIN": {
+        "trades": 181,
+        "win_rate": 41.44,
+        "total_pnl": 129.29,
+        "avg_win": 12.69,
+        "avg_loss": -7.76,
+        "stopped_out": 56,
+        "held_eod": 75
+      },
+      "SHREECEM": {
+        "trades": 14,
+        "win_rate": 57.14,
+        "total_pnl": 1636.11,
+        "avg_win": 323.12,
+        "avg_loss": -158.15,
+        "stopped_out": 2,
+        "held_eod": 8
+      },
+      "SIEMENS": {
+        "trades": 243,
+        "win_rate": 39.92,
+        "total_pnl": -1434.8,
+        "avg_win": 49.84,
+        "avg_loss": -42.94,
+        "stopped_out": 84,
+        "held_eod": 97
+      },
+      "SRF": {
+        "trades": 243,
+        "win_rate": 41.15,
+        "total_pnl": 287.38,
+        "avg_win": 35.71,
+        "avg_loss": -22.96,
+        "stopped_out": 84,
+        "held_eod": 100
+      },
+      "SUNPHARMA": {
+        "trades": 212,
+        "win_rate": 35.85,
+        "total_pnl": -371.74,
+        "avg_win": 17.78,
+        "avg_loss": -12.67,
+        "stopped_out": 76,
+        "held_eod": 76
+      },
+      "SYNGENE": {
+        "trades": 243,
+        "win_rate": 34.57,
+        "total_pnl": -446.77,
+        "avg_win": 9.46,
+        "avg_loss": -7.81,
+        "stopped_out": 97,
+        "held_eod": 84
+      },
+      "TATACOMM": {
+        "trades": 243,
+        "win_rate": 37.86,
+        "total_pnl": -131.71,
+        "avg_win": 24.54,
+        "avg_loss": -15.82,
+        "stopped_out": 84,
+        "held_eod": 92
+      },
+      "TATACONSUM": {
+        "trades": 243,
+        "win_rate": 35.8,
+        "total_pnl": -137.58,
+        "avg_win": 13.04,
+        "avg_loss": -8.16,
+        "stopped_out": 86,
+        "held_eod": 87
+      },
+      "TATAPOWER": {
+        "trades": 235,
+        "win_rate": 41.28,
+        "total_pnl": -403.35,
+        "avg_win": 5.03,
+        "avg_loss": -6.46,
+        "stopped_out": 77,
+        "held_eod": 97
+      },
+      "TATASTEEL": {
+        "trades": 241,
+        "win_rate": 41.91,
+        "total_pnl": -309.84,
+        "avg_win": 3.27,
+        "avg_loss": -4.57,
+        "stopped_out": 78,
+        "held_eod": 101
+      },
+      "TCS": {
+        "trades": 243,
+        "win_rate": 34.16,
+        "total_pnl": -891.26,
+        "avg_win": 33.94,
+        "avg_loss": -23.18,
+        "stopped_out": 83,
+        "held_eod": 83
+      },
+      "TECHM": {
+        "trades": 241,
+        "win_rate": 34.44,
+        "total_pnl": -431.01,
+        "avg_win": 19.32,
+        "avg_loss": -12.88,
+        "stopped_out": 93,
+        "held_eod": 83
+      },
+      "TITAN": {
+        "trades": 243,
+        "win_rate": 37.86,
+        "total_pnl": 348.73,
+        "avg_win": 42.16,
+        "avg_loss": -23.38,
+        "stopped_out": 89,
+        "held_eod": 92
+      },
+      "TRENT": {
+        "trades": 243,
+        "win_rate": 37.04,
+        "total_pnl": -4.31,
+        "avg_win": 49.28,
+        "avg_loss": -29.02,
+        "stopped_out": 96,
+        "held_eod": 90
+      },
+      "TVSMOTOR": {
+        "trades": 243,
+        "win_rate": 39.92,
+        "total_pnl": 1177.3,
+        "avg_win": 49.32,
+        "avg_loss": -24.7,
+        "stopped_out": 85,
+        "held_eod": 97
+      },
+      "UBL": {
+        "trades": 240,
+        "win_rate": 33.33,
+        "total_pnl": -434.4,
+        "avg_win": 19.12,
+        "avg_loss": -12.27,
+        "stopped_out": 94,
+        "held_eod": 80
+      },
+      "ULTRACEMCO": {
+        "trades": 243,
+        "win_rate": 34.57,
+        "total_pnl": 1065.17,
+        "avg_win": 140.45,
+        "avg_loss": -67.5,
+        "stopped_out": 94,
+        "held_eod": 84
+      },
+      "VOLTAS": {
+        "trades": 243,
+        "win_rate": 37.04,
+        "total_pnl": -192.27,
+        "avg_win": 22.54,
+        "avg_loss": -14.52,
+        "stopped_out": 79,
+        "held_eod": 90
+      },
+      "WIPRO": {
+        "trades": 231,
+        "win_rate": 37.23,
+        "total_pnl": 276.46,
+        "avg_win": 8.38,
+        "avg_loss": -3.07,
+        "stopped_out": 88,
+        "held_eod": 86
+      },
+      "ZEEL": {
+        "trades": 243,
+        "win_rate": 33.33,
+        "total_pnl": -725.81,
+        "avg_win": 8.42,
+        "avg_loss": -8.69,
+        "stopped_out": 97,
+        "held_eod": 81
+      }
+    }
+  },
+  "quant_optimized": {
+    "metrics": {
+      "trade_count": 2529,
+      "initial_market_value": 1000000.0,
+      "end_market_value": 1081981.28,
+      "total_pnl": 84551.32999999997,
+      "unrealized_pnl": -2570.0499999999447,
+      "total_return_pct": 8.455133000000004,
+      "total_profit": 1199333.23,
+      "total_loss": -1114781.9,
+      "total_fees": 2191.44,
+      "max_drawdown": -126835.25000000012,
+      "max_drawdown_pct": -10.984694250708005,
+      "max_drawdown_date": "2026-09-29 00:00:00",
+      "win_rate": 49.46576968737634,
+      "loss_rate": 50.53423031262366,
+      "winning_trades": 1250,
+      "losing_trades": 1277,
+      "avg_pnl": 33.43271253459864,
+      "avg_return_pct": 0.05768287860814551,
+      "avg_trade_bars": 1.0,
+      "avg_profit": 959.466584,
+      "avg_profit_pct": 1.2047317854283428,
+      "avg_winning_trade_bars": 1.0,
+      "avg_loss": -872.9693813625685,
+      "avg_loss_pct": -1.0691030684500393,
+      "avg_losing_trade_bars": 1.0,
+      "largest_win": 14546.7,
+      "largest_win_pct": 7.08,
+      "largest_win_bars": 1,
+      "largest_loss": -13184.88,
+      "largest_loss_pct": -7.09,
+      "largest_loss_bars": 1,
+      "max_wins": 23,
+      "max_losses": 32,
+      "sharpe": 0.03000991945223568,
+      "sortino": 0.04697269649345575,
+      "profit_factor": 1.083068216818198,
+      "ulcer_index": 1.8172721462645085,
+      "upi": 0.009752084896065424,
+      "equity_r2": 0.6341041627228163,
+      "std_error": 50020.89778173937
+    },
+    "symbols": {
+      "APOLLOHOSP": {
+        "trades": 95,
+        "win_rate": 55.79,
+        "total_pnl": 27325.66,
+        "avg_win": 1213.37,
+        "avg_loss": -880.54,
+        "stopped_out": 17,
+        "held_eod": 78
+      },
+      "AXISBANK": {
+        "trades": 110,
+        "win_rate": 48.18,
+        "total_pnl": -14692.86,
+        "avg_win": 1058.27,
+        "avg_loss": -1241.78,
+        "stopped_out": 23,
+        "held_eod": 87
+      },
+      "BAJAJ-AUTO": {
+        "trades": 155,
+        "win_rate": 50.97,
+        "total_pnl": 4635.15,
+        "avg_win": 1207.72,
+        "avg_loss": -1194.4,
+        "stopped_out": 40,
+        "held_eod": 115
+      },
+      "BAJFINANCE": {
+        "trades": 195,
+        "win_rate": 53.33,
+        "total_pnl": 36677.07,
+        "avg_win": 1380.32,
+        "avg_loss": -1174.46,
+        "stopped_out": 37,
+        "held_eod": 158
+      },
+      "BHARTIARTL": {
+        "trades": 106,
+        "win_rate": 51.89,
+        "total_pnl": 23916.78,
+        "avg_win": 1388.68,
+        "avg_loss": -1028.64,
+        "stopped_out": 22,
+        "held_eod": 84
+      },
+      "COFORGE": {
+        "trades": 234,
+        "win_rate": 50.85,
+        "total_pnl": 46128.68,
+        "avg_win": 1987.05,
+        "avg_loss": -1655.04,
+        "stopped_out": 49,
+        "held_eod": 185
+      },
+      "DRREDDY": {
+        "trades": 152,
+        "win_rate": 50.0,
+        "total_pnl": -350.43,
+        "avg_win": 662.97,
+        "avg_loss": -667.58,
+        "stopped_out": 31,
+        "held_eod": 121
+      },
+      "HDFCBANK": {
+        "trades": 66,
+        "win_rate": 43.94,
+        "total_pnl": 12945.34,
+        "avg_win": 1154.42,
+        "avg_loss": -554.94,
+        "stopped_out": 19,
+        "held_eod": 47
+      },
+      "ICICIBANK": {
+        "trades": 44,
+        "win_rate": 47.73,
+        "total_pnl": -602.25,
+        "avg_win": 582.1,
+        "avg_loss": -557.67,
+        "stopped_out": 14,
+        "held_eod": 30
+      },
+      "INDUSINDBK": {
+        "trades": 219,
+        "win_rate": 49.77,
+        "total_pnl": 38530.38,
+        "avg_win": 1788.73,
+        "avg_loss": -1422.19,
+        "stopped_out": 48,
+        "held_eod": 171
+      },
+      "INFY": {
+        "trades": 166,
+        "win_rate": 51.2,
+        "total_pnl": -22052.71,
+        "avg_win": 1232.51,
+        "avg_loss": -1565.63,
+        "stopped_out": 30,
+        "held_eod": 136
+      },
+      "KOTAKBANK": {
+        "trades": 112,
+        "win_rate": 50.0,
+        "total_pnl": 14023.59,
+        "avg_win": 677.61,
+        "avg_loss": -427.18,
+        "stopped_out": 31,
+        "held_eod": 81
+      },
+      "LT": {
+        "trades": 99,
+        "win_rate": 48.48,
+        "total_pnl": -3094.84,
+        "avg_win": 329.66,
+        "avg_loss": -370.95,
+        "stopped_out": 24,
+        "held_eod": 75
+      },
+      "MARUTI": {
+        "trades": 118,
+        "win_rate": 48.31,
+        "total_pnl": -1310.24,
+        "avg_win": 329.34,
+        "avg_loss": -329.23,
+        "stopped_out": 37,
+        "held_eod": 81
+      },
+      "RELIANCE": {
+        "trades": 79,
+        "win_rate": 46.84,
+        "total_pnl": -1051.89,
+        "avg_win": 173.07,
+        "avg_loss": -177.52,
+        "stopped_out": 17,
+        "held_eod": 62
+      },
+      "SBIN": {
+        "trades": 87,
+        "win_rate": 44.83,
+        "total_pnl": -10043.41,
+        "avg_win": 162.77,
+        "avg_loss": -341.49,
+        "stopped_out": 17,
+        "held_eod": 70
+      },
+      "SUNPHARMA": {
+        "trades": 89,
+        "win_rate": 56.18,
+        "total_pnl": 8859.86,
+        "avg_win": 314.0,
+        "avg_loss": -175.39,
+        "stopped_out": 14,
+        "held_eod": 75
+      },
+      "TCS": {
+        "trades": 125,
+        "win_rate": 44.8,
+        "total_pnl": -18846.84,
+        "avg_win": 231.48,
+        "avg_loss": -461.01,
+        "stopped_out": 34,
+        "held_eod": 91
+      },
+      "TITAN": {
+        "trades": 118,
+        "win_rate": 47.46,
+        "total_pnl": -3753.89,
+        "avg_win": 186.56,
+        "avg_loss": -229.05,
+        "stopped_out": 33,
+        "held_eod": 85
+      },
+      "WIPRO": {
+        "trades": 160,
+        "win_rate": 42.5,
+        "total_pnl": -52691.82,
+        "avg_win": 101.62,
+        "avg_loss": -647.85,
+        "stopped_out": 38,
+        "held_eod": 122
+      }
+    }
+  },
+  "all_symbols": {
+    "ADANIENT": {
+      "trades": 251,
+      "win_rate": 39.44,
+      "total_pnl": 22613.9,
+      "avg_win": 1122.18,
+      "avg_loss": -582.12,
+      "stopped_out": 89,
+      "held_eod": 99
+    },
+    "ADANIPORTS": {
+      "trades": 245,
+      "win_rate": 40.82,
+      "total_pnl": 58550.86,
+      "avg_win": 1237.12,
+      "avg_loss": -449.39,
+      "stopped_out": 80,
+      "held_eod": 100
+    },
+    "AMBUJACEM": {
+      "trades": 248,
+      "win_rate": 37.1,
+      "total_pnl": -20175.02,
+      "avg_win": 751.15,
+      "avg_loss": -572.31,
+      "stopped_out": 93,
+      "held_eod": 92
+    },
+    "APOLLOHOSP": {
+      "trades": 251,
+      "win_rate": 37.45,
+      "total_pnl": -5413.4,
+      "avg_win": 813.18,
+      "avg_loss": -521.35,
+      "stopped_out": 94,
+      "held_eod": 94
+    },
+    "APOLLOTYRE": {
+      "trades": 251,
+      "win_rate": 38.25,
+      "total_pnl": -30516.8,
+      "avg_win": 942.59,
+      "avg_loss": -780.68,
+      "stopped_out": 91,
+      "held_eod": 96
+    },
+    "ASHOKLEY": {
+      "trades": 251,
+      "win_rate": 39.84,
+      "total_pnl": -9172.87,
+      "avg_win": 1009.65,
+      "avg_loss": -729.39,
+      "stopped_out": 82,
+      "held_eod": 100
+    },
+    "ASIANPAINT": {
+      "trades": 250,
+      "win_rate": 40.4,
+      "total_pnl": 54855.14,
+      "avg_win": 1376.35,
+      "avg_loss": -564.81,
+      "stopped_out": 87,
+      "held_eod": 101
+    },
+    "AUBANK": {
+      "trades": 251,
+      "win_rate": 39.84,
+      "total_pnl": 83954.39,
+      "avg_win": 1938.13,
+      "avg_loss": -727.54,
+      "stopped_out": 91,
+      "held_eod": 100
+    },
+    "AXISBANK": {
+      "trades": 222,
+      "win_rate": 37.39,
+      "total_pnl": 14712.86,
+      "avg_win": 1179.69,
+      "avg_loss": -598.57,
+      "stopped_out": 80,
+      "held_eod": 83
+    },
+    "BAJAJ-AUTO": {
+      "trades": 251,
+      "win_rate": 41.83,
+      "total_pnl": 79590.76,
+      "avg_win": 1502.36,
+      "avg_loss": -535.32,
+      "stopped_out": 89,
+      "held_eod": 105
+    },
+    "BAJAJFINSV": {
+      "trades": 246,
+      "win_rate": 40.65,
+      "total_pnl": 78105.42,
+      "avg_win": 1667.56,
+      "avg_loss": -607.2,
+      "stopped_out": 78,
+      "held_eod": 100
+    },
+    "BAJFINANCE": {
+      "trades": 251,
+      "win_rate": 41.83,
+      "total_pnl": 119186.27,
+      "avg_win": 1953.11,
+      "avg_loss": -588.29,
+      "stopped_out": 82,
+      "held_eod": 105
+    },
+    "BALRAMCHIN": {
+      "trades": 243,
+      "win_rate": 32.51,
+      "total_pnl": -2683.84,
+      "avg_win": 304.61,
+      "avg_loss": -163.1,
+      "stopped_out": 95,
+      "held_eod": 79
+    },
+    "BANDHANBNK": {
+      "trades": 244,
+      "win_rate": 38.93,
+      "total_pnl": -537.99,
+      "avg_win": 64.14,
+      "avg_loss": -44.51,
+      "stopped_out": 81,
+      "held_eod": 95
+    },
+    "BANKBARODA": {
+      "trades": 243,
+      "win_rate": 38.27,
+      "total_pnl": 2470.83,
+      "avg_win": 57.62,
+      "avg_loss": -19.25,
+      "stopped_out": 81,
+      "held_eod": 93
+    },
+    "BATAINDIA": {
+      "trades": 224,
+      "win_rate": 33.93,
+      "total_pnl": -2193.05,
+      "avg_win": 49.26,
+      "avg_loss": -40.12,
+      "stopped_out": 87,
+      "held_eod": 76
+    },
+    "BEL": {
+      "trades": 243,
+      "win_rate": 41.15,
+      "total_pnl": 1381.08,
+      "avg_win": 32.83,
+      "avg_loss": -13.3,
+      "stopped_out": 86,
+      "held_eod": 100
+    },
+    "BHARTIARTL": {
+      "trades": 226,
+      "win_rate": 38.94,
+      "total_pnl": 1968.5,
+      "avg_win": 45.33,
+      "avg_loss": -14.64,
+      "stopped_out": 80,
+      "held_eod": 88
+    },
+    "BHEL": {
+      "trades": 243,
+      "win_rate": 40.33,
+      "total_pnl": 1514.77,
+      "avg_win": 51.67,
+      "avg_loss": -24.48,
+      "stopped_out": 83,
+      "held_eod": 98
+    },
+    "BOSCHLTD": {
+      "trades": 28,
+      "win_rate": 39.29,
+      "total_pnl": 2707.99,
+      "avg_win": 535.23,
+      "avg_loss": -187.03,
+      "stopped_out": 13,
+      "held_eod": 11
+    },
+    "BPCL": {
+      "trades": 243,
+      "win_rate": 39.09,
+      "total_pnl": 535.55,
+      "avg_win": 34.73,
+      "avg_loss": -18.68,
+      "stopped_out": 88,
+      "held_eod": 95
+    },
+    "BRITANNIA": {
+      "trades": 243,
+      "win_rate": 39.51,
+      "total_pnl": -1042.69,
+      "avg_win": 65.27,
+      "avg_loss": -49.72,
+      "stopped_out": 83,
+      "held_eod": 96
+    },
+    "CANBK": {
+      "trades": 243,
+      "win_rate": 41.98,
+      "total_pnl": 1222.22,
+      "avg_win": 55.3,
+      "avg_loss": -31.33,
+      "stopped_out": 87,
+      "held_eod": 102
+    },
+    "CHOLAFIN": {
+      "trades": 243,
+      "win_rate": 36.21,
+      "total_pnl": 1617.62,
+      "avg_win": 70.07,
+      "avg_loss": -29.35,
+      "stopped_out": 86,
+      "held_eod": 88
+    },
+    "CIPLA": {
+      "trades": 210,
+      "win_rate": 36.67,
+      "total_pnl": 221.35,
+      "avg_win": 33.89,
+      "avg_loss": -17.95,
+      "stopped_out": 78,
+      "held_eod": 77
+    },
+    "COALINDIA": {
+      "trades": 198,
+      "win_rate": 36.87,
+      "total_pnl": 1237.65,
+      "avg_win": 41.58,
+      "avg_loss": -14.38,
+      "stopped_out": 74,
+      "held_eod": 73
+    },
+    "COFORGE": {
+      "trades": 243,
+      "win_rate": 39.92,
+      "total_pnl": 3297.51,
+      "avg_win": 87.17,
+      "avg_loss": -35.33,
+      "stopped_out": 90,
+      "held_eod": 97
+    },
+    "CONCOR": {
+      "trades": 242,
+      "win_rate": 37.19,
+      "total_pnl": -2569.17,
+      "avg_win": 15.91,
+      "avg_loss": -26.32,
+      "stopped_out": 90,
+      "held_eod": 90
+    },
+    "CUMMINSIND": {
+      "trades": 243,
+      "win_rate": 39.51,
+      "total_pnl": -476.58,
+      "avg_win": 75.59,
+      "avg_loss": -52.61,
+      "stopped_out": 85,
+      "held_eod": 96
+    },
+    "DABUR": {
+      "trades": 229,
+      "win_rate": 35.81,
+      "total_pnl": -2861.88,
+      "avg_win": 9.11,
+      "avg_loss": -24.55,
+      "stopped_out": 83,
+      "held_eod": 82
+    },
+    "DEEPAKNTR": {
+      "trades": 239,
+      "win_rate": 33.47,
+      "total_pnl": -1432.35,
+      "avg_win": 35.72,
+      "avg_loss": -26.98,
+      "stopped_out": 79,
+      "held_eod": 80
+    },
+    "DIVISLAB": {
+      "trades": 243,
+      "win_rate": 42.39,
+      "total_pnl": 2757.24,
+      "avg_win": 95.29,
+      "avg_loss": -50.41,
+      "stopped_out": 82,
+      "held_eod": 103
+    },
+    "DLF": {
+      "trades": 243,
+      "win_rate": 40.33,
+      "total_pnl": -158.31,
+      "avg_win": 31.08,
+      "avg_loss": -22.1,
+      "stopped_out": 91,
+      "held_eod": 98
+    },
+    "DRREDDY": {
+      "trades": 232,
+      "win_rate": 40.95,
+      "total_pnl": -638.9,
+      "avg_win": 29.25,
+      "avg_loss": -24.95,
+      "stopped_out": 67,
+      "held_eod": 95
+    },
+    "EICHERMOT": {
+      "trades": 243,
+      "win_rate": 39.92,
+      "total_pnl": -316.06,
+      "avg_win": 81.89,
+      "avg_loss": -56.57,
+      "stopped_out": 78,
+      "held_eod": 97
+    },
+    "ESCORTS": {
+      "trades": 243,
+      "win_rate": 38.68,
+      "total_pnl": -1318.75,
+      "avg_win": 55.16,
+      "avg_loss": -43.65,
+      "stopped_out": 77,
+      "held_eod": 94
+    },
+    "EXIDEIND": {
+      "trades": 241,
+      "win_rate": 38.17,
+      "total_pnl": -1913.01,
+      "avg_win": 15.46,
+      "avg_loss": -22.39,
+      "stopped_out": 86,
+      "held_eod": 92
+    },
+    "FEDERALBNK": {
+      "trades": 239,
+      "win_rate": 43.93,
+      "total_pnl": 1151.51,
+      "avg_win": 22.22,
+      "avg_loss": -8.82,
+      "stopped_out": 83,
+      "held_eod": 105
+    },
+    "GLENMARK": {
+      "trades": 243,
+      "win_rate": 41.56,
+      "total_pnl": 868.14,
+      "avg_win": 37.71,
+      "avg_loss": -20.71,
+      "stopped_out": 79,
+      "held_eod": 101
+    },
+    "GNFC": {
+      "trades": 240,
+      "win_rate": 41.25,
+      "total_pnl": 654.07,
+      "avg_win": 16.45,
+      "avg_loss": -6.91,
+      "stopped_out": 77,
+      "held_eod": 99
+    },
+    "GODREJPROP": {
+      "trades": 243,
+      "win_rate": 40.74,
+      "total_pnl": 1663.76,
+      "avg_win": 50.99,
+      "avg_loss": -23.5,
+      "stopped_out": 90,
+      "held_eod": 99
+    },
+    "GRASIM": {
+      "trades": 243,
+      "win_rate": 41.98,
+      "total_pnl": 1201.8,
+      "avg_win": 35.85,
+      "avg_loss": -17.41,
+      "stopped_out": 78,
+      "held_eod": 102
+    },
+    "HAL": {
+      "trades": 243,
+      "win_rate": 46.09,
+      "total_pnl": 1871.06,
+      "avg_win": 62.24,
+      "avg_loss": -38.93,
+      "stopped_out": 80,
+      "held_eod": 112
+    },
+    "HAVELLS": {
+      "trades": 238,
+      "win_rate": 37.39,
+      "total_pnl": -206.22,
+      "avg_win": 19.51,
+      "avg_loss": -13.04,
+      "stopped_out": 83,
+      "held_eod": 89
+    },
+    "HCLTECH": {
+      "trades": 242,
+      "win_rate": 35.95,
+      "total_pnl": -700.79,
+      "avg_win": 19.97,
+      "avg_loss": -15.73,
+      "stopped_out": 89,
+      "held_eod": 87
+    },
+    "HDFCBANK": {
+      "trades": 164,
+      "win_rate": 40.24,
+      "total_pnl": 62.27,
+      "avg_win": 11.85,
+      "avg_loss": -7.35,
+      "stopped_out": 64,
+      "held_eod": 66
+    },
+    "HDFCLIFE": {
+      "trades": 241,
+      "win_rate": 38.59,
+      "total_pnl": -173.47,
+      "avg_win": 9.84,
+      "avg_loss": -7.35,
+      "stopped_out": 96,
+      "held_eod": 93
+    },
+    "HEROMOTOCO": {
+      "trades": 243,
+      "win_rate": 40.33,
+      "total_pnl": 374.33,
+      "avg_win": 67.88,
+      "avg_loss": -43.3,
+      "stopped_out": 64,
+      "held_eod": 98
+    },
+    "HINDALCO": {
+      "trades": 243,
+      "win_rate": 40.74,
+      "total_pnl": 8.08,
+      "avg_win": 11.94,
+      "avg_loss": -8.15,
+      "stopped_out": 89,
+      "held_eod": 99
+    },
+    "HINDUNILVR": {
+      "trades": 224,
+      "win_rate": 35.27,
+      "total_pnl": 23.52,
+      "avg_win": 24.54,
+      "avg_loss": -13.21,
+      "stopped_out": 83,
+      "held_eod": 79
+    },
+    "ICICIBANK": {
+      "trades": 158,
+      "win_rate": 35.44,
+      "total_pnl": 604.04,
+      "avg_win": 25.76,
+      "avg_loss": -8.22,
+      "stopped_out": 62,
+      "held_eod": 56
+    },
+    "IDFCFIRSTB": {
+      "trades": 239,
+      "win_rate": 36.4,
+      "total_pnl": -882.87,
+      "avg_win": 4.02,
+      "avg_loss": -8.11,
+      "stopped_out": 88,
+      "held_eod": 87
+    },
+    "IGL": {
+      "trades": 243,
+      "win_rate": 35.39,
+      "total_pnl": -314.6,
+      "avg_win": 4.99,
+      "avg_loss": -4.74,
+      "stopped_out": 92,
+      "held_eod": 86
+    },
+    "INDHOTEL": {
+      "trades": 239,
+      "win_rate": 41.0,
+      "total_pnl": 409.99,
+      "avg_win": 15.76,
+      "avg_loss": -8.05,
+      "stopped_out": 79,
+      "held_eod": 98
+    },
+    "INDUSINDBK": {
+      "trades": 243,
+      "win_rate": 37.86,
+      "total_pnl": 74.16,
+      "avg_win": 17.58,
+      "avg_loss": -10.22,
+      "stopped_out": 96,
+      "held_eod": 92
+    },
+    "INDUSTOWER": {
+      "trades": 243,
+      "win_rate": 39.09,
+      "total_pnl": 54.27,
+      "avg_win": 13.68,
+      "avg_loss": -8.41,
+      "stopped_out": 82,
+      "held_eod": 95
+    },
+    "INFY": {
+      "trades": 243,
+      "win_rate": 34.57,
+      "total_pnl": -714.64,
+      "avg_win": 21.33,
+      "avg_loss": -15.77,
+      "stopped_out": 88,
+      "held_eod": 84
+    },
+    "IOC": {
+      "trades": 239,
+      "win_rate": 40.17,
+      "total_pnl": -649.11,
+      "avg_win": 7.4,
+      "avg_loss": -9.5,
+      "stopped_out": 80,
+      "held_eod": 96
+    },
+    "IRCTC": {
+      "trades": 192,
+      "win_rate": 35.42,
+      "total_pnl": -313.54,
+      "avg_win": 11.29,
+      "avg_loss": -8.72,
+      "stopped_out": 73,
+      "held_eod": 68
+    },
+    "ITC": {
+      "trades": 168,
+      "win_rate": 33.33,
+      "total_pnl": -861.59,
+      "avg_win": 8.01,
+      "avg_loss": -11.7,
+      "stopped_out": 67,
+      "held_eod": 56
+    },
+    "JINDALSTEL": {
+      "trades": 243,
+      "win_rate": 39.09,
+      "total_pnl": -388.67,
+      "avg_win": 14.63,
+      "avg_loss": -12.02,
+      "stopped_out": 87,
+      "held_eod": 95
+    },
+    "JSWSTEEL": {
+      "trades": 243,
+      "win_rate": 38.68,
+      "total_pnl": -203.26,
+      "avg_win": 13.18,
+      "avg_loss": -9.68,
+      "stopped_out": 99,
+      "held_eod": 94
+    },
+    "KOTAKBANK": {
+      "trades": 217,
+      "win_rate": 40.09,
+      "total_pnl": 6066.54,
+      "avg_win": 86.63,
+      "avg_loss": -11.31,
+      "stopped_out": 75,
+      "held_eod": 87
+    },
+    "LICHSGFIN": {
+      "trades": 229,
+      "win_rate": 40.17,
+      "total_pnl": 641.05,
+      "avg_win": 18.99,
+      "avg_loss": -8.07,
+      "stopped_out": 79,
+      "held_eod": 92
+    },
+    "LT": {
+      "trades": 243,
+      "win_rate": 37.45,
+      "total_pnl": 76.24,
+      "avg_win": 40.47,
+      "avg_loss": -23.73,
+      "stopped_out": 93,
+      "held_eod": 91
+    },
+    "LUPIN": {
+      "trades": 242,
+      "win_rate": 37.6,
+      "total_pnl": 210.34,
+      "avg_win": 24.84,
+      "avg_loss": -13.58,
+      "stopped_out": 99,
+      "held_eod": 91
+    },
+    "M&M": {
+      "trades": 243,
+      "win_rate": 38.68,
+      "total_pnl": 723.85,
+      "avg_win": 44.36,
+      "avg_loss": -23.13,
+      "stopped_out": 90,
+      "held_eod": 94
+    },
+    "MARUTI": {
+      "trades": 243,
+      "win_rate": 38.68,
+      "total_pnl": 1357.1,
+      "avg_win": 148.4,
+      "avg_loss": -84.51,
+      "stopped_out": 77,
+      "held_eod": 94
+    },
+    "METROPOLIS": {
+      "trades": 243,
+      "win_rate": 33.33,
+      "total_pnl": 31.07,
+      "avg_win": 12.35,
+      "avg_loss": -5.98,
+      "stopped_out": 91,
+      "held_eod": 81
+    },
+    "MFSL": {
+      "trades": 243,
+      "win_rate": 38.68,
+      "total_pnl": 260.28,
+      "avg_win": 22.85,
+      "avg_loss": -12.67,
+      "stopped_out": 87,
+      "held_eod": 94
+    },
+    "MGL": {
+      "trades": 243,
+      "win_rate": 38.27,
+      "total_pnl": -181.73,
+      "avg_win": 21.3,
+      "avg_loss": -14.42,
+      "stopped_out": 79,
+      "held_eod": 93
+    },
+    "MPHASIS": {
+      "trades": 243,
+      "win_rate": 35.39,
+      "total_pnl": -501.78,
+      "avg_win": 40.72,
+      "avg_loss": -25.5,
+      "stopped_out": 80,
+      "held_eod": 86
+    },
+    "MRF": {
+      "trades": 12,
+      "win_rate": 37.5,
+      "total_pnl": 14250.0,
+      "avg_win": 2250.0,
+      "avg_loss": -950.0,
+      "stopped_out": 7,
+      "held_eod": 5
+    },
+    "MUTHOOTFIN": {
+      "trades": 243,
+      "win_rate": 41.56,
+      "total_pnl": 430.64,
+      "avg_win": 43.26,
+      "avg_loss": -27.74,
+      "stopped_out": 93,
+      "held_eod": 101
+    },
+    "NATIONALUM": {
+      "trades": 243,
+      "win_rate": 41.56,
+      "total_pnl": -61.66,
+      "avg_win": 8.08,
+      "avg_loss": -6.18,
+      "stopped_out": 88,
+      "held_eod": 101
+    },
+    "NAVINFLUOR": {
+      "trades": 243,
+      "win_rate": 44.44,
+      "total_pnl": 4132.02,
+      "avg_win": 99.76,
+      "avg_loss": -49.2,
+      "stopped_out": 83,
+      "held_eod": 108
+    },
+    "NESTLEIND": {
+      "trades": 227,
+      "win_rate": 36.12,
+      "total_pnl": 128.01,
+      "avg_win": 16.15,
+      "avg_loss": -8.25,
+      "stopped_out": 87,
+      "held_eod": 82
+    },
+    "NIFTY IT": {
+      "trades": 12,
+      "win_rate": 37.5,
+      "total_pnl": 14250.0,
+      "avg_win": 2250.0,
+      "avg_loss": -950.0,
+      "stopped_out": 7,
+      "held_eod": 5
+    },
+    "NTPC": {
+      "trades": 214,
+      "win_rate": 39.25,
+      "total_pnl": -464.89,
+      "avg_win": 4.51,
+      "avg_loss": -6.49,
+      "stopped_out": 67,
+      "held_eod": 84
+    },
+    "OBEROIRLTY": {
+      "trades": 243,
+      "win_rate": 36.63,
+      "total_pnl": 165.14,
+      "avg_win": 26.55,
+      "avg_loss": -14.27,
+      "stopped_out": 87,
+      "held_eod": 89
+    },
+    "OFSS": {
+      "trades": 243,
+      "win_rate": 38.27,
+      "total_pnl": 2112.71,
+      "avg_win": 148.66,
+      "avg_loss": -78.09,
+      "stopped_out": 88,
+      "held_eod": 93
+    },
+    "ONGC": {
+      "trades": 212,
+      "win_rate": 36.32,
+      "total_pnl": -409.62,
+      "avg_win": 3.57,
+      "avg_loss": -5.07,
+      "stopped_out": 75,
+      "held_eod": 77
+    },
+    "PERSISTENT": {
+      "trades": 243,
+      "win_rate": 39.51,
+      "total_pnl": 69.51,
+      "avg_win": 86.73,
+      "avg_loss": -56.17,
+      "stopped_out": 85,
+      "held_eod": 96
+    },
+    "PETRONET": {
+      "trades": 238,
+      "win_rate": 42.44,
+      "total_pnl": -241.45,
+      "avg_win": 4.72,
+      "avg_loss": -5.24,
+      "stopped_out": 83,
+      "held_eod": 101
+    },
+    "PFC": {
+      "trades": 240,
+      "win_rate": 37.08,
+      "total_pnl": -369.73,
+      "avg_win": 5.81,
+      "avg_loss": -5.87,
+      "stopped_out": 90,
+      "held_eod": 89
+    },
+    "PIDILITIND": {
+      "trades": 226,
+      "win_rate": 36.28,
+      "total_pnl": 122.06,
+      "avg_win": 18.59,
+      "avg_loss": -9.74,
+      "stopped_out": 87,
+      "held_eod": 82
+    },
+    "PNB": {
+      "trades": 242,
+      "win_rate": 42.15,
+      "total_pnl": -180.69,
+      "avg_win": 3.24,
+      "avg_loss": -3.65,
+      "stopped_out": 75,
+      "held_eod": 102
+    },
+    "POLYCAB": {
+      "trades": 243,
+      "win_rate": 45.68,
+      "total_pnl": 1504.24,
+      "avg_win": 100.77,
+      "avg_loss": -73.34,
+      "stopped_out": 62,
+      "held_eod": 111
+    },
+    "POWERGRID": {
+      "trades": 230,
+      "win_rate": 30.87,
+      "total_pnl": -307.24,
+      "avg_win": 3.13,
+      "avg_loss": -3.33,
+      "stopped_out": 100,
+      "held_eod": 71
+    },
+    "RECLTD": {
+      "trades": 241,
+      "win_rate": 37.76,
+      "total_pnl": -299.58,
+      "avg_win": 6.69,
+      "avg_loss": -6.06,
+      "stopped_out": 85,
+      "held_eod": 91
+    },
+    "RELIANCE": {
+      "trades": 203,
+      "win_rate": 37.44,
+      "total_pnl": 190.28,
+      "avg_win": 17.35,
+      "avg_loss": -8.89,
+      "stopped_out": 76,
+      "held_eod": 76
+    },
+    "SAIL": {
+      "trades": 243,
+      "win_rate": 39.92,
+      "total_pnl": -862.79,
+      "avg_win": 2.66,
+      "avg_loss": -7.68,
+      "stopped_out": 74,
+      "held_eod": 97
+    },
+    "SBILIFE": {
+      "trades": 235,
+      "win_rate": 33.19,
+      "total_pnl": -388.66,
+      "avg_win": 17.1,
+      "avg_loss": -10.97,
+      "stopped_out": 97,
+      "held_eod": 78
+    },
+    "SBIN": {
+      "trades": 181,
+      "win_rate": 41.44,
+      "total_pnl": 129.29,
+      "avg_win": 12.69,
+      "avg_loss": -7.76,
+      "stopped_out": 56,
+      "held_eod": 75
+    },
+    "SHREECEM": {
+      "trades": 14,
+      "win_rate": 57.14,
+      "total_pnl": 1636.11,
+      "avg_win": 323.12,
+      "avg_loss": -158.15,
+      "stopped_out": 2,
+      "held_eod": 8
+    },
+    "SIEMENS": {
+      "trades": 243,
+      "win_rate": 39.92,
+      "total_pnl": -1434.8,
+      "avg_win": 49.84,
+      "avg_loss": -42.94,
+      "stopped_out": 84,
+      "held_eod": 97
+    },
+    "SRF": {
+      "trades": 243,
+      "win_rate": 41.15,
+      "total_pnl": 287.38,
+      "avg_win": 35.71,
+      "avg_loss": -22.96,
+      "stopped_out": 84,
+      "held_eod": 100
+    },
+    "SUNPHARMA": {
+      "trades": 212,
+      "win_rate": 35.85,
+      "total_pnl": -371.74,
+      "avg_win": 17.78,
+      "avg_loss": -12.67,
+      "stopped_out": 76,
+      "held_eod": 76
+    },
+    "SYNGENE": {
+      "trades": 243,
+      "win_rate": 34.57,
+      "total_pnl": -446.77,
+      "avg_win": 9.46,
+      "avg_loss": -7.81,
+      "stopped_out": 97,
+      "held_eod": 84
+    },
+    "TATACOMM": {
+      "trades": 243,
+      "win_rate": 37.86,
+      "total_pnl": -131.71,
+      "avg_win": 24.54,
+      "avg_loss": -15.82,
+      "stopped_out": 84,
+      "held_eod": 92
+    },
+    "TATACONSUM": {
+      "trades": 243,
+      "win_rate": 35.8,
+      "total_pnl": -137.58,
+      "avg_win": 13.04,
+      "avg_loss": -8.16,
+      "stopped_out": 86,
+      "held_eod": 87
+    },
+    "TATAPOWER": {
+      "trades": 235,
+      "win_rate": 41.28,
+      "total_pnl": -403.35,
+      "avg_win": 5.03,
+      "avg_loss": -6.46,
+      "stopped_out": 77,
+      "held_eod": 97
+    },
+    "TATASTEEL": {
+      "trades": 241,
+      "win_rate": 41.91,
+      "total_pnl": -309.84,
+      "avg_win": 3.27,
+      "avg_loss": -4.57,
+      "stopped_out": 78,
+      "held_eod": 101
+    },
+    "TCS": {
+      "trades": 243,
+      "win_rate": 34.16,
+      "total_pnl": -891.26,
+      "avg_win": 33.94,
+      "avg_loss": -23.18,
+      "stopped_out": 83,
+      "held_eod": 83
+    },
+    "TECHM": {
+      "trades": 241,
+      "win_rate": 34.44,
+      "total_pnl": -431.01,
+      "avg_win": 19.32,
+      "avg_loss": -12.88,
+      "stopped_out": 93,
+      "held_eod": 83
+    },
+    "TITAN": {
+      "trades": 243,
+      "win_rate": 37.86,
+      "total_pnl": 348.73,
+      "avg_win": 42.16,
+      "avg_loss": -23.38,
+      "stopped_out": 89,
+      "held_eod": 92
+    },
+    "TRENT": {
+      "trades": 243,
+      "win_rate": 37.04,
+      "total_pnl": -4.31,
+      "avg_win": 49.28,
+      "avg_loss": -29.02,
+      "stopped_out": 96,
+      "held_eod": 90
+    },
+    "TVSMOTOR": {
+      "trades": 243,
+      "win_rate": 39.92,
+      "total_pnl": 1177.3,
+      "avg_win": 49.32,
+      "avg_loss": -24.7,
+      "stopped_out": 85,
+      "held_eod": 97
+    },
+    "UBL": {
+      "trades": 240,
+      "win_rate": 33.33,
+      "total_pnl": -434.4,
+      "avg_win": 19.12,
+      "avg_loss": -12.27,
+      "stopped_out": 94,
+      "held_eod": 80
+    },
+    "ULTRACEMCO": {
+      "trades": 243,
+      "win_rate": 34.57,
+      "total_pnl": 1065.17,
+      "avg_win": 140.45,
+      "avg_loss": -67.5,
+      "stopped_out": 94,
+      "held_eod": 84
+    },
+    "VOLTAS": {
+      "trades": 243,
+      "win_rate": 37.04,
+      "total_pnl": -192.27,
+      "avg_win": 22.54,
+      "avg_loss": -14.52,
+      "stopped_out": 79,
+      "held_eod": 90
+    },
+    "WIPRO": {
+      "trades": 231,
+      "win_rate": 37.23,
+      "total_pnl": 276.46,
+      "avg_win": 8.38,
+      "avg_loss": -3.07,
+      "stopped_out": 88,
+      "held_eod": 86
+    },
+    "ZEEL": {
+      "trades": 243,
+      "win_rate": 33.33,
+      "total_pnl": -725.81,
+      "avg_win": 8.42,
+      "avg_loss": -8.69,
+      "stopped_out": 97,
+      "held_eod": 81
+    }
+  },
+  "quant_opt": {
+    "symbols": {
+      "ADANIENT": {
+        "trades": 251,
+        "win_rate": 39.44,
+        "total_pnl": 22613.9,
+        "avg_win": 1122.18,
+        "avg_loss": -582.12,
+        "stopped_out": 89,
+        "held_eod": 99
+      },
+      "ADANIPORTS": {
+        "trades": 245,
+        "win_rate": 40.82,
+        "total_pnl": 58550.86,
+        "avg_win": 1237.12,
+        "avg_loss": -449.39,
+        "stopped_out": 80,
+        "held_eod": 100
+      },
+      "AMBUJACEM": {
+        "trades": 248,
+        "win_rate": 37.1,
+        "total_pnl": -20175.02,
+        "avg_win": 751.15,
+        "avg_loss": -572.31,
+        "stopped_out": 93,
+        "held_eod": 92
+      },
+      "APOLLOHOSP": {
+        "trades": 251,
+        "win_rate": 37.45,
+        "total_pnl": -5413.4,
+        "avg_win": 813.18,
+        "avg_loss": -521.35,
+        "stopped_out": 94,
+        "held_eod": 94
+      },
+      "APOLLOTYRE": {
+        "trades": 251,
+        "win_rate": 38.25,
+        "total_pnl": -30516.8,
+        "avg_win": 942.59,
+        "avg_loss": -780.68,
+        "stopped_out": 91,
+        "held_eod": 96
+      },
+      "ASHOKLEY": {
+        "trades": 251,
+        "win_rate": 39.84,
+        "total_pnl": -9172.87,
+        "avg_win": 1009.65,
+        "avg_loss": -729.39,
+        "stopped_out": 82,
+        "held_eod": 100
+      },
+      "ASIANPAINT": {
+        "trades": 250,
+        "win_rate": 40.4,
+        "total_pnl": 54855.14,
+        "avg_win": 1376.35,
+        "avg_loss": -564.81,
+        "stopped_out": 87,
+        "held_eod": 101
+      },
+      "AUBANK": {
+        "trades": 251,
+        "win_rate": 39.84,
+        "total_pnl": 83954.39,
+        "avg_win": 1938.13,
+        "avg_loss": -727.54,
+        "stopped_out": 91,
+        "held_eod": 100
+      },
+      "AXISBANK": {
+        "trades": 222,
+        "win_rate": 37.39,
+        "total_pnl": 14712.86,
+        "avg_win": 1179.69,
+        "avg_loss": -598.57,
+        "stopped_out": 80,
+        "held_eod": 83
+      },
+      "BAJAJ-AUTO": {
+        "trades": 251,
+        "win_rate": 41.83,
+        "total_pnl": 79590.76,
+        "avg_win": 1502.36,
+        "avg_loss": -535.32,
+        "stopped_out": 89,
+        "held_eod": 105
+      },
+      "BAJAJFINSV": {
+        "trades": 246,
+        "win_rate": 40.65,
+        "total_pnl": 78105.42,
+        "avg_win": 1667.56,
+        "avg_loss": -607.2,
+        "stopped_out": 78,
+        "held_eod": 100
+      },
+      "BAJFINANCE": {
+        "trades": 251,
+        "win_rate": 41.83,
+        "total_pnl": 119186.27,
+        "avg_win": 1953.11,
+        "avg_loss": -588.29,
+        "stopped_out": 82,
+        "held_eod": 105
+      },
+      "BALRAMCHIN": {
+        "trades": 243,
+        "win_rate": 32.51,
+        "total_pnl": -2683.84,
+        "avg_win": 304.61,
+        "avg_loss": -163.1,
+        "stopped_out": 95,
+        "held_eod": 79
+      },
+      "BANDHANBNK": {
+        "trades": 244,
+        "win_rate": 38.93,
+        "total_pnl": -537.99,
+        "avg_win": 64.14,
+        "avg_loss": -44.51,
+        "stopped_out": 81,
+        "held_eod": 95
+      },
+      "BANKBARODA": {
+        "trades": 243,
+        "win_rate": 38.27,
+        "total_pnl": 2470.83,
+        "avg_win": 57.62,
+        "avg_loss": -19.25,
+        "stopped_out": 81,
+        "held_eod": 93
+      },
+      "BATAINDIA": {
+        "trades": 224,
+        "win_rate": 33.93,
+        "total_pnl": -2193.05,
+        "avg_win": 49.26,
+        "avg_loss": -40.12,
+        "stopped_out": 87,
+        "held_eod": 76
+      },
+      "BEL": {
+        "trades": 243,
+        "win_rate": 41.15,
+        "total_pnl": 1381.08,
+        "avg_win": 32.83,
+        "avg_loss": -13.3,
+        "stopped_out": 86,
+        "held_eod": 100
+      },
+      "BHARTIARTL": {
+        "trades": 226,
+        "win_rate": 38.94,
+        "total_pnl": 1968.5,
+        "avg_win": 45.33,
+        "avg_loss": -14.64,
+        "stopped_out": 80,
+        "held_eod": 88
+      },
+      "BHEL": {
+        "trades": 243,
+        "win_rate": 40.33,
+        "total_pnl": 1514.77,
+        "avg_win": 51.67,
+        "avg_loss": -24.48,
+        "stopped_out": 83,
+        "held_eod": 98
+      },
+      "BOSCHLTD": {
+        "trades": 28,
+        "win_rate": 39.29,
+        "total_pnl": 2707.99,
+        "avg_win": 535.23,
+        "avg_loss": -187.03,
+        "stopped_out": 13,
+        "held_eod": 11
+      },
+      "BPCL": {
+        "trades": 243,
+        "win_rate": 39.09,
+        "total_pnl": 535.55,
+        "avg_win": 34.73,
+        "avg_loss": -18.68,
+        "stopped_out": 88,
+        "held_eod": 95
+      },
+      "BRITANNIA": {
+        "trades": 243,
+        "win_rate": 39.51,
+        "total_pnl": -1042.69,
+        "avg_win": 65.27,
+        "avg_loss": -49.72,
+        "stopped_out": 83,
+        "held_eod": 96
+      },
+      "CANBK": {
+        "trades": 243,
+        "win_rate": 41.98,
+        "total_pnl": 1222.22,
+        "avg_win": 55.3,
+        "avg_loss": -31.33,
+        "stopped_out": 87,
+        "held_eod": 102
+      },
+      "CHOLAFIN": {
+        "trades": 243,
+        "win_rate": 36.21,
+        "total_pnl": 1617.62,
+        "avg_win": 70.07,
+        "avg_loss": -29.35,
+        "stopped_out": 86,
+        "held_eod": 88
+      },
+      "CIPLA": {
+        "trades": 210,
+        "win_rate": 36.67,
+        "total_pnl": 221.35,
+        "avg_win": 33.89,
+        "avg_loss": -17.95,
+        "stopped_out": 78,
+        "held_eod": 77
+      },
+      "COALINDIA": {
+        "trades": 198,
+        "win_rate": 36.87,
+        "total_pnl": 1237.65,
+        "avg_win": 41.58,
+        "avg_loss": -14.38,
+        "stopped_out": 74,
+        "held_eod": 73
+      },
+      "COFORGE": {
+        "trades": 243,
+        "win_rate": 39.92,
+        "total_pnl": 3297.51,
+        "avg_win": 87.17,
+        "avg_loss": -35.33,
+        "stopped_out": 90,
+        "held_eod": 97
+      },
+      "CONCOR": {
+        "trades": 242,
+        "win_rate": 37.19,
+        "total_pnl": -2569.17,
+        "avg_win": 15.91,
+        "avg_loss": -26.32,
+        "stopped_out": 90,
+        "held_eod": 90
+      },
+      "CUMMINSIND": {
+        "trades": 243,
+        "win_rate": 39.51,
+        "total_pnl": -476.58,
+        "avg_win": 75.59,
+        "avg_loss": -52.61,
+        "stopped_out": 85,
+        "held_eod": 96
+      },
+      "DABUR": {
+        "trades": 229,
+        "win_rate": 35.81,
+        "total_pnl": -2861.88,
+        "avg_win": 9.11,
+        "avg_loss": -24.55,
+        "stopped_out": 83,
+        "held_eod": 82
+      },
+      "DEEPAKNTR": {
+        "trades": 239,
+        "win_rate": 33.47,
+        "total_pnl": -1432.35,
+        "avg_win": 35.72,
+        "avg_loss": -26.98,
+        "stopped_out": 79,
+        "held_eod": 80
+      },
+      "DIVISLAB": {
+        "trades": 243,
+        "win_rate": 42.39,
+        "total_pnl": 2757.24,
+        "avg_win": 95.29,
+        "avg_loss": -50.41,
+        "stopped_out": 82,
+        "held_eod": 103
+      },
+      "DLF": {
+        "trades": 243,
+        "win_rate": 40.33,
+        "total_pnl": -158.31,
+        "avg_win": 31.08,
+        "avg_loss": -22.1,
+        "stopped_out": 91,
+        "held_eod": 98
+      },
+      "DRREDDY": {
+        "trades": 232,
+        "win_rate": 40.95,
+        "total_pnl": -638.9,
+        "avg_win": 29.25,
+        "avg_loss": -24.95,
+        "stopped_out": 67,
+        "held_eod": 95
+      },
+      "EICHERMOT": {
+        "trades": 243,
+        "win_rate": 39.92,
+        "total_pnl": -316.06,
+        "avg_win": 81.89,
+        "avg_loss": -56.57,
+        "stopped_out": 78,
+        "held_eod": 97
+      },
+      "ESCORTS": {
+        "trades": 243,
+        "win_rate": 38.68,
+        "total_pnl": -1318.75,
+        "avg_win": 55.16,
+        "avg_loss": -43.65,
+        "stopped_out": 77,
+        "held_eod": 94
+      },
+      "EXIDEIND": {
+        "trades": 241,
+        "win_rate": 38.17,
+        "total_pnl": -1913.01,
+        "avg_win": 15.46,
+        "avg_loss": -22.39,
+        "stopped_out": 86,
+        "held_eod": 92
+      },
+      "FEDERALBNK": {
+        "trades": 239,
+        "win_rate": 43.93,
+        "total_pnl": 1151.51,
+        "avg_win": 22.22,
+        "avg_loss": -8.82,
+        "stopped_out": 83,
+        "held_eod": 105
+      },
+      "GLENMARK": {
+        "trades": 243,
+        "win_rate": 41.56,
+        "total_pnl": 868.14,
+        "avg_win": 37.71,
+        "avg_loss": -20.71,
+        "stopped_out": 79,
+        "held_eod": 101
+      },
+      "GNFC": {
+        "trades": 240,
+        "win_rate": 41.25,
+        "total_pnl": 654.07,
+        "avg_win": 16.45,
+        "avg_loss": -6.91,
+        "stopped_out": 77,
+        "held_eod": 99
+      },
+      "GODREJPROP": {
+        "trades": 243,
+        "win_rate": 40.74,
+        "total_pnl": 1663.76,
+        "avg_win": 50.99,
+        "avg_loss": -23.5,
+        "stopped_out": 90,
+        "held_eod": 99
+      },
+      "GRASIM": {
+        "trades": 243,
+        "win_rate": 41.98,
+        "total_pnl": 1201.8,
+        "avg_win": 35.85,
+        "avg_loss": -17.41,
+        "stopped_out": 78,
+        "held_eod": 102
+      },
+      "HAL": {
+        "trades": 243,
+        "win_rate": 46.09,
+        "total_pnl": 1871.06,
+        "avg_win": 62.24,
+        "avg_loss": -38.93,
+        "stopped_out": 80,
+        "held_eod": 112
+      },
+      "HAVELLS": {
+        "trades": 238,
+        "win_rate": 37.39,
+        "total_pnl": -206.22,
+        "avg_win": 19.51,
+        "avg_loss": -13.04,
+        "stopped_out": 83,
+        "held_eod": 89
+      },
+      "HCLTECH": {
+        "trades": 242,
+        "win_rate": 35.95,
+        "total_pnl": -700.79,
+        "avg_win": 19.97,
+        "avg_loss": -15.73,
+        "stopped_out": 89,
+        "held_eod": 87
+      },
+      "HDFCBANK": {
+        "trades": 164,
+        "win_rate": 40.24,
+        "total_pnl": 62.27,
+        "avg_win": 11.85,
+        "avg_loss": -7.35,
+        "stopped_out": 64,
+        "held_eod": 66
+      },
+      "HDFCLIFE": {
+        "trades": 241,
+        "win_rate": 38.59,
+        "total_pnl": -173.47,
+        "avg_win": 9.84,
+        "avg_loss": -7.35,
+        "stopped_out": 96,
+        "held_eod": 93
+      },
+      "HEROMOTOCO": {
+        "trades": 243,
+        "win_rate": 40.33,
+        "total_pnl": 374.33,
+        "avg_win": 67.88,
+        "avg_loss": -43.3,
+        "stopped_out": 64,
+        "held_eod": 98
+      },
+      "HINDALCO": {
+        "trades": 243,
+        "win_rate": 40.74,
+        "total_pnl": 8.08,
+        "avg_win": 11.94,
+        "avg_loss": -8.15,
+        "stopped_out": 89,
+        "held_eod": 99
+      },
+      "HINDUNILVR": {
+        "trades": 224,
+        "win_rate": 35.27,
+        "total_pnl": 23.52,
+        "avg_win": 24.54,
+        "avg_loss": -13.21,
+        "stopped_out": 83,
+        "held_eod": 79
+      },
+      "ICICIBANK": {
+        "trades": 158,
+        "win_rate": 35.44,
+        "total_pnl": 604.04,
+        "avg_win": 25.76,
+        "avg_loss": -8.22,
+        "stopped_out": 62,
+        "held_eod": 56
+      },
+      "IDFCFIRSTB": {
+        "trades": 239,
+        "win_rate": 36.4,
+        "total_pnl": -882.87,
+        "avg_win": 4.02,
+        "avg_loss": -8.11,
+        "stopped_out": 88,
+        "held_eod": 87
+      },
+      "IGL": {
+        "trades": 243,
+        "win_rate": 35.39,
+        "total_pnl": -314.6,
+        "avg_win": 4.99,
+        "avg_loss": -4.74,
+        "stopped_out": 92,
+        "held_eod": 86
+      },
+      "INDHOTEL": {
+        "trades": 239,
+        "win_rate": 41.0,
+        "total_pnl": 409.99,
+        "avg_win": 15.76,
+        "avg_loss": -8.05,
+        "stopped_out": 79,
+        "held_eod": 98
+      },
+      "INDUSINDBK": {
+        "trades": 243,
+        "win_rate": 37.86,
+        "total_pnl": 74.16,
+        "avg_win": 17.58,
+        "avg_loss": -10.22,
+        "stopped_out": 96,
+        "held_eod": 92
+      },
+      "INDUSTOWER": {
+        "trades": 243,
+        "win_rate": 39.09,
+        "total_pnl": 54.27,
+        "avg_win": 13.68,
+        "avg_loss": -8.41,
+        "stopped_out": 82,
+        "held_eod": 95
+      },
+      "INFY": {
+        "trades": 243,
+        "win_rate": 34.57,
+        "total_pnl": -714.64,
+        "avg_win": 21.33,
+        "avg_loss": -15.77,
+        "stopped_out": 88,
+        "held_eod": 84
+      },
+      "IOC": {
+        "trades": 239,
+        "win_rate": 40.17,
+        "total_pnl": -649.11,
+        "avg_win": 7.4,
+        "avg_loss": -9.5,
+        "stopped_out": 80,
+        "held_eod": 96
+      },
+      "IRCTC": {
+        "trades": 192,
+        "win_rate": 35.42,
+        "total_pnl": -313.54,
+        "avg_win": 11.29,
+        "avg_loss": -8.72,
+        "stopped_out": 73,
+        "held_eod": 68
+      },
+      "ITC": {
+        "trades": 168,
+        "win_rate": 33.33,
+        "total_pnl": -861.59,
+        "avg_win": 8.01,
+        "avg_loss": -11.7,
+        "stopped_out": 67,
+        "held_eod": 56
+      },
+      "JINDALSTEL": {
+        "trades": 243,
+        "win_rate": 39.09,
+        "total_pnl": -388.67,
+        "avg_win": 14.63,
+        "avg_loss": -12.02,
+        "stopped_out": 87,
+        "held_eod": 95
+      },
+      "JSWSTEEL": {
+        "trades": 243,
+        "win_rate": 38.68,
+        "total_pnl": -203.26,
+        "avg_win": 13.18,
+        "avg_loss": -9.68,
+        "stopped_out": 99,
+        "held_eod": 94
+      },
+      "KOTAKBANK": {
+        "trades": 217,
+        "win_rate": 40.09,
+        "total_pnl": 6066.54,
+        "avg_win": 86.63,
+        "avg_loss": -11.31,
+        "stopped_out": 75,
+        "held_eod": 87
+      },
+      "LICHSGFIN": {
+        "trades": 229,
+        "win_rate": 40.17,
+        "total_pnl": 641.05,
+        "avg_win": 18.99,
+        "avg_loss": -8.07,
+        "stopped_out": 79,
+        "held_eod": 92
+      },
+      "LT": {
+        "trades": 243,
+        "win_rate": 37.45,
+        "total_pnl": 76.24,
+        "avg_win": 40.47,
+        "avg_loss": -23.73,
+        "stopped_out": 93,
+        "held_eod": 91
+      },
+      "LUPIN": {
+        "trades": 242,
+        "win_rate": 37.6,
+        "total_pnl": 210.34,
+        "avg_win": 24.84,
+        "avg_loss": -13.58,
+        "stopped_out": 99,
+        "held_eod": 91
+      },
+      "M&M": {
+        "trades": 243,
+        "win_rate": 38.68,
+        "total_pnl": 723.85,
+        "avg_win": 44.36,
+        "avg_loss": -23.13,
+        "stopped_out": 90,
+        "held_eod": 94
+      },
+      "MARUTI": {
+        "trades": 243,
+        "win_rate": 38.68,
+        "total_pnl": 1357.1,
+        "avg_win": 148.4,
+        "avg_loss": -84.51,
+        "stopped_out": 77,
+        "held_eod": 94
+      },
+      "METROPOLIS": {
+        "trades": 243,
+        "win_rate": 33.33,
+        "total_pnl": 31.07,
+        "avg_win": 12.35,
+        "avg_loss": -5.98,
+        "stopped_out": 91,
+        "held_eod": 81
+      },
+      "MFSL": {
+        "trades": 243,
+        "win_rate": 38.68,
+        "total_pnl": 260.28,
+        "avg_win": 22.85,
+        "avg_loss": -12.67,
+        "stopped_out": 87,
+        "held_eod": 94
+      },
+      "MGL": {
+        "trades": 243,
+        "win_rate": 38.27,
+        "total_pnl": -181.73,
+        "avg_win": 21.3,
+        "avg_loss": -14.42,
+        "stopped_out": 79,
+        "held_eod": 93
+      },
+      "MPHASIS": {
+        "trades": 243,
+        "win_rate": 35.39,
+        "total_pnl": -501.78,
+        "avg_win": 40.72,
+        "avg_loss": -25.5,
+        "stopped_out": 80,
+        "held_eod": 86
+      },
+      "MRF": {
+        "trades": 12,
+        "win_rate": 37.5,
+        "total_pnl": 14250.0,
+        "avg_win": 2250.0,
+        "avg_loss": -950.0,
+        "stopped_out": 7,
+        "held_eod": 5
+      },
+      "MUTHOOTFIN": {
+        "trades": 243,
+        "win_rate": 41.56,
+        "total_pnl": 430.64,
+        "avg_win": 43.26,
+        "avg_loss": -27.74,
+        "stopped_out": 93,
+        "held_eod": 101
+      },
+      "NATIONALUM": {
+        "trades": 243,
+        "win_rate": 41.56,
+        "total_pnl": -61.66,
+        "avg_win": 8.08,
+        "avg_loss": -6.18,
+        "stopped_out": 88,
+        "held_eod": 101
+      },
+      "NAVINFLUOR": {
+        "trades": 243,
+        "win_rate": 44.44,
+        "total_pnl": 4132.02,
+        "avg_win": 99.76,
+        "avg_loss": -49.2,
+        "stopped_out": 83,
+        "held_eod": 108
+      },
+      "NESTLEIND": {
+        "trades": 227,
+        "win_rate": 36.12,
+        "total_pnl": 128.01,
+        "avg_win": 16.15,
+        "avg_loss": -8.25,
+        "stopped_out": 87,
+        "held_eod": 82
+      },
+      "NIFTY IT": {
+        "trades": 12,
+        "win_rate": 37.5,
+        "total_pnl": 14250.0,
+        "avg_win": 2250.0,
+        "avg_loss": -950.0,
+        "stopped_out": 7,
+        "held_eod": 5
+      },
+      "NTPC": {
+        "trades": 214,
+        "win_rate": 39.25,
+        "total_pnl": -464.89,
+        "avg_win": 4.51,
+        "avg_loss": -6.49,
+        "stopped_out": 67,
+        "held_eod": 84
+      },
+      "OBEROIRLTY": {
+        "trades": 243,
+        "win_rate": 36.63,
+        "total_pnl": 165.14,
+        "avg_win": 26.55,
+        "avg_loss": -14.27,
+        "stopped_out": 87,
+        "held_eod": 89
+      },
+      "OFSS": {
+        "trades": 243,
+        "win_rate": 38.27,
+        "total_pnl": 2112.71,
+        "avg_win": 148.66,
+        "avg_loss": -78.09,
+        "stopped_out": 88,
+        "held_eod": 93
+      },
+      "ONGC": {
+        "trades": 212,
+        "win_rate": 36.32,
+        "total_pnl": -409.62,
+        "avg_win": 3.57,
+        "avg_loss": -5.07,
+        "stopped_out": 75,
+        "held_eod": 77
+      },
+      "PERSISTENT": {
+        "trades": 243,
+        "win_rate": 39.51,
+        "total_pnl": 69.51,
+        "avg_win": 86.73,
+        "avg_loss": -56.17,
+        "stopped_out": 85,
+        "held_eod": 96
+      },
+      "PETRONET": {
+        "trades": 238,
+        "win_rate": 42.44,
+        "total_pnl": -241.45,
+        "avg_win": 4.72,
+        "avg_loss": -5.24,
+        "stopped_out": 83,
+        "held_eod": 101
+      },
+      "PFC": {
+        "trades": 240,
+        "win_rate": 37.08,
+        "total_pnl": -369.73,
+        "avg_win": 5.81,
+        "avg_loss": -5.87,
+        "stopped_out": 90,
+        "held_eod": 89
+      },
+      "PIDILITIND": {
+        "trades": 226,
+        "win_rate": 36.28,
+        "total_pnl": 122.06,
+        "avg_win": 18.59,
+        "avg_loss": -9.74,
+        "stopped_out": 87,
+        "held_eod": 82
+      },
+      "PNB": {
+        "trades": 242,
+        "win_rate": 42.15,
+        "total_pnl": -180.69,
+        "avg_win": 3.24,
+        "avg_loss": -3.65,
+        "stopped_out": 75,
+        "held_eod": 102
+      },
+      "POLYCAB": {
+        "trades": 243,
+        "win_rate": 45.68,
+        "total_pnl": 1504.24,
+        "avg_win": 100.77,
+        "avg_loss": -73.34,
+        "stopped_out": 62,
+        "held_eod": 111
+      },
+      "POWERGRID": {
+        "trades": 230,
+        "win_rate": 30.87,
+        "total_pnl": -307.24,
+        "avg_win": 3.13,
+        "avg_loss": -3.33,
+        "stopped_out": 100,
+        "held_eod": 71
+      },
+      "RECLTD": {
+        "trades": 241,
+        "win_rate": 37.76,
+        "total_pnl": -299.58,
+        "avg_win": 6.69,
+        "avg_loss": -6.06,
+        "stopped_out": 85,
+        "held_eod": 91
+      },
+      "RELIANCE": {
+        "trades": 203,
+        "win_rate": 37.44,
+        "total_pnl": 190.28,
+        "avg_win": 17.35,
+        "avg_loss": -8.89,
+        "stopped_out": 76,
+        "held_eod": 76
+      },
+      "SAIL": {
+        "trades": 243,
+        "win_rate": 39.92,
+        "total_pnl": -862.79,
+        "avg_win": 2.66,
+        "avg_loss": -7.68,
+        "stopped_out": 74,
+        "held_eod": 97
+      },
+      "SBILIFE": {
+        "trades": 235,
+        "win_rate": 33.19,
+        "total_pnl": -388.66,
+        "avg_win": 17.1,
+        "avg_loss": -10.97,
+        "stopped_out": 97,
+        "held_eod": 78
+      },
+      "SBIN": {
+        "trades": 181,
+        "win_rate": 41.44,
+        "total_pnl": 129.29,
+        "avg_win": 12.69,
+        "avg_loss": -7.76,
+        "stopped_out": 56,
+        "held_eod": 75
+      },
+      "SHREECEM": {
+        "trades": 14,
+        "win_rate": 57.14,
+        "total_pnl": 1636.11,
+        "avg_win": 323.12,
+        "avg_loss": -158.15,
+        "stopped_out": 2,
+        "held_eod": 8
+      },
+      "SIEMENS": {
+        "trades": 243,
+        "win_rate": 39.92,
+        "total_pnl": -1434.8,
+        "avg_win": 49.84,
+        "avg_loss": -42.94,
+        "stopped_out": 84,
+        "held_eod": 97
+      },
+      "SRF": {
+        "trades": 243,
+        "win_rate": 41.15,
+        "total_pnl": 287.38,
+        "avg_win": 35.71,
+        "avg_loss": -22.96,
+        "stopped_out": 84,
+        "held_eod": 100
+      },
+      "SUNPHARMA": {
+        "trades": 212,
+        "win_rate": 35.85,
+        "total_pnl": -371.74,
+        "avg_win": 17.78,
+        "avg_loss": -12.67,
+        "stopped_out": 76,
+        "held_eod": 76
+      },
+      "SYNGENE": {
+        "trades": 243,
+        "win_rate": 34.57,
+        "total_pnl": -446.77,
+        "avg_win": 9.46,
+        "avg_loss": -7.81,
+        "stopped_out": 97,
+        "held_eod": 84
+      },
+      "TATACOMM": {
+        "trades": 243,
+        "win_rate": 37.86,
+        "total_pnl": -131.71,
+        "avg_win": 24.54,
+        "avg_loss": -15.82,
+        "stopped_out": 84,
+        "held_eod": 92
+      },
+      "TATACONSUM": {
+        "trades": 243,
+        "win_rate": 35.8,
+        "total_pnl": -137.58,
+        "avg_win": 13.04,
+        "avg_loss": -8.16,
+        "stopped_out": 86,
+        "held_eod": 87
+      },
+      "TATAPOWER": {
+        "trades": 235,
+        "win_rate": 41.28,
+        "total_pnl": -403.35,
+        "avg_win": 5.03,
+        "avg_loss": -6.46,
+        "stopped_out": 77,
+        "held_eod": 97
+      },
+      "TATASTEEL": {
+        "trades": 241,
+        "win_rate": 41.91,
+        "total_pnl": -309.84,
+        "avg_win": 3.27,
+        "avg_loss": -4.57,
+        "stopped_out": 78,
+        "held_eod": 101
+      },
+      "TCS": {
+        "trades": 243,
+        "win_rate": 34.16,
+        "total_pnl": -891.26,
+        "avg_win": 33.94,
+        "avg_loss": -23.18,
+        "stopped_out": 83,
+        "held_eod": 83
+      },
+      "TECHM": {
+        "trades": 241,
+        "win_rate": 34.44,
+        "total_pnl": -431.01,
+        "avg_win": 19.32,
+        "avg_loss": -12.88,
+        "stopped_out": 93,
+        "held_eod": 83
+      },
+      "TITAN": {
+        "trades": 243,
+        "win_rate": 37.86,
+        "total_pnl": 348.73,
+        "avg_win": 42.16,
+        "avg_loss": -23.38,
+        "stopped_out": 89,
+        "held_eod": 92
+      },
+      "TRENT": {
+        "trades": 243,
+        "win_rate": 37.04,
+        "total_pnl": -4.31,
+        "avg_win": 49.28,
+        "avg_loss": -29.02,
+        "stopped_out": 96,
+        "held_eod": 90
+      },
+      "TVSMOTOR": {
+        "trades": 243,
+        "win_rate": 39.92,
+        "total_pnl": 1177.3,
+        "avg_win": 49.32,
+        "avg_loss": -24.7,
+        "stopped_out": 85,
+        "held_eod": 97
+      },
+      "UBL": {
+        "trades": 240,
+        "win_rate": 33.33,
+        "total_pnl": -434.4,
+        "avg_win": 19.12,
+        "avg_loss": -12.27,
+        "stopped_out": 94,
+        "held_eod": 80
+      },
+      "ULTRACEMCO": {
+        "trades": 243,
+        "win_rate": 34.57,
+        "total_pnl": 1065.17,
+        "avg_win": 140.45,
+        "avg_loss": -67.5,
+        "stopped_out": 94,
+        "held_eod": 84
+      },
+      "VOLTAS": {
+        "trades": 243,
+        "win_rate": 37.04,
+        "total_pnl": -192.27,
+        "avg_win": 22.54,
+        "avg_loss": -14.52,
+        "stopped_out": 79,
+        "held_eod": 90
+      },
+      "WIPRO": {
+        "trades": 231,
+        "win_rate": 37.23,
+        "total_pnl": 276.46,
+        "avg_win": 8.38,
+        "avg_loss": -3.07,
+        "stopped_out": 88,
+        "held_eod": 86
+      },
+      "ZEEL": {
+        "trades": 243,
+        "win_rate": 33.33,
+        "total_pnl": -725.81,
+        "avg_win": 8.42,
+        "avg_loss": -8.69,
+        "stopped_out": 97,
+        "held_eod": 81
+      }
+    }
+  }
+}

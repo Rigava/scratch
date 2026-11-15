@@ -3304,8 +3304,12 @@
                 
                 let btBadge = `<span style="color: var(--text-dim); font-size: 10px;">--</span>`;
                 if (s.orb_has_backtest) {
-                    btBadge = `<span style="font-size: 10px; font-weight: 700; color: #34d399; background: rgba(52, 211, 153, 0.12); padding: 2px 6px; border-radius: 4px;" title="Total PnL: ₹${s.orb_bt_pnl.toLocaleString()}">
-                        ${s.orb_bt_win_rate}% Win • +₹${Math.round(s.orb_bt_pnl / 1000)}k
+                    const pnlSign = (s.orb_bt_pnl || 0) >= 0 ? '+' : '';
+                    const pnlColor = (s.orb_bt_pnl || 0) >= 0 ? '#34d399' : '#f87171';
+                    const pnlBg = (s.orb_bt_pnl || 0) >= 0 ? 'rgba(52, 211, 153, 0.12)' : 'rgba(239, 68, 68, 0.12)';
+                    const pnlVal = Math.abs(s.orb_bt_pnl || 0) >= 1000 ? `${pnlSign}₹${((s.orb_bt_pnl || 0) / 1000).toFixed(1)}k` : `${pnlSign}₹${Math.round(s.orb_bt_pnl || 0)}`;
+                    btBadge = `<span style="font-size: 10px; font-weight: 700; color: ${pnlColor}; background: ${pnlBg}; padding: 2px 6px; border-radius: 4px;" title="Total PnL: ₹${(s.orb_bt_pnl || 0).toLocaleString()}">
+                        ${s.orb_bt_win_rate}% Win • ${pnlVal}
                     </span>`;
                 }
 

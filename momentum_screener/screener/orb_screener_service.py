@@ -24,7 +24,7 @@ def get_backtest_symbol_stats():
         try:
             with open(PYBROKER_RES_PATH, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                _CACHED_BACKTEST = data.get('raw_rules', {}).get('symbols', {})
+                _CACHED_BACKTEST = data.get('all_symbols') or data.get('raw_rules', {}).get('symbols', {})
         except Exception as e:
             logger.warning(f"Error loading pybroker_results.json: {e}")
     return _CACHED_BACKTEST

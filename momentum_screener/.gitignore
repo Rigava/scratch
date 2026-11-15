@@ -1,6 +1,7 @@
 db.sqlite3
 .venv
 .env
-screener/data/
+screener/data/*
+!screener/data/pybroker_results.json
 **/fo_historical_dump.json
 PitchDeck.pptx

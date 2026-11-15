@@ -224,6 +224,307 @@ const App = (function() {
         return result;
     }
 
+
+    // --- 3-Session Kinematics Engine (T-2 -> T-1 -> T) ---
+    function calcStockKinematics(candles, prices, rsi, adxData, ema50, sma200) {
+        const n = candles ? candles.length : 0;
+        if (!candles || n < 3) {
+            return {
+                regime: 'STABLE',
+                signalType: 'NEUTRAL',
+                badgeLabel: 'Neutral Flow',
+                badgeClass: 'stable',
+                icon: '<i class="fa-solid fa-minus"></i>',
+                dates: ['-', '-', '-'],
+                prices: [0, 0, 0],
+                stances: ['Stable', 'Stable', 'Stable'],
+                rsiValues: [50, 50, 50],
+                volRatios: [1, 1, 1],
+                priority: 1,
+                deltaPrice1d: 0,
+                deltaPrice2d: 0,
+                deltaRsi1d: 0,
+                deltaRsi2d: 0,
+                psychology: 'Price and momentum indicators are trending within normal bounds. Order flow is balanced.',
+                action: 'No multi-session structural dislocation detected. Maintain standard trend rules.'
+            };
+        }
+
+        const idx_t2 = n - 3;
+        const idx_t1 = n - 2;
+        const idx_t = n - 1;
+
+        const p_t2 = prices[idx_t2];
+        const p_t1 = prices[idx_t1];
+        const p_t = prices[idx_t];
+
+        const h_t2 = candles[idx_t2].high !== undefined ? candles[idx_t2].high : p_t2;
+        const h_t1 = candles[idx_t1].high !== undefined ? candles[idx_t1].high : p_t1;
+        const h_t = candles[idx_t].high !== undefined ? candles[idx_t].high : p_t;
+
+        const l_t2 = candles[idx_t2].low !== undefined ? candles[idx_t2].low : p_t2;
+        const l_t1 = candles[idx_t1].low !== undefined ? candles[idx_t1].low : p_t1;
+        const l_t = candles[idx_t].low !== undefined ? candles[idx_t].low : p_t;
+
+        const o_t = candles[idx_t].open !== undefined ? candles[idx_t].open : p_t;
+
+        const v_t2 = candles[idx_t2].volume || 1;
+        const v_t1 = candles[idx_t1].volume || 1;
+        const v_t = candles[idx_t].volume || 1;
+
+        // 20-period volume SMA
+        const calcVolSMA = (idx) => {
+            const start = Math.max(0, idx - 19);
+            const slice = candles.slice(start, idx + 1);
+            if (slice.length === 0) return 1;
+            const sum = slice.reduce((acc, c) => acc + (c.volume || 1), 0);
+            return sum / slice.length;
+        };
+        const vsma_t2 = calcVolSMA(idx_t2) || 1;
+        const vsma_t1 = calcVolSMA(idx_t1) || 1;
+        const vsma_t = calcVolSMA(idx_t) || 1;
+
+        const vr_t2 = Math.round((v_t2 / vsma_t2) * 100) / 100;
+        const vr_t1 = Math.round((v_t1 / vsma_t1) * 100) / 100;
+        const vr_t = Math.round((v_t / vsma_t) * 100) / 100;
+
+        const r_t2 = (rsi && rsi[idx_t2] !== null) ? rsi[idx_t2] : 50.0;
+        const r_t1 = (rsi && rsi[idx_t1] !== null) ? rsi[idx_t1] : 50.0;
+        const r_t = (rsi && rsi[idx_t] !== null) ? rsi[idx_t] : 50.0;
+
+        const adx_t2 = (adxData && adxData.adx && adxData.adx[idx_t2] !== null) ? adxData.adx[idx_t2] : 20.0;
+        const adx_t = (adxData && adxData.adx && adxData.adx[idx_t] !== null) ? adxData.adx[idx_t] : 20.0;
+        const pdi_t = (adxData && adxData.plusDI && adxData.plusDI[idx_t] !== null) ? adxData.plusDI[idx_t] : 20.0;
+        const mdi_t = (adxData && adxData.minusDI && adxData.minusDI[idx_t] !== null) ? adxData.minusDI[idx_t] : 20.0;
+
+        // Key level stance helper
+        const getStance = (idx) => {
+            const p = prices[idx];
+            const lookback = Math.min(250, idx);
+            const w = prices.slice(Math.max(0, idx - lookback), idx);
+            if (w.length === 0) return 'Stable';
+            const max52 = Math.max(...w);
+            const min52 = Math.min(...w);
+            if (max52 > 0 && p >= max52 * 0.985) return '52W High';
+            if (min52 > 0 && p <= min52 * 1.015) return '52W Low';
+            const s200 = sma200 ? sma200[idx] : null;
+            const e50 = ema50 ? ema50[idx] : null;
+            if (s200 && Math.abs(p - s200) / s200 <= 0.015) return 'Near SMA 200';
+            if (e50 && Math.abs(p - e50) / e50 <= 0.015) return 'Near EMA 50';
+            return 'Stable';
+        };
+
+        const stance_t2 = getStance(idx_t2);
+        const stance_t1 = getStance(idx_t1);
+        const stance_t = getStance(idx_t);
+
+        const delta_p1d = Math.round(((p_t - p_t1) / p_t1) * 10000) / 100;
+        const delta_p2d = Math.round(((p_t - p_t2) / p_t2) * 10000) / 100;
+        const delta_r1d = Math.round((r_t - r_t1) * 10) / 10;
+        const delta_r2d = Math.round((r_t - r_t2) * 10) / 10;
+        const delta_adx2d = Math.round((adx_t - adx_t2) * 10) / 10;
+
+        const candle_range_t = h_t - l_t;
+        const upper_wick_t = h_t - Math.max(o_t, p_t);
+        const upper_wick_ratio = candle_range_t > 0 ? (upper_wick_t / candle_range_t) : 0;
+
+        const formatDateStr = (d) => {
+            if (!d) return '';
+            if (typeof d === 'string') return d.split('T')[0].split(' ')[0];
+            if (d instanceof Date) return d.toISOString().split('T')[0];
+            return String(d);
+        };
+        const dates = [
+            formatDateStr(candles[idx_t2].date || candles[idx_t2].datetime),
+            formatDateStr(candles[idx_t1].date || candles[idx_t1].datetime),
+            formatDateStr(candles[idx_t].date || candles[idx_t].datetime)
+        ];
+
+        // 1. Structural Failures
+        const failures = [];
+        if ((stance_t1 === '52W High' || stance_t2 === '52W High' || r_t1 >= 68.0) && delta_p1d <= -1.5 && vr_t >= 1.0) {
+            failures.push('BULL_TRAP');
+        }
+        const e50_t = ema50 ? ema50[idx_t] : null;
+        const e50_t1 = ema50 ? ema50[idx_t1] : null;
+        if (e50_t && e50_t1 && p_t1 >= e50_t1 * 0.995 && p_t < e50_t * 0.985 && delta_p1d < -0.8) {
+            failures.push('MA50_BREAKDOWN');
+        }
+        if (vr_t >= 1.4 && upper_wick_ratio >= 0.50 && delta_p1d < 0.5) {
+            failures.push('EXPANSION_FAILURE');
+        }
+
+        // 2. Momentum Accelerations
+        const ignitions = [];
+        if (delta_r2d >= 8.0 && delta_r1d >= 3.0 && r_t >= 56.0 && p_t > p_t1 && p_t1 > p_t2) {
+            ignitions.push('MOMENTUM_IGNITION');
+        }
+        if (adx_t >= 22.0 && delta_adx2d >= 2.5 && pdi_t > (mdi_t + 5.0) && (!sma200 || !sma200[idx_t] || p_t > sma200[idx_t])) {
+            ignitions.push('ADX_IGNITION');
+        }
+        if (vr_t >= 1.8 && vr_t1 >= 1.2 && delta_p2d >= 2.0) {
+            ignitions.push('VOLUME_CASCADE');
+        }
+
+        // 3. Trend Reversals
+        const reversals = [];
+        if ((stance_t2 === '52W Low' || stance_t1 === '52W Low' || r_t2 <= 36.0) && delta_p1d >= 1.8 && p_t > h_t2) {
+            reversals.push('BEAR_TRAP_RECLAIM');
+        }
+        if (p_t < p_t2 && r_t >= (r_t2 + 3.0) && r_t <= 55.0 && delta_p1d >= 0.5) {
+            reversals.push('BULLISH_DIVERGENCE');
+        }
+        if (r_t1 >= 72.0 && vr_t >= 2.5 && (delta_p1d < 0.2 || upper_wick_ratio >= 0.50)) {
+            reversals.push('CLIMAX_EXHAUSTION');
+        }
+
+        let regime = 'STABLE';
+        let signalType = 'NEUTRAL';
+        let badgeLabel = 'Neutral Flow';
+        let badgeClass = 'stable';
+        let icon = '<i class="fa-solid fa-minus"></i>';
+        let priority = 1;
+        let psychology = 'Price and momentum indicators are trending within normal bounds. Order flow is balanced.';
+        let action = 'No multi-session structural dislocation detected. Maintain standard trend rules.';
+
+        if (failures.length > 0) {
+            regime = 'STRUCTURAL_FAILURE';
+            signalType = failures[0];
+            badgeClass = 'failure';
+            priority = 4;
+            icon = '<i class="fa-solid fa-triangle-exclamation"></i>';
+            if (signalType === 'BULL_TRAP') {
+                badgeLabel = 'Bull Trap Rejection';
+                psychology = `Retail breakout buyers were lured above prior highs (${dates[1] || 'T-1'}), followed by aggressive institutional selling (${delta_p1d}% today) trapping late bulls offside.`;
+                action = `Avoid fresh longs. Tighten protective stops to ₹${Math.round(p_t1 * 1.005)} or consider tactical short exposure targeting ₹${Math.round(p_t * 0.96)}.`;
+            } else if (signalType === 'MA50_BREAKDOWN') {
+                badgeLabel = '50 EMA Breakdown';
+                psychology = `Institutional dip buyers failed to defend the 50-day EMA support line (₹${e50_t ? Math.round(e50_t) : '-'}), triggering systematic stop cascades.`;
+                action = `Exit momentum longs. Wait for price reclaim of 50 EMA before re-entering.`;
+            } else {
+                badgeLabel = 'Expansion Failure';
+                psychology = `High-volume intraday breakout (${vr_t}x vol) met heavy overhead supply, creating a large upper rejection wick (${Math.round(upper_wick_ratio * 100)}% of candle range).`;
+                action = `De-risk immediate long exposure. High probability of mean reversion or pullback into consolidation.`;
+            }
+        } else if (ignitions.length > 0) {
+            regime = 'MOMENTUM_ACCELERATION';
+            signalType = ignitions[0];
+            badgeClass = 'ignition';
+            priority = 3;
+            icon = '<i class="fa-solid fa-bolt"></i>';
+            if (signalType === 'VOLUME_CASCADE') {
+                badgeLabel = `Volume Cascade (+${Math.round(delta_p2d)}%)`;
+                icon = '<i class="fa-solid fa-water"></i>';
+                psychology = `Aggressive institutional accumulation over consecutive sessions (${vr_t1}x then ${vr_t}x 20-day avg volume) driving strong price expansion (+${delta_p2d}%).`;
+                action = `High momentum continuation setup. Backtest indicates 59.5% win rate over 5 sessions. Trail stop below T-1 low (₹${Math.round(l_t1)}).`;
+            } else if (signalType === 'MOMENTUM_IGNITION') {
+                badgeLabel = 'Momentum Ignition';
+                icon = '<i class="fa-solid fa-fire-flame-curved"></i>';
+                psychology = `RSI velocity steepened sharply (+${delta_r2d} pts across 2 sessions to ${r_t.toFixed(1)}) confirming latent trend ignition across sessions.`;
+                action = `Favorable risk-reward for swing entry. Look for brief intraday dips towards ₹${Math.round(p_t1)} as entry zones.`;
+            } else {
+                badgeLabel = 'ADX Trend Breakout';
+                icon = '<i class="fa-solid fa-rocket"></i>';
+                psychology = `ADX trend strength jumped above 22 with DI+ dominant, confirming an authentic directional regime transition above long-term moving averages.`;
+                action = `Add to trend-following positions. Systematic trend strength confirms high probability of multiday continuation.`;
+            }
+        } else if (reversals.length > 0) {
+            regime = 'TREND_REVERSAL';
+            signalType = reversals[0];
+            badgeClass = 'reversal';
+            priority = 2;
+            icon = '<i class="fa-solid fa-arrows-rotate"></i>';
+            if (signalType === 'BEAR_TRAP_RECLAIM') {
+                badgeLabel = 'Bear Trap Reclaim';
+                psychology = `Short sellers were trapped after a flush towards support (${stance_t2 !== 'Stable' ? stance_t2 : 'recent lows'}), followed by an explosive reclaim (+${delta_p1d}% today) clearing prior candle highs.`;
+                action = `High-conviction long reversal opportunity. Place invalidation stop directly beneath yesterday's pivot low (₹${Math.round(l_t1)}).`;
+            } else if (signalType === 'BULLISH_DIVERGENCE') {
+                badgeLabel = 'Bullish Divergence';
+                psychology = `Internal RSI momentum formed a higher low (+${delta_r2d.toFixed(1)} pts) while price printed a lower low, indicating seller exhaustion.`;
+                action = `Early counter-trend entry setup. Target initial mean-reversion resistance at ₹${Math.round(p_t * 1.04)}.`;
+            } else {
+                badgeLabel = 'Climax Exhaustion';
+                icon = '<i class="fa-solid fa-gauge-high"></i>';
+                psychology = `Parabolic blow-off volume surge (${vr_t}x avg) failed to make proportional price progress, signaling institutional distribution into retail buying.`;
+                action = `Lock in long gains immediately. Do not chase breakout at current levels.`;
+            }
+        }
+
+        return {
+            regime,
+            signalType,
+            badgeLabel,
+            badgeClass,
+            icon,
+            priority,
+            dates,
+            prices: [p_t2, p_t1, p_t],
+            highs: [h_t2, h_t1, h_t],
+            lows: [l_t2, l_t1, l_t],
+            stances: [stance_t2, stance_t1, stance_t],
+            rsiValues: [Math.round(r_t2 * 10) / 10, Math.round(r_t1 * 10) / 10, Math.round(r_t * 10) / 10],
+            volRatios: [vr_t2, vr_t1, vr_t],
+            deltaPrice1d: delta_p1d,
+            deltaPrice2d: delta_p2d,
+            deltaRsi1d: delta_r1d,
+            deltaRsi2d: delta_r2d,
+            psychology,
+            action
+        };
+    }
+
+    function renderKinematicsStrip(kin) {
+        if (!kin || !kin.prices || kin.prices.length < 3) return '';
+        const p2 = Math.round(kin.prices[0]);
+        const p1 = Math.round(kin.prices[1]);
+        const p0 = Math.round(kin.prices[2]);
+
+        if (kin.regime === 'STRUCTURAL_FAILURE') {
+            const t1Label = kin.stances[1] === '52W High' ? `₹${p1} (52W H)` : `₹${p1}`;
+            return `
+                <span class="strip-step">₹${p2}</span>
+                <i class="fa-solid fa-arrow-right"></i>
+                <span class="strip-step ${kin.stances[1] === '52W High' ? 'highlight' : ''}">${t1Label}</span>
+                <i class="fa-solid fa-arrow-right"></i>
+                <span class="strip-step highlight" style="color: #f87171; font-weight: 700;">₹${p0}</span>
+            `;
+        } else if (kin.regime === 'MOMENTUM_ACCELERATION') {
+            if (kin.signalType === 'VOLUME_CASCADE') {
+                return `
+                    <span class="strip-step">${kin.volRatios[0]}x</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                    <span class="strip-step">${kin.volRatios[1]}x</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                    <span class="strip-step highlight" style="color: #34d399; font-weight: 700;">${kin.volRatios[2]}x (+${kin.deltaPrice2d}%)</span>
+                `;
+            } else {
+                return `
+                    <span class="strip-step">RSI ${Math.round(kin.rsiValues[0])}</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                    <span class="strip-step">RSI ${Math.round(kin.rsiValues[1])}</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                    <span class="strip-step highlight" style="color: #34d399; font-weight: 700;">RSI ${Math.round(kin.rsiValues[2])} (+${kin.deltaRsi2d > 0 ? kin.deltaRsi2d : 0})</span>
+                `;
+            }
+        } else if (kin.regime === 'TREND_REVERSAL') {
+            return `
+                <span class="strip-step">₹${p2}</span>
+                <i class="fa-solid fa-arrow-right"></i>
+                <span class="strip-step">₹${p1}</span>
+                <i class="fa-solid fa-arrow-right"></i>
+                <span class="strip-step highlight" style="color: #c084fc; font-weight: 700;">₹${p0} (+${kin.deltaPrice1d}%)</span>
+            `;
+        } else {
+            return `
+                <span class="strip-step">₹${p2}</span>
+                <i class="fa-solid fa-arrow-right"></i>
+                <span class="strip-step">₹${p1}</span>
+                <i class="fa-solid fa-arrow-right"></i>
+                <span class="strip-step">₹${p0}</span>
+            `;
+        }
+    }
+
     // Process a stock's raw candles to compute all historical indicator vectors
     function processStockIndicators(stock) {
         const candles = stock.candles;
@@ -518,7 +819,10 @@ const App = (function() {
             }
         }
 
+        const kinematics = calcStockKinematics(candles, prices, rsi, adxData, ema50, sma200);
+
         stock.current = {
+            kinematics,
             price: prices[lastIdx],
             drawdown: drawdown[lastIdx],
             rsi: rsi[lastIdx],
@@ -568,8 +872,17 @@ const App = (function() {
 
     // Filter stocks list and update the display table
     function renderScreenerGrid() {
-        const query = document.getElementById('grid-search').value.toLowerCase();
         const tbody = document.getElementById('screener-tbody');
+        if (!tbody) {
+            // Screener is hidden from non-admin users; keep backtest dashboard synced
+            const backtestView = document.getElementById('backtest-view-card');
+            if (backtestView && !backtestView.classList.contains('hidden')) {
+                renderBacktestDashboard();
+            }
+            return;
+        }
+        const queryInput = document.getElementById('grid-search');
+        const query = queryInput ? queryInput.value.toLowerCase() : '';
         tbody.innerHTML = '';
 
         let total = 0;
@@ -595,6 +908,9 @@ const App = (function() {
             const filterPerfSelect = document.getElementById('sel-filter-performance');
             const filterPerf = filterPerfSelect ? filterPerfSelect.value : 'all';
             const matchesPerf = filterPerf === 'all' || 
+                                (filterPerf === 'kinematics-failure' && stock.current.kinematics && stock.current.kinematics.regime === 'STRUCTURAL_FAILURE') ||
+                                (filterPerf === 'kinematics-ignition' && stock.current.kinematics && stock.current.kinematics.regime === 'MOMENTUM_ACCELERATION') ||
+                                (filterPerf === 'kinematics-reversal' && stock.current.kinematics && stock.current.kinematics.regime === 'TREND_REVERSAL') ||
                                 (filterPerf === 'momentum-shift' && stock.current.hasMomentumShift) ||
                                 (filterPerf === 'rsi-buy-5d' && stock.current.hasRsiBuy5d) ||
                                 (filterPerf === 'rsi-sell-5d' && stock.current.hasRsiSell5d) ||
@@ -667,6 +983,9 @@ const App = (function() {
             } else if (sortField === 'milestone') {
                 valA = a.current.milestonePriority ?? 1;
                 valB = b.current.milestonePriority ?? 1;
+            } else if (sortField === 'kinematics') {
+                valA = a.current.kinematics ? a.current.kinematics.priority : 1;
+                valB = b.current.kinematics ? b.current.kinematics.priority : 1;
             } else if (sortField === 'drawdown') {
                 valA = a.current.drawdown;
                 valB = b.current.drawdown;
@@ -753,6 +1072,21 @@ const App = (function() {
                 universeBadge = `<span style="font-size: 9px; padding: 2px 6px; border-radius: 4px; background: rgba(244, 162, 97, 0.15); color: #f4a261; border: 1px solid rgba(244, 162, 97, 0.3); font-weight: 600; margin-left: 6px; white-space: nowrap;">F&O</span>`;
             }
 
+            const kin = stock.current.kinematics || calcStockKinematics(stock.candles, stock.candles.map(c => c.close), stock.indicators.rsi, { adx: stock.indicators.adx, plusDI: stock.indicators.plusDI, minusDI: stock.indicators.minusDI }, stock.indicators.ema50, stock.indicators.sma200);
+            const kinStripHtml = renderKinematicsStrip(kin);
+            const kinematicsCellHtml = `
+                <div class="kinematics-cell" style="cursor: pointer;" title="Click to view full 3-session kinematics audit" onclick="event.stopPropagation(); App.openKinematicsModal('${stock.ticker}')">
+                    <div>
+                        <span class="badge-kinematics ${kin.badgeClass}">
+                            ${kin.icon} ${kin.badgeLabel}
+                        </span>
+                    </div>
+                    <div class="kinematics-strip">
+                        ${kinStripHtml}
+                    </div>
+                </div>
+            `;
+
             tr.innerHTML = `
                 <td><strong>${stock.ticker}</strong></td>
                 <td>
@@ -766,6 +1100,7 @@ const App = (function() {
                 <td>${perfVisualHtml}</td>
                 <td>${momentumShiftHtml}</td>
                 <td>${milestoneHtml}</td>
+                <td>${kinematicsCellHtml}</td>
                 <td class="detail-col ${stock.current.drawdown > state.filters.drawdown.threshold && state.filters.drawdown.enabled ? 'text-red' : ''}">${stock.current.drawdown}%</td>
                 <td class="detail-col ${stock.current.rsi < state.filters.rsi.threshold && state.filters.rsi.enabled ? 'text-red' : ''}">
                     ${stock.current.rsi ?? '-'}
@@ -800,10 +1135,13 @@ const App = (function() {
             });
         })();
 
-        // Update statistics
-        document.getElementById('stat-total').innerText = total;
-        document.getElementById('stat-knives').innerText = knives;
-        document.getElementById('stat-safe').innerText = safe;
+        // Update statistics (if visible)
+        const elTotal = document.getElementById('stat-total');
+        if (elTotal) elTotal.innerText = total;
+        const elKnives = document.getElementById('stat-knives');
+        if (elKnives) elKnives.innerText = knives;
+        const elSafe = document.getElementById('stat-safe');
+        if (elSafe) elSafe.innerText = safe;
         const statGainers = document.getElementById('stat-gainers');
         if (statGainers) statGainers.innerText = gainers;
         const statLosers = document.getElementById('stat-losers');
@@ -2973,7 +3311,7 @@ const App = (function() {
                     }
 
                     syncStatusDiv.style.color = 'var(--color-safe)';
-                    syncStatusDiv.innerHTML = `<i class="fa-solid fa-circle-check"></i> Sync complete! Synced ${totalSyncCount} candles across ${totalUpdatedTickers} tickers.`;
+                    syncStatusDiv.innerHTML = `<i class="fa-solid fa-circle-check"></i> Sync complete! Synced ${totalSyncCount} candles across ${totalUpdatedTickers} tickers.<br><button type="button" onclick="window.runGodsEyeFromAdmin(event)" style="margin-top:8px; background:linear-gradient(135deg, #e9805d, #d86a47); color:#fff; border:none; padding:5px 12px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-eye"></i> Run God's Eye Analysis Now</button>`;
 
                     // If current mode is simulation, reload data to reflect the changes
                     if (state.dataSource === 'simulation') {
@@ -3047,6 +3385,133 @@ const App = (function() {
                 }
             });
         }
+
+        // Admin Kinematics Thought-Leadership Agent controls
+        const btnAdminKinematics = document.getElementById('btn-admin-kinematics-agent');
+        const kinematicsStatusDiv = document.getElementById('admin-kinematics-status');
+        const kinematicArticleModal = document.getElementById('kinematic-article-modal');
+        const btnCloseKinematicArticleModal = document.getElementById('btn-close-kinematic-article-modal');
+        const btnDismissKinematicArticleModal = document.getElementById('btn-dismiss-kinematic-article-modal');
+        const btnCopyKinematicArticle = document.getElementById('btn-copy-kinematic-article');
+
+        function openKinematicArticleModal(payload) {
+            if (!kinematicArticleModal) return;
+            const titleEl = document.getElementById('modal-kinematic-article-title');
+            const engineBadge = document.getElementById('modal-kinematic-engine-badge');
+            const dbBadge = document.getElementById('modal-kinematic-db-badge');
+            const bodyEl = document.getElementById('modal-kinematic-article-body');
+
+            if (titleEl) titleEl.textContent = payload.title || 'Market Kinematics Analysis';
+            if (engineBadge) engineBadge.textContent = payload.engine || 'Quantitative Agent';
+            if (dbBadge) {
+                if (payload.post_id) {
+                    dbBadge.innerHTML = `<i class="fa-solid fa-database"></i> Saved to Community (#${payload.post_id})`;
+                } else {
+                    dbBadge.innerHTML = `<i class="fa-solid fa-file"></i> Draft Saved: ${payload.filename || 'Local'}`;
+                }
+            }
+            if (bodyEl) bodyEl.textContent = payload.article || 'No article generated.';
+
+            kinematicArticleModal.style.display = 'flex';
+        }
+
+        function closeKinematicArticleModal() {
+            if (kinematicArticleModal) {
+                kinematicArticleModal.style.display = 'none';
+            }
+        }
+
+        if (btnCloseKinematicArticleModal) btnCloseKinematicArticleModal.addEventListener('click', closeKinematicArticleModal);
+        if (btnDismissKinematicArticleModal) btnDismissKinematicArticleModal.addEventListener('click', closeKinematicArticleModal);
+        if (kinematicArticleModal) {
+            kinematicArticleModal.addEventListener('click', (e) => {
+                if (e.target === kinematicArticleModal) closeKinematicArticleModal();
+            });
+        }
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && kinematicArticleModal && kinematicArticleModal.style.display !== 'none') {
+                closeKinematicArticleModal();
+            }
+        });
+
+        if (btnCopyKinematicArticle) {
+            btnCopyKinematicArticle.addEventListener('click', async () => {
+                const bodyEl = document.getElementById('modal-kinematic-article-body');
+                if (!bodyEl) return;
+                const text = bodyEl.textContent;
+                try {
+                    await navigator.clipboard.writeText(text);
+                    const copyTextSpan = document.getElementById('btn-copy-text');
+                    const origHtml = btnCopyKinematicArticle.innerHTML;
+                    btnCopyKinematicArticle.innerHTML = '<i class="fa-solid fa-check"></i> <span>Copied!</span>';
+                    btnCopyKinematicArticle.style.background = '#10b981';
+                    setTimeout(() => {
+                        btnCopyKinematicArticle.innerHTML = '<i class="fa-regular fa-clipboard"></i> <span id="btn-copy-text">Copy Article</span>';
+                        btnCopyKinematicArticle.style.background = '#0a66c2';
+                    }, 2200);
+                } catch (err) {
+                    alert('Could not copy to clipboard. Please select text manually.');
+                }
+            });
+        }
+
+        if (btnAdminKinematics && kinematicsStatusDiv) {
+            btnAdminKinematics.addEventListener('click', async () => {
+                const focusVal = document.getElementById('sel-kinematics-focus') ? document.getElementById('sel-kinematics-focus').value : 'all';
+                const symbolVal = document.getElementById('txt-kinematics-symbol') ? document.getElementById('txt-kinematics-symbol').value.trim() : '';
+
+                btnAdminKinematics.disabled = true;
+                kinematicsStatusDiv.style.color = 'var(--text-secondary)';
+                kinematicsStatusDiv.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing tape kinematics & drafting article...';
+
+                try {
+                    const getCookie = (name) => {
+                        let cookieValue = null;
+                        if (document.cookie && document.cookie !== '') {
+                            const cookies = document.cookie.split(';');
+                            for (let i = 0; i < cookies.length; i++) {
+                                const cookie = cookies[i].trim();
+                                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                    break;
+                                }
+                            }
+                        }
+                        return cookieValue;
+                    };
+                    const csrftoken = getCookie('csrftoken');
+
+                    const response = await fetch('/api/admin/run-kinematics-agent/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrftoken
+                        },
+                        body: JSON.stringify({
+                            focus: focusVal || 'all',
+                            symbol: symbolVal || null
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (response.ok && data.status === 'success') {
+                        kinematicsStatusDiv.style.color = '#38bdf8';
+                        kinematicsStatusDiv.innerHTML = `<i class="fa-solid fa-circle-check"></i> Article generated via ${data.engine}! Previewing...`;
+                        console.log("Kinematics Agent logs:", data.logs);
+                        openKinematicArticleModal(data);
+                    } else {
+                        throw new Error(data.message || 'Server returned an error');
+                    }
+                } catch (err) {
+                    console.error("Kinematics agent trigger failed:", err);
+                    kinematicsStatusDiv.style.color = '#ef4444';
+                    kinematicsStatusDiv.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Failed: ${err.message}`;
+                } finally {
+                    btnAdminKinematics.disabled = false;
+                }
+            });
+        }
+
 
         // Admin User License Management
         // Admin User License Management
@@ -3357,6 +3822,7 @@ const App = (function() {
         const tabBacktest = document.getElementById('btn-tab-backtest');
         const tabJournal = document.getElementById('btn-tab-journal');
         const tabAdvanced = document.getElementById('btn-tab-advanced');
+        const tabOrb = document.getElementById('btn-tab-orb');
         const tabAdminStats = document.getElementById('btn-tab-admin-stats');
         
         const screenerStats = document.getElementById('screener-stats-bar');
@@ -3364,6 +3830,7 @@ const App = (function() {
         const backtestViewCard = document.getElementById('backtest-view-card');
         const journalViewCard = document.getElementById('journal-view-card');
         const advancedViewCard = document.getElementById('advanced-strategy-view-card');
+        const orbViewCard = document.getElementById('orb-screener-view-card');
         const adminStatsViewCard = document.getElementById('admin-stats-view-card');
         const useCasesSection = document.querySelector('.use-cases-section');
         
@@ -3386,60 +3853,67 @@ const App = (function() {
             const btnStatsFs = document.getElementById('btn-fullscreen-stats');
             if (btnStatsFs) btnStatsFs.title = 'Toggle Fullscreen Table';
 
-            [tabScreener, tabBacktest, tabJournal, tabAdvanced, tabAdminStats].forEach(tab => {
+            [tabScreener, tabBacktest, tabJournal, tabAdvanced, tabOrb, tabAdminStats].forEach(tab => {
                 if (tab) {
                     tab.classList.remove('active');
                     tab.style.background = 'transparent';
                     tab.style.color = 'var(--text-secondary)';
                 }
             });
-            screenerStats.classList.add('hidden');
-            screenerGrid.classList.add('hidden');
-            backtestViewCard.classList.add('hidden');
-            journalViewCard.classList.add('hidden');
+            if (screenerStats) screenerStats.classList.add('hidden');
+            if (screenerGrid) screenerGrid.classList.add('hidden');
+            if (backtestViewCard) backtestViewCard.classList.add('hidden');
+            if (journalViewCard) journalViewCard.classList.add('hidden');
             if (advancedViewCard) advancedViewCard.classList.add('hidden');
+            if (orbViewCard) orbViewCard.classList.add('hidden');
             if (adminStatsViewCard) adminStatsViewCard.classList.add('hidden');
             if (useCasesSection) useCasesSection.classList.add('hidden');
         }
 
-        tabScreener.addEventListener('click', () => {
-            deactivateAllTabs();
-            tabScreener.classList.add('active');
-            tabScreener.style.background = 'rgba(255,255,255,0.05)';
-            tabScreener.style.color = 'var(--text-primary)';
-            
-            screenerStats.classList.remove('hidden');
-            screenerGrid.classList.remove('hidden');
-            if (useCasesSection) useCasesSection.classList.remove('hidden');
-        });
+        if (tabScreener) {
+            tabScreener.addEventListener('click', () => {
+                deactivateAllTabs();
+                tabScreener.classList.add('active');
+                tabScreener.style.background = 'rgba(255,255,255,0.05)';
+                tabScreener.style.color = 'var(--text-primary)';
+                
+                if (screenerStats) screenerStats.classList.remove('hidden');
+                if (screenerGrid) screenerGrid.classList.remove('hidden');
+                if (useCasesSection) useCasesSection.classList.remove('hidden');
+            });
+        }
         
-        tabBacktest.addEventListener('click', () => {
-            if (USER_STATUS === 'expired') {
-                document.getElementById('trial-expired-overlay').classList.remove('hidden');
-                return;
-            }
-            deactivateAllTabs();
-            tabBacktest.classList.add('active');
-            tabBacktest.style.background = 'rgba(255,255,255,0.05)';
-            tabBacktest.style.color = 'var(--text-primary)';
-            
-            backtestViewCard.classList.remove('hidden');
-            renderBacktestDashboard();
-        });
+        if (tabBacktest) {
+            tabBacktest.addEventListener('click', () => {
+                if (USER_STATUS === 'expired') {
+                    document.getElementById('trial-expired-overlay').classList.remove('hidden');
+                    return;
+                }
+                deactivateAllTabs();
+                tabBacktest.classList.add('active');
+                tabBacktest.style.background = 'rgba(255,255,255,0.05)';
+                tabBacktest.style.color = 'var(--text-primary)';
+                
+                if (backtestViewCard) backtestViewCard.classList.remove('hidden');
+                renderBacktestDashboard();
+            });
+        }
 
-        tabJournal.addEventListener('click', () => {
-            if (USER_STATUS === 'expired') {
-                document.getElementById('trial-expired-overlay').classList.remove('hidden');
-                return;
-            }
-            deactivateAllTabs();
-            tabJournal.classList.add('active');
-            tabJournal.style.background = 'rgba(255,255,255,0.05)';
-            tabJournal.style.color = 'var(--text-primary)';
-            
-            journalViewCard.classList.remove('hidden');
-            renderJournalDashboard();
-        });
+        if (tabJournal) {
+            tabJournal.addEventListener('click', () => {
+                if (USER_STATUS === 'expired') {
+                    document.getElementById('trial-expired-overlay').classList.remove('hidden');
+                    return;
+                }
+                deactivateAllTabs();
+                tabJournal.classList.add('active');
+                tabJournal.style.background = 'rgba(255,255,255,0.05)';
+                tabJournal.style.color = 'var(--text-primary)';
+                
+                if (journalViewCard) journalViewCard.classList.remove('hidden');
+                renderJournalDashboard();
+            });
+        }
 
         if (tabAdvanced) {
             tabAdvanced.addEventListener('click', () => {
@@ -3464,6 +3938,27 @@ const App = (function() {
                     advancedViewCard.classList.remove('hidden');
                 }
                 renderAdvancedStrategyDashboard();
+            });
+        }
+
+        if (tabOrb) {
+            tabOrb.addEventListener('click', () => {
+                if (typeof window.switchDashboardTab === 'function') {
+                    window.switchDashboardTab('orb');
+                    return;
+                }
+                deactivateAllTabs();
+                tabOrb.classList.add('active');
+                tabOrb.style.background = 'rgba(255,255,255,0.05)';
+                tabOrb.style.color = 'var(--text-primary)';
+                
+                if (orbViewCard) {
+                    orbViewCard.classList.remove('hidden');
+                    orbViewCard.style.display = 'block';
+                }
+                if (typeof window.loadIdxOrbScreenerDashboard === 'function') {
+                    window.loadIdxOrbScreenerDashboard();
+                }
             });
         }
 
@@ -3918,6 +4413,184 @@ const App = (function() {
                 }
             }
         });
+
+        let idxOrbStocks = [];
+        let idxOrbMode = 'raw'; // 'raw', 'opt', 'all'
+
+        window.switchIdxOrbMode = function(mode) {
+            idxOrbMode = mode;
+            const btnRaw = document.getElementById('idx_orb_btn_raw');
+            const btnOpt = document.getElementById('idx_orb_btn_opt');
+            const btnAll = document.getElementById('idx_orb_btn_all');
+            if (btnRaw) {
+                btnRaw.style.background = mode === 'raw' ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255,255,255,0.05)';
+                btnRaw.style.borderColor = mode === 'raw' ? '#38bdf8' : 'rgba(255,255,255,0.1)';
+                btnRaw.style.color = mode === 'raw' ? '#38bdf8' : '#d6d3d1';
+            }
+            if (btnOpt) {
+                btnOpt.style.background = mode === 'opt' ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255,255,255,0.05)';
+                btnOpt.style.borderColor = mode === 'opt' ? '#38bdf8' : 'rgba(255,255,255,0.1)';
+                btnOpt.style.color = mode === 'opt' ? '#38bdf8' : '#d6d3d1';
+            }
+            if (btnAll) {
+                btnAll.style.background = mode === 'all' ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255,255,255,0.05)';
+                btnAll.style.borderColor = mode === 'all' ? '#38bdf8' : 'rgba(255,255,255,0.1)';
+                btnAll.style.color = mode === 'all' ? '#38bdf8' : '#d6d3d1';
+            }
+            window.filterIdxOrbTable();
+        };
+
+        window.recalculateIdxOrb = function() {
+            const capital = parseFloat(document.getElementById('idx_orb_capital')?.value) || 1000000;
+            const riskPct = parseFloat(document.getElementById('idx_orb_risk_pct')?.value) || 1.0;
+            const riskAmt = (capital * riskPct) / 100.0;
+            const badge = document.getElementById('idx_orb_risk_badge');
+            if (badge) badge.innerText = `(₹${riskAmt.toLocaleString('en-IN', {maximumFractionDigits: 0})})`;
+            window.filterIdxOrbTable();
+        };
+
+        window.filterIdxOrbTable = function() {
+            if (!idxOrbStocks || !idxOrbStocks.length) return;
+            const searchVal = (document.getElementById('idx_orb_search')?.value || '').toUpperCase().trim();
+            const capital = parseFloat(document.getElementById('idx_orb_capital')?.value) || 1000000;
+            const riskPct = parseFloat(document.getElementById('idx_orb_risk_pct')?.value) || 1.0;
+            const riskBudget = (capital * riskPct) / 100.0;
+
+            let filtered = idxOrbStocks.filter(s => {
+                if (searchVal && !s.symbol.includes(searchVal)) return false;
+                if (idxOrbMode === 'raw' && !s.qualifies_atr50) return false;
+                if (idxOrbMode === 'opt' && !s.qualifies_atrpct) return false;
+                return true;
+            });
+
+            // KPIs
+            const totalInMode = idxOrbStocks.filter(s => {
+                if (idxOrbMode === 'raw') return s.qualifies_atr50;
+                if (idxOrbMode === 'opt') return s.qualifies_atrpct;
+                return true;
+            });
+            const liveBreakouts = idxOrbStocks.filter(s => ['LONG_TRIGGERED', 'SHORT_BREAKDOWN'].includes(s.status));
+            const avgSL = filtered.length ? (filtered.reduce((acc, s) => acc + (s.sl_points_10pct || 0), 0) / filtered.length).toFixed(1) : '0';
+
+            let totalSizedVal = 0;
+            filtered.forEach(s => {
+                const slPts = s.sl_points_10pct || 1.0;
+                let shares = Math.max(1, Math.floor(riskBudget / slPts));
+                const maxShares = Math.max(1, Math.floor((capital * 0.20) / s.close));
+                shares = Math.min(shares, maxShares);
+                totalSizedVal += (shares * s.close);
+            });
+
+            const kpiTotal = document.getElementById('idx_orb_kpi_total');
+            const kpiQual = document.getElementById('idx_orb_kpi_qual');
+            const kpiBrk = document.getElementById('idx_orb_kpi_breakouts');
+            const kpiAvgSl = document.getElementById('idx_orb_kpi_avg_sl');
+            const kpiCap = document.getElementById('idx_orb_kpi_capital');
+
+            if (kpiTotal) kpiTotal.innerText = `${idxOrbStocks.length}`;
+            if (kpiQual) kpiQual.innerText = `${totalInMode.length}`;
+            if (kpiBrk) kpiBrk.innerText = `${liveBreakouts.length}`;
+            if (kpiAvgSl) kpiAvgSl.innerText = `₹${avgSL}`;
+            if (kpiCap) kpiCap.innerText = `₹${(totalSizedVal / 10000000).toFixed(2)} Cr`;
+
+            const tbody = document.getElementById('idx_orb_tbody');
+            if (!tbody) return;
+
+            if (!filtered.length) {
+                tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 24px; color: var(--text-muted); font-style: italic;">No stocks meet the selected filters. Try switching to Quant-Optimized (ATR% &ge; 2%) or All Liquid F&O.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(s => {
+                const slPts = s.sl_points_10pct || 1.0;
+                let shares = Math.max(1, Math.floor(riskBudget / slPts));
+                const maxShares = Math.max(1, Math.floor((capital * 0.20) / s.close));
+                shares = Math.min(shares, maxShares);
+                const capReq = Math.round(shares * s.close);
+
+                let btBadge = `<span style="color: var(--text-dim); font-size: 10px;">--</span>`;
+                if (s.has_backtest) {
+                    const pnlSign = s.bt_pnl >= 0 ? '+' : '';
+                    const pnlColor = s.bt_pnl >= 0 ? '#34d399' : '#f87171';
+                    const pnlBg = s.bt_pnl >= 0 ? 'rgba(52, 211, 153, 0.12)' : 'rgba(239, 68, 68, 0.12)';
+                    const pnlVal = Math.abs(s.bt_pnl) >= 1000 ? `${pnlSign}₹${(s.bt_pnl / 1000).toFixed(1)}k` : `${pnlSign}₹${Math.round(s.bt_pnl)}`;
+                    btBadge = `<span style="font-size: 10px; font-weight: 700; color: ${pnlColor}; background: ${pnlBg}; padding: 2px 6px; border-radius: 4px;" title="Trades: ${s.bt_trades || 0} | Total PnL: ₹${(s.bt_pnl || 0).toLocaleString()}">
+                        ${s.bt_win_rate}% Win • ${pnlVal}
+                    </span>`;
+                }
+
+                const chgColor = s.day_change_pct >= 0 ? '#10b981' : '#f87171';
+                const statusBg = s.status === 'LONG_TRIGGERED' ? 'rgba(56, 189, 248, 0.18)' : 
+                                 (s.status === 'SHORT_BREAKDOWN' ? 'rgba(239, 68, 68, 0.18)' : 
+                                 (s.status.includes('TESTING') ? 'rgba(245, 158, 11, 0.18)' : 'rgba(255, 255, 255, 0.05)'));
+
+                return `<tr>
+                    <td>
+                        <b style="color: #fff; font-size: 13px;">${s.symbol}</b>
+                    </td>
+                    <td class="mono" style="font-weight: 700;">₹${s.close.toLocaleString('en-IN')}</td>
+                    <td class="mono" style="color: ${chgColor}; font-weight: 600;">${s.day_change_pct >= 0 ? '+' : ''}${s.day_change_pct}%</td>
+                    <td>
+                        <span class="mono">${(s.vol_14 / 100000).toFixed(1)}L sh</span>
+                        <div style="font-size: 10px; color: var(--text-dim);">₹${s.turnover_cr} Cr</div>
+                    </td>
+                    <td>
+                        <span class="mono">₹${s.atr_14}</span>
+                        <div style="font-size: 10px; color: ${s.qualifies_atrpct ? '#34d399' : '#a8a29e'}; font-weight: 600;">(${s.atr_pct_14}%)</div>
+                    </td>
+                    <td>
+                        <div class="mono" style="color: #38bdf8;">H: ₹${s.h5}</div>
+                        <div class="mono" style="color: #f87171;">L: ₹${s.l5}</div>
+                    </td>
+                    <td class="mono" style="font-weight: 700; color: ${s.rvol >= 1.2 ? '#34d399' : '#a8a29e'};">
+                        ${s.rvol}x
+                    </td>
+                    <td>
+                        <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: ${statusBg}; color: ${s.status_color};">
+                            ${s.status_display}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="mono" style="font-weight: 700; color: #fbbf24;">₹${slPts}</div>
+                        <div style="font-size: 10px; color: var(--text-dim);">Lvl: ₹${s.trade_sl}</div>
+                    </td>
+                    <td class="mono" style="font-weight: 700; color: #38bdf8;">
+                        ${shares.toLocaleString()}
+                    </td>
+                    <td class="mono">₹${capReq.toLocaleString('en-IN')}</td>
+                    <td>
+                        <div class="mono" style="color: #34d399; font-weight: 600;">₹${s.trade_target}</div>
+                        <div style="font-size: 10px; color: var(--text-dim);">R:R ~${s.rr_ratio}:1</div>
+                    </td>
+                    <td>${btBadge}</td>
+                    <td>
+                        <a href="/quant-terminal/?symbol=${s.symbol}" class="guide-btn" style="text-decoration: none; padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; border-radius: 4px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">
+                            <i class="fa-solid fa-chart-line"></i> Chart
+                        </a>
+                    </td>
+                </tr>`;
+            }).join('');
+        };
+
+        window.loadIdxOrbScreenerDashboard = async function() {
+            const tbody = document.getElementById('idx_orb_tbody');
+            if (tbody && (!idxOrbStocks || !idxOrbStocks.length)) {
+                tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 24px; color: var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin"></i> Scanning 115 F&O stocks for 5-minute ORB setups...</td></tr>`;
+            }
+
+            try {
+                const res = await fetch('/api/orb-screener/');
+                const data = await res.json();
+                if (data.status === 'success' && data.stocks) {
+                    idxOrbStocks = data.stocks;
+                    window.filterIdxOrbTable();
+                } else {
+                    if (tbody) tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 24px; color: #f87171;">Failed to load ORB data: ${data.message || 'Unknown error'}</td></tr>`;
+                }
+            } catch (err) {
+                if (tbody) tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 24px; color: #f87171;">Network error fetching ORB screener: ${err.message}</td></tr>`;
+            }
+        };
 
         async function renderAdvancedStrategyDashboard() {
             const absBody = document.getElementById('abs-ranking-table-body');
@@ -4398,6 +5071,9 @@ const App = (function() {
                                   (filterStatus === 'safe' && stock.status === 'Safe') || 
                                   (filterStatus === 'knife' && stock.status === 'Knife');
             const matchesPerf = filterPerf === 'all' || 
+                                (filterPerf === 'kinematics-failure' && stock.current.kinematics && stock.current.kinematics.regime === 'STRUCTURAL_FAILURE') ||
+                                (filterPerf === 'kinematics-ignition' && stock.current.kinematics && stock.current.kinematics.regime === 'MOMENTUM_ACCELERATION') ||
+                                (filterPerf === 'kinematics-reversal' && stock.current.kinematics && stock.current.kinematics.regime === 'TREND_REVERSAL') ||
                                 (filterPerf === 'momentum-shift' && stock.current.hasMomentumShift) ||
                                 (filterPerf === 'rsi-buy-5d' && stock.current.hasRsiBuy5d) ||
                                 (filterPerf === 'rsi-sell-5d' && stock.current.hasRsiSell5d) ||
@@ -4491,6 +5167,100 @@ const App = (function() {
                 `;
                 signalsTbody.appendChild(tr);
             });
+        }
+    }
+
+
+    function openKinematicsModal(ticker) {
+        const stock = state.stocks[ticker];
+        if (!stock) return;
+
+        if (!stock.current || !stock.current.kinematics) {
+            processStockIndicators(stock);
+        }
+        const kin = stock.current.kinematics;
+        if (!kin) return;
+
+        const modal = document.getElementById('kinematics-audit-modal');
+        if (!modal) return;
+
+        const iconBox = document.getElementById('modal-kinematics-icon-box');
+        const titleEl = document.getElementById('modal-kinematics-title');
+        const badgeLabelEl = document.getElementById('modal-kinematics-badge-label');
+        const tbody = document.getElementById('modal-kinematics-table-body');
+        const psychEl = document.getElementById('modal-kinematics-psychology');
+        const actionEl = document.getElementById('modal-kinematics-action');
+
+        if (titleEl) {
+            titleEl.textContent = `${stock.ticker} (${stock.name}) - 3-Session Kinematics Audit`;
+        }
+
+        if (badgeLabelEl) {
+            badgeLabelEl.innerHTML = `<span class="badge-kinematics ${kin.badgeClass}">${kin.icon} ${kin.badgeLabel}</span>`;
+        }
+
+        if (iconBox) {
+            let bg = 'rgba(148, 163, 184, 0.15)', color = '#94a3b8', border = 'rgba(148, 163, 184, 0.3)';
+            if (kin.regime === 'STRUCTURAL_FAILURE') {
+                bg = 'rgba(239, 68, 68, 0.15)'; color = '#f87171'; border = 'rgba(239, 68, 68, 0.3)';
+            } else if (kin.regime === 'MOMENTUM_ACCELERATION') {
+                bg = 'rgba(16, 185, 129, 0.15)'; color = '#34d399'; border = 'rgba(16, 185, 129, 0.3)';
+            } else if (kin.regime === 'TREND_REVERSAL') {
+                bg = 'rgba(139, 92, 246, 0.15)'; color = '#c084fc'; border = 'rgba(139, 92, 246, 0.3)';
+            }
+            iconBox.style.background = bg;
+            iconBox.style.color = color;
+            iconBox.style.border = `1px solid ${border}`;
+            iconBox.innerHTML = kin.icon;
+        }
+
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                    <td style="padding: 7px; color: var(--text-muted);">T-2</td>
+                    <td style="padding: 7px;">${kin.dates[0] || '-'}</td>
+                    <td style="padding: 7px; font-weight: 600;">₹${kin.prices[0] ? kin.prices[0].toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
+                    <td style="padding: 7px;">${kin.rsiValues[0] ?? '-'}</td>
+                    <td style="padding: 7px;">${kin.volRatios[0] ?? '1.0'}x</td>
+                    <td style="padding: 7px;"><span class="badge-milestone normal">${kin.stances[0] || 'Stable'}</span></td>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); background: rgba(255, 255, 255, 0.02);">
+                    <td style="padding: 7px; color: var(--text-muted);">T-1</td>
+                    <td style="padding: 7px;">${kin.dates[1] || '-'}</td>
+                    <td style="padding: 7px; font-weight: 600;">₹${kin.prices[1] ? kin.prices[1].toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
+                    <td style="padding: 7px;">${kin.rsiValues[1] ?? '-'}</td>
+                    <td style="padding: 7px;">${kin.volRatios[1] ?? '1.0'}x</td>
+                    <td style="padding: 7px;"><span class="badge-milestone normal">${kin.stances[1] || 'Stable'}</span></td>
+                </tr>
+                <tr style="background: rgba(99, 102, 241, 0.08);">
+                    <td style="padding: 7px; font-weight: 700; color: var(--accent-indigo);">T (Today)</td>
+                    <td style="padding: 7px; font-weight: 600;">${kin.dates[2] || '-'}</td>
+                    <td style="padding: 7px; font-weight: 700; color: ${kin.deltaPrice1d >= 0 ? '#34d399' : '#f87171'};">
+                        ₹${kin.prices[2] ? kin.prices[2].toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}
+                        <span style="font-size: 10px; font-weight: 400; margin-left: 3px;">(${kin.deltaPrice1d >= 0 ? '+' : ''}${kin.deltaPrice1d}%)</span>
+                    </td>
+                    <td style="padding: 7px; font-weight: 700; color: ${kin.deltaRsi1d >= 0 ? '#34d399' : '#f87171'};">
+                        ${kin.rsiValues[2] ?? '-'}
+                        <span style="font-size: 10px; font-weight: 400; margin-left: 3px;">(${kin.deltaRsi1d >= 0 ? '+' : ''}${kin.deltaRsi1d})</span>
+                    </td>
+                    <td style="padding: 7px; font-weight: 700; color: ${kin.volRatios[2] >= 1.5 ? '#f59e0b' : 'inherit'};">${kin.volRatios[2] ?? '1.0'}x</td>
+                    <td style="padding: 7px;"><span class="badge-milestone normal">${kin.stances[2] || 'Stable'}</span></td>
+                </tr>
+            `;
+        }
+
+        if (psychEl) psychEl.textContent = kin.psychology;
+        if (actionEl) actionEl.textContent = kin.action;
+
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+    }
+
+    function closeKinematicsModal() {
+        const modal = document.getElementById('kinematics-audit-modal');
+        if (modal) {
+            modal.classList.remove('active');
+            modal.style.display = 'none';
         }
     }
 
@@ -6068,6 +6838,29 @@ const App = (function() {
     function init() {
         bindEvents();
         
+        // Setup 3-Day Kinematics Modal listeners
+        const btnCloseKinModal = document.getElementById('btn-close-kinematics-modal');
+        if (btnCloseKinModal) {
+            btnCloseKinModal.addEventListener('click', closeKinematicsModal);
+        }
+        const btnDismissKinModal = document.getElementById('btn-dismiss-kinematics-modal');
+        if (btnDismissKinModal) {
+            btnDismissKinModal.addEventListener('click', closeKinematicsModal);
+        }
+        const kinModalBackdrop = document.getElementById('kinematics-audit-modal');
+        if (kinModalBackdrop) {
+            kinModalBackdrop.addEventListener('click', (e) => {
+                if (e.target === kinModalBackdrop) {
+                    closeKinematicsModal();
+                }
+            });
+        }
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeKinematicsModal();
+            }
+        });
+
         // Pre-fill fields from sessionStorage if already configured
         const savedKey = sessionStorage.getItem('zerodha_api_key');
         const savedToken = sessionStorage.getItem('zerodha_access_token');
@@ -6099,13 +6892,25 @@ const App = (function() {
 
         // Start in Simulation / Historical Snapshot Mode
         loadSimulationData();
+
+        // If non-admin user (screener hidden), ensure Backtest tab is rendered initially
+        if (typeof IS_SUPERUSER !== 'undefined' && !IS_SUPERUSER) {
+            const bViewCard = document.getElementById('backtest-view-card');
+            if (bViewCard) {
+                bViewCard.classList.remove('hidden');
+            }
+            renderBacktestDashboard();
+        }
     }
 
     return {
         init,
         triggerSelect: (ticker) => {
-            // Switch back to screener tab first
-            document.getElementById('btn-tab-screener').click();
+            // Switch back to screener tab first if available
+            const btnScreener = document.getElementById('btn-tab-screener');
+            if (btnScreener) {
+                btnScreener.click();
+            }
             openDetailDrawer(ticker);
         },
         triggerTradeLog: (ticker) => {
@@ -6113,14 +6918,36 @@ const App = (function() {
             const name = stock ? stock.name : ticker;
             showTradeLogModal(ticker, name);
         },
+        openKinematicsModal: (ticker) => {
+            openKinematicsModal(ticker);
+        },
         triggerCloseTrade: (tradeId) => {
             openCloseTradeModal(tradeId);
         },
         triggerDeleteTrade: (tradeId) => {
             deleteJournalEntry(tradeId);
+        },
+        runKinematicsAgent: (e) => {
+            if (typeof window.runKinematicsAgent === 'function') {
+                return window.runKinematicsAgent(e);
+            }
+        },
+        openKinematicArticleModal: (payload) => {
+            if (typeof window.openKinematicArticleModal === 'function') {
+                return window.openKinematicArticleModal(payload);
+            }
+        },
+        closeKinematicArticleModal: () => {
+            if (typeof window.closeKinematicArticleModal === 'function') {
+                return window.closeKinematicArticleModal();
+            }
         }
     };
 })();
+
+// Attach globally for inline handlers
+window.App = App;
+window.openKinematicsModal = (ticker) => App.openKinematicsModal(ticker);
 
 // Bootstrap the application on page load
 window.addEventListener('DOMContentLoaded', () => {

@@ -786,30 +786,125 @@
             <!-- Center Panel: Screener Grid & Stats -->
             <section class="screener-results">
                 <!-- Navigation Tabs -->
-                <div class="view-tabs" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 10px; font-family: var(--font-stack);">
+                <div class="view-tabs" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 10px; font-family: var(--font-stack); flex-wrap: wrap;">
                     {% if request.user.is_superuser or request.user.is_staff %}
-                    <button id="btn-tab-screener" class="tab-btn active" style="background: rgba(255,255,255,0.05); border: none; color: var(--text-primary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
+                    <button id="btn-tab-screener" class="tab-btn active" onclick="switchDashboardTab('screener')" style="background: rgba(255,255,255,0.05); border: none; color: var(--text-primary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
                         <i class="fa-solid fa-list-check"></i> Screener Grid
                     </button>
                     {% endif %}
-                    <button id="btn-tab-backtest" class="tab-btn {% if not request.user.is_superuser and not request.user.is_staff %}active{% endif %}" style="background: {% if not request.user.is_superuser and not request.user.is_staff %}rgba(255,255,255,0.05){% else %}transparent{% endif %}; border: none; color: {% if not request.user.is_superuser and not request.user.is_staff %}var(--text-primary){% else %}var(--text-secondary){% endif %}; font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
+                    <button id="btn-tab-backtest" class="tab-btn {% if not request.user.is_superuser and not request.user.is_staff %}active{% endif %}" onclick="switchDashboardTab('backtest')" style="background: {% if not request.user.is_superuser and not request.user.is_staff %}rgba(255,255,255,0.05){% else %}transparent{% endif %}; border: none; color: {% if not request.user.is_superuser and not request.user.is_staff %}var(--text-primary){% else %}var(--text-secondary){% endif %}; font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
                         <i class="fa-solid fa-calculator"></i> RSI Strategy & Backtest
                     </button>
-                    <button id="btn-tab-journal" class="tab-btn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
+                    <button id="btn-tab-journal" class="tab-btn" onclick="switchDashboardTab('journal')" style="background: transparent; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
                         <i class="fa-solid fa-book"></i> Trading Journal
                     </button>
-                    <button id="btn-tab-advanced" class="tab-btn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
+                    <button id="btn-tab-advanced" class="tab-btn" onclick="switchDashboardTab('advanced')" style="background: transparent; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
                         <i class="fa-solid fa-gem" style="color: #a855f7;"></i> Advanced Strategy
                     </button>
-                    <button id="btn-tab-orb" class="tab-btn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
+                    <button id="btn-tab-orb" class="tab-btn" onclick="switchDashboardTab('orb')" style="background: transparent; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
                         <i class="fa-solid fa-crosshairs" style="color: #38bdf8;"></i> 5M ORB Screener
                     </button>
                     {% if request.user.is_superuser or request.user.is_staff %}
-                    <button id="btn-tab-admin-stats" class="tab-btn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
+                    <button id="btn-tab-admin-stats" class="tab-btn" onclick="switchDashboardTab('admin-stats')" style="background: transparent; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
                         <i class="fa-solid fa-chart-pie" style="color: #10b981;"></i> Screener Statistics & Export <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #10b981; font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">Admin</span>
                     </button>
                     {% endif %}
                 </div>
+
+                <script>
+                window.switchDashboardTab = function(tabName) {
+                    console.log("[Dashboard] Switching to tab:", tabName);
+
+                    const tabIds = ['btn-tab-screener', 'btn-tab-backtest', 'btn-tab-journal', 'btn-tab-advanced', 'btn-tab-orb', 'btn-tab-admin-stats'];
+                    tabIds.forEach(function(id) {
+                        const el = document.getElementById(id);
+                        if (el) {
+                            el.classList.remove('active');
+                            el.style.background = 'transparent';
+                            el.style.color = 'var(--text-secondary)';
+                        }
+                    });
+
+                    const cardIds = [
+                        'screener-stats-bar',
+                        'main-screener-grid',
+                        'backtest-view-card',
+                        'journal-view-card',
+                        'advanced-strategy-view-card',
+                        'orb-screener-view-card',
+                        'admin-stats-view-card'
+                    ];
+                    cardIds.forEach(function(id) {
+                        const el = document.getElementById(id);
+                        if (el) {
+                            el.classList.add('hidden');
+                            el.style.display = 'none';
+                        }
+                    });
+                    const useCases = document.querySelector('.use-cases-section');
+                    if (useCases) {
+                        useCases.classList.add('hidden');
+                        useCases.style.display = 'none';
+                    }
+
+                    if (tabName === 'screener') {
+                        const btn = document.getElementById('btn-tab-screener');
+                        if (btn) { btn.classList.add('active'); btn.style.background = 'rgba(255,255,255,0.05)'; btn.style.color = 'var(--text-primary)'; }
+                        const sBar = document.getElementById('screener-stats-bar');
+                        const sGrid = document.getElementById('main-screener-grid');
+                        if (sBar) { sBar.classList.remove('hidden'); sBar.style.display = ''; }
+                        if (sGrid) { sGrid.classList.remove('hidden'); sGrid.style.display = ''; }
+                        if (useCases) { useCases.classList.remove('hidden'); useCases.style.display = ''; }
+                    } else if (tabName === 'backtest') {
+                        const btn = document.getElementById('btn-tab-backtest');
+                        if (btn) { btn.classList.add('active'); btn.style.background = 'rgba(255,255,255,0.05)'; btn.style.color = 'var(--text-primary)'; }
+                        const bCard = document.getElementById('backtest-view-card');
+                        if (bCard) { bCard.classList.remove('hidden'); bCard.style.display = ''; }
+                        if (typeof renderBacktestDashboard === 'function') {
+                            renderBacktestDashboard();
+                        }
+                    } else if (tabName === 'journal') {
+                        const btn = document.getElementById('btn-tab-journal');
+                        if (btn) { btn.classList.add('active'); btn.style.background = 'rgba(255,255,255,0.05)'; btn.style.color = 'var(--text-primary)'; }
+                        const jCard = document.getElementById('journal-view-card');
+                        if (jCard) { jCard.classList.remove('hidden'); jCard.style.display = ''; }
+                        if (typeof renderJournalDashboard === 'function') {
+                            renderJournalDashboard();
+                        }
+                    } else if (tabName === 'advanced') {
+                        const isProUser = (typeof PLAN_TIER !== 'undefined' && PLAN_TIER === 'pro') || (typeof USER_STATUS !== 'undefined' && (USER_STATUS === 'premium' || USER_STATUS === 'pro')) || (typeof IS_SUPERUSER !== 'undefined' && IS_SUPERUSER === true);
+                        if (!isProUser) {
+                            const overlay = document.getElementById('pro-only-overlay');
+                            if (overlay) overlay.classList.remove('hidden');
+                            return;
+                        }
+                        const btn = document.getElementById('btn-tab-advanced');
+                        if (btn) { btn.classList.add('active'); btn.style.background = 'rgba(255,255,255,0.05)'; btn.style.color = 'var(--text-primary)'; }
+                        const aCard = document.getElementById('advanced-strategy-view-card');
+                        if (aCard) { aCard.classList.remove('hidden'); aCard.style.display = ''; }
+                        if (typeof renderAdvancedStrategyDashboard === 'function') {
+                            renderAdvancedStrategyDashboard();
+                        }
+                    } else if (tabName === 'orb') {
+                        const btn = document.getElementById('btn-tab-orb');
+                        if (btn) { btn.classList.add('active'); btn.style.background = 'rgba(255,255,255,0.05)'; btn.style.color = 'var(--text-primary)'; }
+                        const oCard = document.getElementById('orb-screener-view-card');
+                        if (oCard) { oCard.classList.remove('hidden'); oCard.style.display = 'block'; }
+                        if (typeof window.loadIdxOrbScreenerDashboard === 'function') {
+                            window.loadIdxOrbScreenerDashboard();
+                        }
+                    } else if (tabName === 'admin-stats') {
+                        const btn = document.getElementById('btn-tab-admin-stats');
+                        if (btn) { btn.classList.add('active'); btn.style.background = 'rgba(255,255,255,0.05)'; btn.style.color = 'var(--text-primary)'; }
+                        const asCard = document.getElementById('admin-stats-view-card');
+                        if (asCard) { asCard.classList.remove('hidden'); asCard.style.display = ''; }
+                        if (typeof renderAdminStatsDashboard === 'function') {
+                            renderAdminStatsDashboard();
+                        }
+                    }
+                };
+                window.switchMainTab = window.switchDashboardTab;
+                </script>
 
                 <!-- User Notification Banner Block -->
                 {% if user_notifications or pending_payments %}
@@ -2557,8 +2652,8 @@
 
     <!-- Project JS dependencies -->
     <script src="{% static 'screener/qrcode.min.js' %}"></script>
-    <script src="{% static 'screener/mockData.js' %}?v=5.1"></script>
-    <script src="{% static 'screener/app.js' %}?v=5.1"></script>
+    <script src="{% static 'screener/mockData.js' %}?v=5.2"></script>
+    <script src="{% static 'screener/app.js' %}?v=5.2"></script>
 
     <!-- Sidebar mobile drawer toggling -->
     <script>
