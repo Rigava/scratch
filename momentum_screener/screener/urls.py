@@ -58,7 +58,10 @@ urlpatterns = [
     # God's Eye Market Intelligence & Editorial routes
     path('api/gods-eye/latest/', views.api_gods_eye_latest, name='api_gods_eye_latest'),
     path('api/admin/gods-eye/generate/', views.api_admin_gods_eye_generate, name='api_admin_gods_eye_generate'),
-    path('api/admin/gods-eye/publish/', views.api_admin_gods_eye_publish, name='api_admin_gods_eye_publish'),
+    path('api/gods-eye/publish/', views.api_admin_gods_eye_publish, name='api_admin_gods_eye_publish'),
     path('api/market-breadth/timeline-briefings/', views.api_market_breadth_timeline_briefings, name='api_market_breadth_timeline_briefings'),
+    
+    # 5-Minute ORB Strategy Screener API
+    path('api/orb-screener/', views.api_orb_screener_view, name='api_orb_screener'),
 ]
 

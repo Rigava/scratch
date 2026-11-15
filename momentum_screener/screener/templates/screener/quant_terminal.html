@@ -1454,6 +1454,202 @@
             align-items: center;
             gap: 8px;
         }
+
+        /* 5-MINUTE ORB INTRADAY MODAL & DESK STYLES */
+        .orb-backdrop {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.82);
+            backdrop-filter: blur(6px);
+            z-index: 210;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .orb-backdrop.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .orb-modal {
+            background: #12100e;
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            border-radius: 12px;
+            width: 1240px;
+            max-width: 96vw;
+            max-height: 92vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(56, 189, 248, 0.15);
+            transform: scale(0.97);
+            transition: transform 0.25s ease;
+        }
+        .orb-backdrop.active .orb-modal {
+            transform: scale(1);
+        }
+        .orb-header {
+            padding: 14px 20px;
+            background: #1a1715;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .orb-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #f5f5f4;
+        }
+        .orb-controls-bar {
+            padding: 12px 20px;
+            background: #161412;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+        .orb-btn-group {
+            display: inline-flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .orb-filter-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #d6d3d1;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .orb-filter-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+        .orb-filter-btn.active {
+            background: rgba(56, 189, 248, 0.18);
+            border-color: #38bdf8;
+            color: #38bdf8;
+        }
+        .orb-input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #a8a29e;
+        }
+        .orb-input {
+            background: #0c0a09;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #f5f5f4;
+            padding: 5px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            width: 100px;
+        }
+        .orb-kpis-bar {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            padding: 10px 20px;
+            background: #141210;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            flex-shrink: 0;
+        }
+        .orb-kpi-card {
+            background: #1c1917;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 8px;
+            padding: 8px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .orb-kpi-label {
+            font-size: 10.5px;
+            color: #a8a29e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .orb-kpi-val {
+            font-size: 15px;
+            font-weight: 700;
+            color: #f5f5f4;
+        }
+        .orb-table-wrap {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: auto;
+            padding: 0;
+        }
+        .orb-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            text-align: left;
+        }
+        .orb-table th {
+            position: sticky;
+            top: 0;
+            background: #1c1917;
+            color: #a8a29e;
+            padding: 10px 12px;
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            white-space: nowrap;
+            z-index: 10;
+        }
+        .orb-table td {
+            padding: 9px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: #e7e5e4;
+            white-space: nowrap;
+        }
+        .orb-table tr:hover {
+            background: rgba(56, 189, 248, 0.04);
+        }
+        .orb-badge-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+        .orb-btn-chart {
+            background: rgba(56, 189, 248, 0.15);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            color: #38bdf8;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .orb-btn-chart:hover {
+            background: #38bdf8;
+            color: #0c0a09;
+        }
     </style>
 
 </head>
@@ -1485,6 +1681,12 @@
                 <span class="pulse-dot" style="background: #e9805d; box-shadow: 0 0 8px #e9805d;"></span>
                 <span>👁️ GOD'S EYE BRIEF</span>
             </button>
+
+            <!-- 5M ORB STRATEGY DESK BUTTON -->
+            <button class="gods-eye-badge" id="btn_orb_desk_hdr" onclick="openOrbDeskModal()" title="Open 5-Minute ORB Intraday Screener & Sizing Desk" style="border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.1); color: #38bdf8;">
+                <span class="pulse-dot" style="background: #38bdf8; box-shadow: 0 0 8px #38bdf8;"></span>
+                <span>🎯 5M ORB DESK</span>
+            </button>
         </div>
         
         <div class="header-nav-links">
@@ -1509,6 +1711,9 @@
                     <span class="stock-chg badge-up" id="tv_chg">+1.85%</span>
                     <span class="regime-tag tag-rebound" id="tv_regime">Demand Rebound</span>
                     <span class="dna-pill pill-runner" id="tv_dna_pill"><i class="fa-solid fa-bolt"></i> Runner</span>
+                    <span class="regime-tag" id="tv_orb_pill" style="display: none; align-items: center; gap: 5px; font-size: 11px; padding: 2px 8px; border-radius: 4px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-weight: 600; cursor: pointer;" onclick="openOrbDeskModal()" title="Click to view 5M ORB Trading Desk">
+                        🎯 5M ORB: <span id="tv_orb_desc">--</span>
+                    </span>
                 </div>
                 
                 <!-- DECLUTTER & DISPLAY TOGGLES -->
@@ -1655,6 +1860,7 @@
                 <!-- FILTER TABS -->
                 <div class="filter-tabs">
                     <button class="filter-tab active" id="tab_all" onclick="setFilter('ALL', this)">All (115)</button>
+                    <button class="filter-tab" id="tab_orb" onclick="setFilter('ORB_STRATEGY', this)" style="border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8;">🎯 5M ORB (<span id="cnt_orb">0</span>)</button>
                     <button class="filter-tab" id="tab_breakout" onclick="setFilter('SUPPLY_BREAKOUT', this)">🚀 Breakout (Live) (0)</button>
                     <button class="filter-tab" id="tab_runners" onclick="setFilter('RUNNERS_5Y', this)">⚡ 5Y Runners (9)</button>
                     <button class="filter-tab" id="tab_rebound" onclick="setFilter('DEMAND_REBOUND', this)">🛡️ Rebound (0)</button>
@@ -2126,6 +2332,7 @@
         function updateTabCounts() {
             const counts = {
                 ALL: STOCKS_METRICS.length,
+                ORB_STRATEGY: STOCKS_METRICS.filter(s => s.orb_qualifies_strategy || s.orb_status === 'LONG_TRIGGERED' || s.orb_status === 'SHORT_BREAKDOWN' || s.orb_qualifies_atr50).length,
                 SUPPLY_BREAKOUT: STOCKS_METRICS.filter(s => s.is_breakout || (s.category && s.category.includes('Breakout'))).length,
                 RUNNERS_5Y: STOCKS_METRICS.filter(s => s.struct_label === 'Expansion Runner').length,
                 DEMAND_REBOUND: STOCKS_METRICS.filter(s => s.category && s.category.includes('Demand Rebound')).length,
@@ -2136,6 +2343,7 @@
 
             const tabMap = {
                 tab_all: `All (${counts.ALL})`,
+                tab_orb: `🎯 5M ORB (${counts.ORB_STRATEGY})`,
                 tab_breakout: `🚀 Breakout (${counts.SUPPLY_BREAKOUT})`,
                 tab_runners: `⚡ 5Y Runners (${counts.RUNNERS_5Y})`,
                 tab_rebound: `🛡️ Rebound (${counts.DEMAND_REBOUND})`,
@@ -2175,6 +2383,7 @@
                 }
 
                 // Category tab filter
+                if (currentFilter === 'ORB_STRATEGY') return s.orb_qualifies_strategy || s.orb_status === 'LONG_TRIGGERED' || s.orb_status === 'SHORT_BREAKDOWN' || s.orb_qualifies_atr50;
                 if (currentFilter === 'SUPPLY_BREAKOUT') return s.is_breakout || (s.category && s.category.includes('Breakout'));
                 if (currentFilter === 'RUNNERS_5Y') return s.struct_label === 'Expansion Runner';
                 if (currentFilter === 'DEMAND_REBOUND') return s.category && s.category.includes('Demand Rebound');
@@ -2216,7 +2425,12 @@
                         </span>
                     </div>
                     <div class="item-bottom">
-                        <div>${renderCardDnaBadge(s)}</div>
+                        <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;">
+                            ${renderCardDnaBadge(s)}
+                            <span style="font-size: 10px; font-weight: 700; color: ${s.orb_status_color || '#94a3b8'}; background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 3px;" title="5M ORB: ${s.orb_status_display || ''}">
+                                ${s.orb_status === 'LONG_TRIGGERED' ? '🚀 LONG' : (s.orb_status === 'SHORT_BREAKDOWN' ? '🔻 SHORT' : '🎯 ORB')} SL ₹${s.orb_sl_10pct}
+                            </span>
+                        </div>
                         <span>Safety: <b style="color: ${s.safety_score >= 75 ? '#34d399' : (s.safety_score < 50 ? '#f87171' : '#fbbf24')};">${s.safety_score}</b></span>
                     </div>
                 </div>
@@ -2864,11 +3078,302 @@
         </div>
     </div>
 
+    <!-- 5-MINUTE ORB INTRADAY DESK MODAL -->
+    <div class="orb-backdrop" id="orb_backdrop" onclick="closeOrbDeskModal(event)">
+        <div class="orb-modal" onclick="event.stopPropagation()">
+            <!-- HEADER -->
+            <div class="orb-header">
+                <div class="orb-title">
+                    <i class="fa-solid fa-crosshairs" style="color: #38bdf8; font-size: 18px;"></i>
+                    <span>5-Minute ORB (RVOL + ATR) Day Trading Desk</span>
+                    <span style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">
+                        PyBroker 5Y Walk-forward: 38.9% Win Rate • 1.49 PF • 7.3:1 Win/Loss Payoff
+                    </span>
+                </div>
+                <button class="btn-close-modal" onclick="closeOrbDeskModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- CONTROLS & SIZING BAR -->
+            <div class="orb-controls-bar">
+                <!-- RULE MODE TOGGLE -->
+                <div class="orb-btn-group">
+                    <button class="orb-filter-btn active" id="orb_btn_raw" onclick="setOrbRuleMode('raw')">
+                        Raw User Rule (ATR > 50)
+                    </button>
+                    <button class="orb-filter-btn" id="orb_btn_opt" onclick="setOrbRuleMode('opt')">
+                        Quant-Optimized (ATR% &ge; 2.0%)
+                    </button>
+                    <button class="orb-filter-btn" id="orb_btn_all" onclick="setOrbRuleMode('all')">
+                        All Liquid F&O (100k+ Vol)
+                    </button>
+                </div>
+
+                <!-- SIGNAL STATUS FILTER -->
+                <div class="orb-btn-group">
+                    <button class="orb-filter-btn active" id="orb_st_all" onclick="setOrbStatusFilter('ALL')">All Signals</button>
+                    <button class="orb-filter-btn" id="orb_st_long" onclick="setOrbStatusFilter('LONG')">🚀 Long Breakouts</button>
+                    <button class="orb-filter-btn" id="orb_st_short" onclick="setOrbStatusFilter('SHORT')">🔻 Short Breakdowns</button>
+                    <button class="orb-filter-btn" id="orb_st_watch" onclick="setOrbStatusFilter('WATCH')">⚡ Near Range</button>
+                </div>
+
+                <!-- POSITION SIZING INPUTS -->
+                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                    <div class="orb-input-group">
+                        <span>Capital (₹):</span>
+                        <input type="number" id="orb_capital" class="orb-input" value="1000000" step="50000" onchange="recalculateOrbDesk()">
+                    </div>
+                    <div class="orb-input-group">
+                        <span>Risk %:</span>
+                        <input type="number" id="orb_risk_pct" class="orb-input" value="1.0" step="0.25" min="0.25" max="5.0" style="width: 55px;" onchange="recalculateOrbDesk()">
+                        <span id="orb_risk_amt_badge" style="color: #38bdf8; font-weight: 700;">(₹10,000 Risk)</span>
+                    </div>
+                    <div class="orb-input-group">
+                        <input type="text" id="orb_search" class="orb-input" placeholder="Search ticker..." style="width: 120px;" oninput="filterOrbTable()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI SUMMARY STRIP -->
+            <div class="orb-kpis-bar">
+                <div class="orb-kpi-card">
+                    <span class="orb-kpi-label">Strategy Universe</span>
+                    <span class="orb-kpi-val" id="orb_kpi_total">113 Stocks</span>
+                </div>
+                <div class="orb-kpi-card">
+                    <span class="orb-kpi-label">Qualifying (Rule Match)</span>
+                    <span class="orb-kpi-val" style="color: #38bdf8;" id="orb_kpi_qual">-- Stocks</span>
+                </div>
+                <div class="orb-kpi-card">
+                    <span class="orb-kpi-label">Active Breakouts (Live)</span>
+                    <span class="orb-kpi-val" style="color: #34d399;" id="orb_kpi_breakouts">-- Triggers</span>
+                </div>
+                <div class="orb-kpi-card">
+                    <span class="orb-kpi-label">Avg 10% ATR Stop</span>
+                    <span class="orb-kpi-val" style="color: #fbbf24;" id="orb_kpi_avg_sl">-- Pts</span>
+                </div>
+                <div class="orb-kpi-card">
+                    <span class="orb-kpi-label">Total Sized Value</span>
+                    <span class="orb-kpi-val" style="color: #c084fc;" id="orb_kpi_sized_val">₹-- Cr</span>
+                </div>
+            </div>
+
+            <!-- TABLE WRAPPER -->
+            <div class="orb-table-wrap">
+                <table class="orb-table" id="orb_main_table">
+                    <thead>
+                        <tr>
+                            <th>Stock</th>
+                            <th>Price</th>
+                            <th>24h Chg</th>
+                            <th>14D Vol</th>
+                            <th>14D ATR</th>
+                            <th>5M Range (H5 - L5)</th>
+                            <th>5M RVOL</th>
+                            <th>Signal Status</th>
+                            <th>10% ATR Stop</th>
+                            <th>Sized Qty</th>
+                            <th>Capital Req</th>
+                            <th>EOD Target</th>
+                            <th>Backtest Track</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orb_table_body">
+                        <!-- Injected via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <!-- TOAST NOTIFICATION -->
     <div class="gods-eye-toast" id="gods_eye_toast">
         <i class="fa-solid fa-circle-check" style="color: #10b981;"></i>
         <span id="toast_msg">Copied to clipboard!</span>
     </div>
 
+    <script>
+        // 5-MINUTE ORB INTRADAY DESK JAVASCRIPT LOGIC
+        let orbRuleMode = 'raw'; // 'raw' (ATR>50), 'opt' (ATR%>=2%), 'all'
+        let orbStatusFilter = 'ALL'; // 'ALL', 'LONG', 'SHORT', 'WATCH'
+
+        function openOrbDeskModal() {
+            const bd = document.getElementById('orb_backdrop');
+            if (bd) {
+                bd.classList.add('active');
+                filterOrbTable();
+            }
+        }
+
+        function closeOrbDeskModal(event) {
+            if (event && event.target && event.target.id !== 'orb_backdrop' && !event.target.classList.contains('btn-close-modal') && !event.target.closest('.btn-close-modal')) {
+                return;
+            }
+            const bd = document.getElementById('orb_backdrop');
+            if (bd) bd.classList.remove('active');
+        }
+
+        function setOrbRuleMode(mode) {
+            orbRuleMode = mode;
+            document.getElementById('orb_btn_raw').classList.toggle('active', mode === 'raw');
+            document.getElementById('orb_btn_opt').classList.toggle('active', mode === 'opt');
+            document.getElementById('orb_btn_all').classList.toggle('active', mode === 'all');
+            filterOrbTable();
+        }
+
+        function setOrbStatusFilter(status) {
+            orbStatusFilter = status;
+            document.getElementById('orb_st_all').classList.toggle('active', status === 'ALL');
+            document.getElementById('orb_st_long').classList.toggle('active', status === 'LONG');
+            document.getElementById('orb_st_short').classList.toggle('active', status === 'SHORT');
+            document.getElementById('orb_st_watch').classList.toggle('active', status === 'WATCH');
+            filterOrbTable();
+        }
+
+        function recalculateOrbDesk() {
+            const capital = parseFloat(document.getElementById('orb_capital').value) || 1000000;
+            const riskPct = parseFloat(document.getElementById('orb_risk_pct').value) || 1.0;
+            const riskAmt = (capital * riskPct) / 100.0;
+            document.getElementById('orb_risk_amt_badge').innerText = `(₹${riskAmt.toLocaleString('en-IN', {maximumFractionDigits: 0})} Risk)`;
+            filterOrbTable();
+        }
+
+        function filterOrbTable() {
+            if (!STOCKS_METRICS || !STOCKS_METRICS.length) return;
+            const searchVal = (document.getElementById('orb_search').value || '').toUpperCase().trim();
+            const capital = parseFloat(document.getElementById('orb_capital').value) || 1000000;
+            const riskPct = parseFloat(document.getElementById('orb_risk_pct').value) || 1.0;
+            const riskBudget = (capital * riskPct) / 100.0;
+
+            let filtered = STOCKS_METRICS.filter(s => {
+                if (searchVal && !s.symbol.includes(searchVal)) return false;
+
+                // Rule filter
+                if (orbRuleMode === 'raw') {
+                    if (!s.orb_qualifies_atr50) return false;
+                } else if (orbRuleMode === 'opt') {
+                    if (!s.orb_qualifies_atrpct) return false;
+                }
+
+                // Status filter
+                if (orbStatusFilter === 'LONG' && s.orb_status !== 'LONG_TRIGGERED') return false;
+                if (orbStatusFilter === 'SHORT' && s.orb_status !== 'SHORT_BREAKDOWN') return false;
+                if (orbStatusFilter === 'WATCH' && !['TESTING_HIGH', 'TESTING_LOW'].includes(s.orb_status)) return false;
+
+                return true;
+            });
+
+            // Update KPIs
+            const totalInMode = STOCKS_METRICS.filter(s => {
+                if (orbRuleMode === 'raw') return s.orb_qualifies_atr50;
+                if (orbRuleMode === 'opt') return s.orb_qualifies_atrpct;
+                return true;
+            });
+
+            const liveBreakouts = STOCKS_METRICS.filter(s => ['LONG_TRIGGERED', 'SHORT_BREAKDOWN'].includes(s.orb_status));
+            const avgSL = filtered.length ? (filtered.reduce((acc, s) => acc + (s.orb_sl_10pct || 0), 0) / filtered.length).toFixed(1) : '0';
+
+            let totalSizedVal = 0;
+            filtered.forEach(s => {
+                const slPts = s.orb_sl_10pct || 1.0;
+                let shares = Math.max(1, Math.floor(riskBudget / slPts));
+                const maxShares = Math.max(1, Math.floor((capital * 0.20) / s.close));
+                shares = Math.min(shares, maxShares);
+                totalSizedVal += (shares * s.close);
+            });
+
+            document.getElementById('orb_kpi_total').innerText = `${STOCKS_METRICS.length} Stocks`;
+            document.getElementById('orb_kpi_qual').innerText = `${totalInMode.length} Stocks`;
+            document.getElementById('orb_kpi_breakouts').innerText = `${liveBreakouts.length} Triggers`;
+            document.getElementById('orb_kpi_avg_sl').innerText = `₹${avgSL}`;
+            document.getElementById('orb_kpi_sized_val').innerText = `₹${(totalSizedVal / 10000000).toFixed(2)} Cr`;
+
+            // Render table
+            const tbody = document.getElementById('orb_table_body');
+            if (!filtered.length) {
+                tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 24px; color: var(--text-muted); font-style: italic;">No stocks meet the selected filters. Try switching to Quant-Optimized (ATR% &ge; 2%) or All Liquid F&O.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(s => {
+                const slPts = s.orb_sl_10pct || 1.0;
+                let shares = Math.max(1, Math.floor(riskBudget / slPts));
+                const maxShares = Math.max(1, Math.floor((capital * 0.20) / s.close));
+                shares = Math.min(shares, maxShares);
+                const capReq = Math.round(shares * s.close);
+                
+                let btBadge = `<span style="color: var(--text-dim); font-size: 10px;">--</span>`;
+                if (s.orb_has_backtest) {
+                    btBadge = `<span style="font-size: 10px; font-weight: 700; color: #34d399; background: rgba(52, 211, 153, 0.12); padding: 2px 6px; border-radius: 4px;" title="Total PnL: ₹${s.orb_bt_pnl.toLocaleString()}">
+                        ${s.orb_bt_win_rate}% Win • +₹${Math.round(s.orb_bt_pnl / 1000)}k
+                    </span>`;
+                }
+
+                const chgColor = s.change_pct >= 0 ? '#10b981' : '#f87171';
+                const statusBg = s.orb_status === 'LONG_TRIGGERED' ? 'rgba(56, 189, 248, 0.18)' : 
+                                 (s.orb_status === 'SHORT_BREAKDOWN' ? 'rgba(239, 68, 68, 0.18)' : 
+                                 (s.orb_status.includes('TESTING') ? 'rgba(245, 158, 11, 0.18)' : 'rgba(255, 255, 255, 0.05)'));
+
+                return `<tr>
+                    <td>
+                        <b style="color: #fff; font-size: 13px;">${s.symbol}</b>
+                        <div style="font-size: 9.5px; margin-top: 2px;">${renderCardDnaBadge(s)}</div>
+                    </td>
+                    <td class="mono" style="font-weight: 700;">₹${s.close.toLocaleString('en-IN')}</td>
+                    <td class="mono" style="color: ${chgColor}; font-weight: 600;">${s.change_pct >= 0 ? '+' : ''}${s.change_pct}%</td>
+                    <td>
+                        <span class="mono">${(s.volume / 100000).toFixed(1)}L sh</span>
+                        <div style="font-size: 10px; color: var(--text-dim);">₹${((s.volume * s.close)/10000000).toFixed(0)} Cr</div>
+                    </td>
+                    <td>
+                        <span class="mono">₹${s.atr}</span>
+                        <div style="font-size: 10px; color: ${s.orb_qualifies_atrpct ? '#34d399' : '#a8a29e'}; font-weight: 600;">(${((s.atr / s.close)*100).toFixed(2)}%)</div>
+                    </td>
+                    <td>
+                        <div class="mono" style="color: #38bdf8;">H: ₹${s.orb_h5}</div>
+                        <div class="mono" style="color: #f87171;">L: ₹${s.orb_l5}</div>
+                    </td>
+                    <td class="mono" style="font-weight: 700; color: ${s.orb_rvol >= 1.2 ? '#34d399' : '#a8a29e'};">
+                        ${s.orb_rvol}x
+                    </td>
+                    <td>
+                        <span class="orb-badge-status" style="background: ${statusBg}; color: ${s.orb_status_color};">
+                            ${s.orb_status_display}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="mono" style="font-weight: 700; color: #fbbf24;">₹${slPts}</div>
+                        <div style="font-size: 10px; color: var(--text-dim);">Lvl: ₹${s.orb_trade_sl}</div>
+                    </td>
+                    <td class="mono" style="font-weight: 700; color: #38bdf8;">
+                        ${shares.toLocaleString()}
+                    </td>
+                    <td class="mono">₹${capReq.toLocaleString('en-IN')}</td>
+                    <td>
+                        <div class="mono" style="color: #34d399; font-weight: 600;">₹${s.orb_trade_target}</div>
+                        <div style="font-size: 10px; color: var(--text-dim);">R:R ~7:1</div>
+                    </td>
+                    <td>${btBadge}</td>
+                    <td>
+                        <button class="orb-btn-chart" onclick="loadOrbStockAndClose('${s.symbol}')">
+                            <i class="fa-solid fa-chart-line"></i> Chart
+                        </button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function loadOrbStockAndClose(symbol) {
+            closeOrbDeskModal();
+            loadStockIntoChart(symbol);
+        }
+
+        // Initialize Tab Counts on Page Load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                updateTabCounts();
+            }, 300);
+        });
+    </script>
 </body>
 </html>

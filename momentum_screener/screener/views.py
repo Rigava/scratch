@@ -2282,7 +2282,7 @@ def advanced_strategy_view(request):
             if not candles:
                 continue
             df = pd.DataFrame(candles, columns=['date', 'open', 'high', 'low', 'close', 'volume'])
-            df['date'] = pd.to_datetime(df['date']).dt.tz_localize(None)
+            df['date'] = pd.to_datetime(df['date'].astype(str).str.split('T').str[0])
             df.set_index('date', inplace=True)
             for col in ['open', 'high', 'low', 'close', 'volume']:
                 df[col] = pd.to_numeric(df[col], errors='coerce')
@@ -2513,7 +2513,7 @@ def generate_pm_brief_view(request):
             return JsonResponse({'status': 'error', 'message': f'No historical data for {ticker}.'}, status=400)
             
         df = pd.DataFrame(candles, columns=['date', 'open', 'high', 'low', 'close', 'volume'])
-        df['date'] = pd.to_datetime(df['date']).dt.tz_localize(None)
+        df['date'] = pd.to_datetime(df['date'].astype(str).str.split('T').str[0])
         df.set_index('date', inplace=True)
         for col in ['open', 'high', 'low', 'close', 'volume']:
             df[col] = pd.to_numeric(df[col], errors='coerce')
@@ -2525,7 +2525,7 @@ def generate_pm_brief_view(request):
             return JsonResponse({'status': 'error', 'message': 'Nifty 50 data missing.'}, status=400)
             
         nifty_df = pd.DataFrame(nifty_candles, columns=['date', 'open', 'high', 'low', 'close', 'volume'])
-        nifty_df['date'] = pd.to_datetime(nifty_df['date']).dt.tz_localize(None)
+        nifty_df['date'] = pd.to_datetime(nifty_df['date'].astype(str).str.split('T').str[0])
         nifty_df.set_index('date', inplace=True)
         for col in ['open', 'high', 'low', 'close', 'volume']:
             nifty_df[col] = pd.to_numeric(nifty_df[col], errors='coerce')
@@ -3709,6 +3709,77 @@ def api_admin_gods_eye_publish(request):
         })
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@require_GET
+def api_orb_screener_view(request):
+    """
+    Quantitative Screener API for the 5-Minute Opening Range Breakout (ORB) Day Trading Strategy.
+    Filters NSE F&O universe by Liquidity, 14-day ATR / ATR%, and 5m RVOL, computing exact 10% ATR stops and position sizing.
+    """
+    try:
+        from .orb_screener_service import scan_orb_universe
+        
+        min_vol = int(request.GET.get('min_vol', 100000))
+        min_atr = float(request.GET.get('min_atr', 50.0))
+        use_atr_pct = request.GET.get('use_atr_pct', 'false').lower() in ['true', '1', 'yes']
+        min_atr_pct = float(request.GET.get('min_atr_pct', 2.0))
+        min_rvol = float(request.GET.get('min_rvol', 1.0))
+        capital = float(request.GET.get('capital', 1000000))
+        risk_pct = float(request.GET.get('risk_pct', 1.0))
+        filter_mode = request.GET.get('filter_mode', 'ALL').upper()
+
+        records = scan_orb_universe(
+            min_vol=min_vol,
+            min_atr=min_atr,
+            use_atr_pct=use_atr_pct,
+            min_atr_pct=min_atr_pct,
+            min_rvol=min_rvol,
+            capital=capital,
+            risk_pct=risk_pct
+        )
+
+        # Apply optional filter_mode
+        if filter_mode == 'QUALIFIED':
+            filtered = [r for r in records if r['qualifies_strategy']]
+        elif filter_mode == 'BREAKOUTS':
+            filtered = [r for r in records if r['status'] in ['LONG_TRIGGERED', 'SHORT_BREAKDOWN']]
+        elif filter_mode == 'ATR50':
+            filtered = [r for r in records if r['qualifies_atr50'] and r['qualifies_liquidity']]
+        elif filter_mode == 'ATRPCT':
+            filtered = [r for r in records if r['qualifies_atrpct'] and r['qualifies_liquidity']]
+        else:
+            filtered = records
+
+        qualified_cnt = len([r for r in records if r['qualifies_strategy']])
+        breakouts_cnt = len([r for r in records if r['status'] in ['LONG_TRIGGERED', 'SHORT_BREAKDOWN']])
+        atr50_cnt = len([r for r in records if r['qualifies_atr50'] and r['qualifies_liquidity']])
+        atrpct_cnt = len([r for r in records if r['qualifies_atrpct'] and r['qualifies_liquidity']])
+
+        return JsonResponse({
+            'status': 'success',
+            'total_universe': len(records),
+            'displayed_count': len(filtered),
+            'qualified_count': qualified_cnt,
+            'breakouts_count': breakouts_cnt,
+            'atr50_count': atr50_cnt,
+            'atrpct_count': atrpct_cnt,
+            'parameters': {
+                'min_vol': min_vol,
+                'min_atr': min_atr,
+                'use_atr_pct': use_atr_pct,
+                'min_atr_pct': min_atr_pct,
+                'min_rvol': min_rvol,
+                'capital': capital,
+                'risk_pct': risk_pct,
+                'filter_mode': filter_mode
+            },
+            'stocks': filtered
+        })
+    except Exception as e:
+        logger.error(f"Error in api_orb_screener_view: {e}", exc_info=True)
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
 
 
 

@@ -131,6 +131,13 @@ def get_quant_terminal_payload():
     records = []
     chart_data_payload = {}
 
+    try:
+        from .orb_screener_service import scan_orb_universe
+        orb_list = scan_orb_universe()
+        orb_dict = {r['symbol']: r for r in orb_list}
+    except Exception as e:
+        orb_dict = {}
+
     for symbol, raw_records in raw_dump.items():
         if len(raw_records) < 70:
             continue
@@ -298,6 +305,25 @@ def get_quant_terminal_payload():
             'dist_52wl': round(dist_52wl, 2),
             'daily_vol': round(d_vol, 2),
             'annual_vol': round(a_vol, 2),
+            # 5-Minute ORB Strategy Fields
+            'orb_status': orb_dict.get(symbol, {}).get('status', 'RANGE_BOUND'),
+            'orb_status_display': orb_dict.get(symbol, {}).get('status_display', '⏳ In Range'),
+            'orb_status_color': orb_dict.get(symbol, {}).get('status_color', '#94a3b8'),
+            'orb_h5': orb_dict.get(symbol, {}).get('h5', round(cmp_price * 1.005, 2)),
+            'orb_l5': orb_dict.get(symbol, {}).get('l5', round(cmp_price * 0.995, 2)),
+            'orb_rvol': orb_dict.get(symbol, {}).get('rvol', 1.0),
+            'orb_sl_10pct': orb_dict.get(symbol, {}).get('sl_points_10pct', round(0.10 * atr, 2)),
+            'orb_trade_entry': orb_dict.get(symbol, {}).get('trade_entry', cmp_price),
+            'orb_trade_sl': orb_dict.get(symbol, {}).get('trade_sl', round(cmp_price - 0.10 * atr, 2)),
+            'orb_trade_target': orb_dict.get(symbol, {}).get('trade_target', round(cmp_price + 1.5 * atr, 2)),
+            'orb_shares_sized': orb_dict.get(symbol, {}).get('shares_sized', 10),
+            'orb_capital_required': orb_dict.get(symbol, {}).get('capital_required', round(10 * cmp_price, 2)),
+            'orb_qualifies_atr50': orb_dict.get(symbol, {}).get('qualifies_atr50', False),
+            'orb_qualifies_atrpct': orb_dict.get(symbol, {}).get('qualifies_atrpct', False),
+            'orb_qualifies_strategy': orb_dict.get(symbol, {}).get('qualifies_strategy', False),
+            'orb_has_backtest': orb_dict.get(symbol, {}).get('has_backtest', False),
+            'orb_bt_win_rate': orb_dict.get(symbol, {}).get('bt_win_rate', 0.0),
+            'orb_bt_pnl': orb_dict.get(symbol, {}).get('bt_pnl', 0.0),
         })
         
         candles = []

@@ -3822,6 +3822,7 @@ const App = (function() {
         const tabBacktest = document.getElementById('btn-tab-backtest');
         const tabJournal = document.getElementById('btn-tab-journal');
         const tabAdvanced = document.getElementById('btn-tab-advanced');
+        const tabOrb = document.getElementById('btn-tab-orb');
         const tabAdminStats = document.getElementById('btn-tab-admin-stats');
         
         const screenerStats = document.getElementById('screener-stats-bar');
@@ -3829,6 +3830,7 @@ const App = (function() {
         const backtestViewCard = document.getElementById('backtest-view-card');
         const journalViewCard = document.getElementById('journal-view-card');
         const advancedViewCard = document.getElementById('advanced-strategy-view-card');
+        const orbViewCard = document.getElementById('orb-screener-view-card');
         const adminStatsViewCard = document.getElementById('admin-stats-view-card');
         const useCasesSection = document.querySelector('.use-cases-section');
         
@@ -3851,7 +3853,7 @@ const App = (function() {
             const btnStatsFs = document.getElementById('btn-fullscreen-stats');
             if (btnStatsFs) btnStatsFs.title = 'Toggle Fullscreen Table';
 
-            [tabScreener, tabBacktest, tabJournal, tabAdvanced, tabAdminStats].forEach(tab => {
+            [tabScreener, tabBacktest, tabJournal, tabAdvanced, tabOrb, tabAdminStats].forEach(tab => {
                 if (tab) {
                     tab.classList.remove('active');
                     tab.style.background = 'transparent';
@@ -3863,6 +3865,7 @@ const App = (function() {
             if (backtestViewCard) backtestViewCard.classList.add('hidden');
             if (journalViewCard) journalViewCard.classList.add('hidden');
             if (advancedViewCard) advancedViewCard.classList.add('hidden');
+            if (orbViewCard) orbViewCard.classList.add('hidden');
             if (adminStatsViewCard) adminStatsViewCard.classList.add('hidden');
             if (useCasesSection) useCasesSection.classList.add('hidden');
         }
@@ -3880,33 +3883,37 @@ const App = (function() {
             });
         }
         
-        tabBacktest.addEventListener('click', () => {
-            if (USER_STATUS === 'expired') {
-                document.getElementById('trial-expired-overlay').classList.remove('hidden');
-                return;
-            }
-            deactivateAllTabs();
-            tabBacktest.classList.add('active');
-            tabBacktest.style.background = 'rgba(255,255,255,0.05)';
-            tabBacktest.style.color = 'var(--text-primary)';
-            
-            backtestViewCard.classList.remove('hidden');
-            renderBacktestDashboard();
-        });
+        if (tabBacktest) {
+            tabBacktest.addEventListener('click', () => {
+                if (USER_STATUS === 'expired') {
+                    document.getElementById('trial-expired-overlay').classList.remove('hidden');
+                    return;
+                }
+                deactivateAllTabs();
+                tabBacktest.classList.add('active');
+                tabBacktest.style.background = 'rgba(255,255,255,0.05)';
+                tabBacktest.style.color = 'var(--text-primary)';
+                
+                if (backtestViewCard) backtestViewCard.classList.remove('hidden');
+                renderBacktestDashboard();
+            });
+        }
 
-        tabJournal.addEventListener('click', () => {
-            if (USER_STATUS === 'expired') {
-                document.getElementById('trial-expired-overlay').classList.remove('hidden');
-                return;
-            }
-            deactivateAllTabs();
-            tabJournal.classList.add('active');
-            tabJournal.style.background = 'rgba(255,255,255,0.05)';
-            tabJournal.style.color = 'var(--text-primary)';
-            
-            journalViewCard.classList.remove('hidden');
-            renderJournalDashboard();
-        });
+        if (tabJournal) {
+            tabJournal.addEventListener('click', () => {
+                if (USER_STATUS === 'expired') {
+                    document.getElementById('trial-expired-overlay').classList.remove('hidden');
+                    return;
+                }
+                deactivateAllTabs();
+                tabJournal.classList.add('active');
+                tabJournal.style.background = 'rgba(255,255,255,0.05)';
+                tabJournal.style.color = 'var(--text-primary)';
+                
+                if (journalViewCard) journalViewCard.classList.remove('hidden');
+                renderJournalDashboard();
+            });
+        }
 
         if (tabAdvanced) {
             tabAdvanced.addEventListener('click', () => {
@@ -3931,6 +3938,20 @@ const App = (function() {
                     advancedViewCard.classList.remove('hidden');
                 }
                 renderAdvancedStrategyDashboard();
+            });
+        }
+
+        if (tabOrb) {
+            tabOrb.addEventListener('click', () => {
+                deactivateAllTabs();
+                tabOrb.classList.add('active');
+                tabOrb.style.background = 'rgba(255,255,255,0.05)';
+                tabOrb.style.color = 'var(--text-primary)';
+                
+                if (orbViewCard) {
+                    orbViewCard.classList.remove('hidden');
+                }
+                loadIdxOrbScreenerDashboard();
             });
         }
 
@@ -4385,6 +4406,180 @@ const App = (function() {
                 }
             }
         });
+
+        let idxOrbStocks = [];
+        let idxOrbMode = 'raw'; // 'raw', 'opt', 'all'
+
+        window.switchIdxOrbMode = function(mode) {
+            idxOrbMode = mode;
+            const btnRaw = document.getElementById('idx_orb_btn_raw');
+            const btnOpt = document.getElementById('idx_orb_btn_opt');
+            const btnAll = document.getElementById('idx_orb_btn_all');
+            if (btnRaw) {
+                btnRaw.style.background = mode === 'raw' ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255,255,255,0.05)';
+                btnRaw.style.borderColor = mode === 'raw' ? '#38bdf8' : 'rgba(255,255,255,0.1)';
+                btnRaw.style.color = mode === 'raw' ? '#38bdf8' : '#d6d3d1';
+            }
+            if (btnOpt) {
+                btnOpt.style.background = mode === 'opt' ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255,255,255,0.05)';
+                btnOpt.style.borderColor = mode === 'opt' ? '#38bdf8' : 'rgba(255,255,255,0.1)';
+                btnOpt.style.color = mode === 'opt' ? '#38bdf8' : '#d6d3d1';
+            }
+            if (btnAll) {
+                btnAll.style.background = mode === 'all' ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255,255,255,0.05)';
+                btnAll.style.borderColor = mode === 'all' ? '#38bdf8' : 'rgba(255,255,255,0.1)';
+                btnAll.style.color = mode === 'all' ? '#38bdf8' : '#d6d3d1';
+            }
+            window.filterIdxOrbTable();
+        };
+
+        window.recalculateIdxOrb = function() {
+            const capital = parseFloat(document.getElementById('idx_orb_capital')?.value) || 1000000;
+            const riskPct = parseFloat(document.getElementById('idx_orb_risk_pct')?.value) || 1.0;
+            const riskAmt = (capital * riskPct) / 100.0;
+            const badge = document.getElementById('idx_orb_risk_badge');
+            if (badge) badge.innerText = `(₹${riskAmt.toLocaleString('en-IN', {maximumFractionDigits: 0})})`;
+            window.filterIdxOrbTable();
+        };
+
+        window.filterIdxOrbTable = function() {
+            if (!idxOrbStocks || !idxOrbStocks.length) return;
+            const searchVal = (document.getElementById('idx_orb_search')?.value || '').toUpperCase().trim();
+            const capital = parseFloat(document.getElementById('idx_orb_capital')?.value) || 1000000;
+            const riskPct = parseFloat(document.getElementById('idx_orb_risk_pct')?.value) || 1.0;
+            const riskBudget = (capital * riskPct) / 100.0;
+
+            let filtered = idxOrbStocks.filter(s => {
+                if (searchVal && !s.symbol.includes(searchVal)) return false;
+                if (idxOrbMode === 'raw' && !s.qualifies_atr50) return false;
+                if (idxOrbMode === 'opt' && !s.qualifies_atrpct) return false;
+                return true;
+            });
+
+            // KPIs
+            const totalInMode = idxOrbStocks.filter(s => {
+                if (idxOrbMode === 'raw') return s.qualifies_atr50;
+                if (idxOrbMode === 'opt') return s.qualifies_atrpct;
+                return true;
+            });
+            const liveBreakouts = idxOrbStocks.filter(s => ['LONG_TRIGGERED', 'SHORT_BREAKDOWN'].includes(s.status));
+            const avgSL = filtered.length ? (filtered.reduce((acc, s) => acc + (s.sl_points_10pct || 0), 0) / filtered.length).toFixed(1) : '0';
+
+            let totalSizedVal = 0;
+            filtered.forEach(s => {
+                const slPts = s.sl_points_10pct || 1.0;
+                let shares = Math.max(1, Math.floor(riskBudget / slPts));
+                const maxShares = Math.max(1, Math.floor((capital * 0.20) / s.close));
+                shares = Math.min(shares, maxShares);
+                totalSizedVal += (shares * s.close);
+            });
+
+            const kpiTotal = document.getElementById('idx_orb_kpi_total');
+            const kpiQual = document.getElementById('idx_orb_kpi_qual');
+            const kpiBrk = document.getElementById('idx_orb_kpi_breakouts');
+            const kpiAvgSl = document.getElementById('idx_orb_kpi_avg_sl');
+            const kpiCap = document.getElementById('idx_orb_kpi_capital');
+
+            if (kpiTotal) kpiTotal.innerText = `${idxOrbStocks.length}`;
+            if (kpiQual) kpiQual.innerText = `${totalInMode.length}`;
+            if (kpiBrk) kpiBrk.innerText = `${liveBreakouts.length}`;
+            if (kpiAvgSl) kpiAvgSl.innerText = `₹${avgSL}`;
+            if (kpiCap) kpiCap.innerText = `₹${(totalSizedVal / 10000000).toFixed(2)} Cr`;
+
+            const tbody = document.getElementById('idx_orb_tbody');
+            if (!tbody) return;
+
+            if (!filtered.length) {
+                tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 24px; color: var(--text-muted); font-style: italic;">No stocks meet the selected filters. Try switching to Quant-Optimized (ATR% &ge; 2%) or All Liquid F&O.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(s => {
+                const slPts = s.sl_points_10pct || 1.0;
+                let shares = Math.max(1, Math.floor(riskBudget / slPts));
+                const maxShares = Math.max(1, Math.floor((capital * 0.20) / s.close));
+                shares = Math.min(shares, maxShares);
+                const capReq = Math.round(shares * s.close);
+
+                let btBadge = `<span style="color: var(--text-dim); font-size: 10px;">--</span>`;
+                if (s.has_backtest) {
+                    btBadge = `<span style="font-size: 10px; font-weight: 700; color: #34d399; background: rgba(52, 211, 153, 0.12); padding: 2px 6px; border-radius: 4px;" title="Total PnL: ₹${s.bt_pnl.toLocaleString()}">
+                        ${s.bt_win_rate}% Win • +₹${Math.round(s.bt_pnl / 1000)}k
+                    </span>`;
+                }
+
+                const chgColor = s.day_change_pct >= 0 ? '#10b981' : '#f87171';
+                const statusBg = s.status === 'LONG_TRIGGERED' ? 'rgba(56, 189, 248, 0.18)' : 
+                                 (s.status === 'SHORT_BREAKDOWN' ? 'rgba(239, 68, 68, 0.18)' : 
+                                 (s.status.includes('TESTING') ? 'rgba(245, 158, 11, 0.18)' : 'rgba(255, 255, 255, 0.05)'));
+
+                return `<tr>
+                    <td>
+                        <b style="color: #fff; font-size: 13px;">${s.symbol}</b>
+                    </td>
+                    <td class="mono" style="font-weight: 700;">₹${s.close.toLocaleString('en-IN')}</td>
+                    <td class="mono" style="color: ${chgColor}; font-weight: 600;">${s.day_change_pct >= 0 ? '+' : ''}${s.day_change_pct}%</td>
+                    <td>
+                        <span class="mono">${(s.vol_14 / 100000).toFixed(1)}L sh</span>
+                        <div style="font-size: 10px; color: var(--text-dim);">₹${s.turnover_cr} Cr</div>
+                    </td>
+                    <td>
+                        <span class="mono">₹${s.atr_14}</span>
+                        <div style="font-size: 10px; color: ${s.qualifies_atrpct ? '#34d399' : '#a8a29e'}; font-weight: 600;">(${s.atr_pct_14}%)</div>
+                    </td>
+                    <td>
+                        <div class="mono" style="color: #38bdf8;">H: ₹${s.h5}</div>
+                        <div class="mono" style="color: #f87171;">L: ₹${s.l5}</div>
+                    </td>
+                    <td class="mono" style="font-weight: 700; color: ${s.rvol >= 1.2 ? '#34d399' : '#a8a29e'};">
+                        ${s.rvol}x
+                    </td>
+                    <td>
+                        <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: ${statusBg}; color: ${s.status_color};">
+                            ${s.status_display}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="mono" style="font-weight: 700; color: #fbbf24;">₹${slPts}</div>
+                        <div style="font-size: 10px; color: var(--text-dim);">Lvl: ₹${s.trade_sl}</div>
+                    </td>
+                    <td class="mono" style="font-weight: 700; color: #38bdf8;">
+                        ${shares.toLocaleString()}
+                    </td>
+                    <td class="mono">₹${capReq.toLocaleString('en-IN')}</td>
+                    <td>
+                        <div class="mono" style="color: #34d399; font-weight: 600;">₹${s.trade_target}</div>
+                        <div style="font-size: 10px; color: var(--text-dim);">R:R ~${s.rr_ratio}:1</div>
+                    </td>
+                    <td>${btBadge}</td>
+                    <td>
+                        <a href="/quant-terminal/?symbol=${s.symbol}" class="guide-btn" style="text-decoration: none; padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; border-radius: 4px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">
+                            <i class="fa-solid fa-chart-line"></i> Chart
+                        </a>
+                    </td>
+                </tr>`;
+            }).join('');
+        };
+
+        window.loadIdxOrbScreenerDashboard = async function() {
+            const tbody = document.getElementById('idx_orb_tbody');
+            if (tbody && (!idxOrbStocks || !idxOrbStocks.length)) {
+                tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 24px; color: var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin"></i> Scanning 115 F&O stocks for 5-minute ORB setups...</td></tr>`;
+            }
+
+            try {
+                const res = await fetch('/api/orb-screener/');
+                const data = await res.json();
+                if (data.status === 'success' && data.stocks) {
+                    idxOrbStocks = data.stocks;
+                    window.filterIdxOrbTable();
+                } else {
+                    if (tbody) tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 24px; color: #f87171;">Failed to load ORB data: ${data.message || 'Unknown error'}</td></tr>`;
+                }
+            } catch (err) {
+                if (tbody) tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 24px; color: #f87171;">Network error fetching ORB screener: ${err.message}</td></tr>`;
+            }
+        };
 
         async function renderAdvancedStrategyDashboard() {
             const absBody = document.getElementById('abs-ranking-table-body');
@@ -6689,8 +6884,9 @@ filterPerf === 'all' ||
 
         // If non-admin user (screener hidden), ensure Backtest tab is rendered initially
         if (typeof IS_SUPERUSER !== 'undefined' && !IS_SUPERUSER) {
-            if (backtestViewCard) {
-                backtestViewCard.classList.remove('hidden');
+            const bViewCard = document.getElementById('backtest-view-card');
+            if (bViewCard) {
+                bViewCard.classList.remove('hidden');
             }
             renderBacktestDashboard();
         }

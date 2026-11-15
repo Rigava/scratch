@@ -801,6 +801,9 @@
                     <button id="btn-tab-advanced" class="tab-btn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
                         <i class="fa-solid fa-gem" style="color: #a855f7;"></i> Advanced Strategy
                     </button>
+                    <button id="btn-tab-orb" class="tab-btn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-crosshairs" style="color: #38bdf8;"></i> 5M ORB Screener
+                    </button>
                     {% if request.user.is_superuser or request.user.is_staff %}
                     <button id="btn-tab-admin-stats" class="tab-btn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
                         <i class="fa-solid fa-chart-pie" style="color: #10b981;"></i> Screener Statistics & Export <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #10b981; font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">Admin</span>
@@ -1385,6 +1388,127 @@
                 </div>
             </div>
 
+        </div>
+    </div>
+
+    <!-- 5-MINUTE ORB DAY TRADING SCREENER CARD -->
+    <div id="orb-screener-view-card" class="screener-grid-card glass-card hidden" style="margin-top: 0; padding: 20px;">
+        <!-- Header -->
+        <div style="margin-bottom: 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 14px; font-family: var(--font-stack);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <h2 style="margin: 0; color: var(--text-primary); font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px;">
+                    <i class="fa-solid fa-crosshairs" style="color: #38bdf8;"></i> 5-Minute ORB (RVOL + ATR) Day Trading Screener
+                </h2>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 11px; padding: 4px 10px; border-radius: 12px; font-weight: 700;">
+                        PyBroker 5Y Backtested • 38.9% Win Rate • 1.49 PF • 7.3:1 Reward-to-Risk
+                    </span>
+                    <a href="/quant-terminal/" class="guide-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 11.5px; border-radius: var(--border-radius-sm); background: rgba(255,255,255,0.06); color: var(--text-primary); border: 1px solid rgba(255,255,255,0.1);">
+                        <i class="fa-solid fa-chart-line"></i> Open in Quant Terminal
+                    </a>
+                </div>
+            </div>
+            <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin: 8px 0 0 0;">
+                Automated opening volatility scanner. Filters stocks on 14-day average liquidity (&ge; 100k shares), calculates the 5-minute opening range ($H_5$ / $L_5$), monitors relative volume surges, and calculates strict 10% ATR protective stops with sized share counts for 1% account risk.
+            </p>
+        </div>
+
+        <!-- Strategy Controls & Filter Bar -->
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; background: rgba(0,0,0,0.25); padding: 12px 16px; border-radius: var(--border-radius-md); border: 1px solid rgba(255,255,255,0.05); margin-bottom: 16px;">
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <span style="font-size: 11px; font-weight: 700; color: #a8a29e; text-transform: uppercase;">Rule Mode:</span>
+                <button class="orb-mode-btn active" id="idx_orb_btn_raw" onclick="switchIdxOrbMode('raw')" style="padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; background: rgba(56, 189, 248, 0.2); border: 1px solid #38bdf8; color: #38bdf8;">
+                    Raw User Rule (ATR > 50)
+                </button>
+                <button class="orb-mode-btn" id="idx_orb_btn_opt" onclick="switchIdxOrbMode('opt')" style="padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #d6d3d1;">
+                    Quant-Optimized (ATR% &ge; 2.0%)
+                </button>
+                <button class="orb-mode-btn" id="idx_orb_btn_all" onclick="switchIdxOrbMode('all')" style="padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #d6d3d1;">
+                    All Liquid F&O
+                </button>
+            </div>
+
+            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #a8a29e;">
+                    <span>Capital:</span>
+                    <input type="number" id="idx_orb_capital" value="1000000" step="50000" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 4px 8px; border-radius: 4px; width: 95px; font-size: 12px;" onchange="recalculateIdxOrb()">
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #a8a29e;">
+                    <span>Risk %:</span>
+                    <input type="number" id="idx_orb_risk_pct" value="1.0" step="0.25" min="0.25" max="5.0" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 4px 8px; border-radius: 4px; width: 55px; font-size: 12px;" onchange="recalculateIdxOrb()">
+                    <span id="idx_orb_risk_badge" style="color: #38bdf8; font-weight: 700;">(₹10,000)</span>
+                </div>
+                <div class="search-box" style="margin: 0;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="idx_orb_search" placeholder="Search ticker..." style="width: 130px; font-size: 12px; padding: 5px 8px 5px 28px;" oninput="filterIdxOrbTable()">
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI Strip -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 18px;">
+            <div class="stat-card glass-card" style="padding: 12px 14px;">
+                <div class="stat-icon blue"><i class="fa-solid fa-layer-group"></i></div>
+                <div class="stat-data">
+                    <span class="stat-val" id="idx_orb_kpi_total">113</span>
+                    <span class="stat-lbl">Universe Total</span>
+                </div>
+            </div>
+            <div class="stat-card glass-card" style="padding: 12px 14px;">
+                <div class="stat-icon blue" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;"><i class="fa-solid fa-circle-check"></i></div>
+                <div class="stat-data">
+                    <span class="stat-val" style="color: #38bdf8;" id="idx_orb_kpi_qual">--</span>
+                    <span class="stat-lbl">Qualify Selected Rule</span>
+                </div>
+            </div>
+            <div class="stat-card glass-card" style="padding: 12px 14px;">
+                <div class="stat-icon green"><i class="fa-solid fa-bolt"></i></div>
+                <div class="stat-data">
+                    <span class="stat-val text-green" id="idx_orb_kpi_breakouts">--</span>
+                    <span class="stat-lbl">Live Breakout Triggers</span>
+                </div>
+            </div>
+            <div class="stat-card glass-card" style="padding: 12px 14px;">
+                <div class="stat-icon yellow" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;"><i class="fa-solid fa-shield"></i></div>
+                <div class="stat-data">
+                    <span class="stat-val" style="color: #fbbf24;" id="idx_orb_kpi_avg_sl">--</span>
+                    <span class="stat-lbl">Avg 10% ATR Stop</span>
+                </div>
+            </div>
+            <div class="stat-card glass-card" style="padding: 12px 14px;">
+                <div class="stat-icon purple" style="background: rgba(168, 85, 247, 0.15); color: #c084fc;"><i class="fa-solid fa-wallet"></i></div>
+                <div class="stat-data">
+                    <span class="stat-val" style="color: #c084fc;" id="idx_orb_kpi_capital">₹-- Cr</span>
+                    <span class="stat-lbl">Total Sized Positions</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Container -->
+        <div class="table-container" style="max-height: 580px; overflow-y: auto;">
+            <table class="screener-table" id="idx_orb_table" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th>Stock</th>
+                        <th>Price</th>
+                        <th>24h Chg</th>
+                        <th>14D Vol (Turnover)</th>
+                        <th>14D ATR (%)</th>
+                        <th>5M Range (H5 - L5)</th>
+                        <th>5M RVOL</th>
+                        <th>Status</th>
+                        <th>10% ATR Stop</th>
+                        <th>Sized Qty</th>
+                        <th>Capital Req</th>
+                        <th>EOD Target</th>
+                        <th>Backtest Track</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="idx_orb_tbody">
+                    <tr><td colspan="14" style="text-align: center; padding: 24px; color: var(--text-muted);">Loading 5M ORB screener data...</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -2433,8 +2557,8 @@
 
     <!-- Project JS dependencies -->
     <script src="{% static 'screener/qrcode.min.js' %}"></script>
-    <script src="{% static 'screener/mockData.js' %}?v=5.0"></script>
-    <script src="{% static 'screener/app.js' %}?v=5.0"></script>
+    <script src="{% static 'screener/mockData.js' %}?v=5.1"></script>
+    <script src="{% static 'screener/app.js' %}?v=5.1"></script>
 
     <!-- Sidebar mobile drawer toggling -->
     <script>

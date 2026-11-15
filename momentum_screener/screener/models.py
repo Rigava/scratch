@@ -191,6 +191,7 @@ class RecommendationStrategy(models.Model):
         ('macd_cross', 'MACD Velocity Crossover'),
         ('volatility_squeeze', 'Volatility Squeeze Breakout'),
         ('pullback', 'Trend Pullback & Re-test'),
+        ('orb_breakout', '5-Min Opening Range Breakout (ORB)'),
     ]
 
     name = models.CharField(max_length=100)

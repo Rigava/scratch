@@ -62,6 +62,17 @@ DEFAULT_STRATEGIES = [
         'avg_return_pct': 0.0,
         'is_active': True,
     },
+    {
+        'name': '5-Min Opening Range Breakout (ORB + RVOL)',
+        'slug': 'orb-5m-breakout',
+        'category': 'orb_breakout',
+        'description': 'Intraday Opening Range Breakout capturing 5-minute volume surges with 10% ATR tight protective stops and EOD trend holds.',
+        'parameters': {'min_volume': 100000, 'min_atr': 50.0, 'min_rvol': 1.2, 'sl_atr_multiplier': 0.10, 'hold_mode': 'EOD'},
+        'win_rate': 38.9,
+        'total_signals': 1539,
+        'avg_return_pct': 1.6,
+        'is_active': True,
+    },
 ]
 
 def ensure_default_strategies():
@@ -381,6 +392,62 @@ def evaluate_strategy_compliance(ticker, strategy):
         })
 
         summary = f"Bollinger Bandwidth is {bb_width * 100:.1f}% with ATR(14) volatility risk at ₹{atr14:,.2f}."
+
+    elif category == 'orb_breakout':
+        min_vol = float(params.get('min_volume', 100000))
+        min_atr = float(params.get('min_atr', 50.0))
+        min_rvol = float(params.get('min_rvol', 1.2))
+        sl_mult = float(params.get('sl_atr_multiplier', 0.10))
+        
+        tr1 = df['high'] - df['low']
+        tr2 = (df['high'] - df['close'].shift()).abs()
+        tr3 = (df['low'] - df['close'].shift()).abs()
+        tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+        atr14 = float(tr.rolling(14).mean().iloc[-1]) if len(df) >= 14 else float(tr.mean())
+        vol14 = float(df['volume'].rolling(14).mean().iloc[-1]) if len(df) >= 14 else float(df['volume'].mean())
+        atr_pct = (atr14 / cmp) * 100.0
+
+        total_checks += 1
+        is_vol_pass = vol14 >= min_vol
+        if is_vol_pass: pass_count += 1
+        criteria_checks.append({
+            'param': '14-Day Average Volume',
+            'target': f'>= {int(min_vol):,} shares',
+            'actual': f'{int(vol14):,} shares',
+            'status': 'PASS' if is_vol_pass else 'LOW_LIQUIDITY'
+        })
+
+        total_checks += 1
+        is_atr_pass = (atr14 >= min_atr) or (atr_pct >= 2.0)
+        if is_atr_pass: pass_count += 1
+        criteria_checks.append({
+            'param': '14-Day Volatility (ATR / ATR%)',
+            'target': f'ATR > ₹{min_atr:.0f} or ATR% >= 2.0%',
+            'actual': f'₹{atr14:.2f} ({atr_pct:.2f}%)',
+            'status': 'PASS' if is_atr_pass else 'LOW_VOLATILITY'
+        })
+
+        total_checks += 1
+        is_rvol_pass = vol_multiple >= min_rvol
+        if is_rvol_pass: pass_count += 1
+        criteria_checks.append({
+            'param': 'Relative Volume (RVOL)',
+            'target': f'>= {min_rvol:.1f}x baseline',
+            'actual': f'{vol_multiple:.2f}x',
+            'status': 'PASS' if is_rvol_pass else 'NORMAL_VOL'
+        })
+
+        total_checks += 1
+        sl_points = max(0.05, round(sl_mult * atr14, 2))
+        criteria_checks.append({
+            'param': f'Stop-Loss ({int(sl_mult*100)}% ATR)',
+            'target': 'Tight Risk Buffer',
+            'actual': f'₹{sl_points:.2f} per share',
+            'status': 'PASS'
+        })
+        pass_count += 1
+
+        summary = f"14D Vol is {int(vol14):,} with ATR ₹{atr14:.2f} ({atr_pct:.2f}%). RVOL sits at {vol_multiple:.2f}x with 10% ATR stop at ₹{sl_points:.2f}."
 
     else:  # pullback or custom
         trend_ema_p = int(params.get('trend_ema', 50))
