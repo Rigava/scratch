@@ -45,6 +45,42 @@ def load_env_file(force=False):
 # Load environmental configs
 load_env_file()
 
+def update_env_file(key, value):
+    """
+    Updates or appends an environment variable in the root .env file.
+    """
+    base_dir = Path(__file__).resolve().parent.parent
+    env_path = base_dir / '.env'
+    lines = []
+    found = False
+    if env_path.exists():
+        try:
+            with open(env_path, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+        except Exception:
+            lines = []
+
+    new_lines = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith(f"{key}=") or stripped.startswith(f"{key} =") or stripped.startswith(f"{key.lower()}=") or stripped.startswith(f"{key.lower()} ="):
+            new_lines.append(f"{key}={value}\n")
+            found = True
+        else:
+            new_lines.append(line)
+
+    if not found:
+        if new_lines and not new_lines[-1].endswith('\n'):
+            new_lines[-1] += '\n'
+        new_lines.append(f"{key}={value}\n")
+
+    try:
+        with open(env_path, 'w', encoding='utf-8') as f:
+            f.writelines(new_lines)
+    except Exception as e:
+        logger.warning(f"Could not write to .env file: {e}")
+
+
 
 # Popular NSE Stock Symbol to Zerodha Instrument Token Mapping
 SYMBOL_TO_TOKEN = {
@@ -605,6 +641,17 @@ def validate_kite_credentials_view(request):
         if resp.status_code == 200:
             user_data = resp.json().get('data', {})
             user_name = user_data.get('user_name') or user_data.get('user_id') or 'User'
+
+            # If user is admin/staff, persist valid credentials to .env so server background tasks have fresh tokens
+            if request.user.is_superuser or request.user.is_staff:
+                try:
+                    update_env_file('ZERODHA_API_KEY', api_key)
+                    update_env_file('ZERODHA_ACCESS_TOKEN', access_token)
+                    os.environ['ZERODHA_API_KEY'] = api_key
+                    os.environ['ZERODHA_ACCESS_TOKEN'] = access_token
+                except Exception as e:
+                    logger.warning(f"Failed to update .env with validated Zerodha credentials: {e}")
+
             return JsonResponse({
                 'status': 'success',
                 'message': f"Zerodha Kite credentials verified successfully for {user_name} ({user_data.get('user_id', '')})!",
@@ -1262,16 +1309,40 @@ def admin_sync_data_dump(request):
         return JsonResponse({'status': 'error', 'message': 'Forbidden: Admin access required'}, status=403)
 
     import datetime
-    
-    # Force reload environment variables to capture newly pasted variables
-    load_env_file(force=True)
-    api_key = os.environ.get('ZERODHA_API_KEY')
-    access_token = os.environ.get('ZERODHA_ACCESS_TOKEN')
+
+    # Parse symbols list and optional credentials from post request
+    requested_symbols = []
+    payload = {}
+    if request.method == 'POST' and request.body:
+        try:
+            payload = json.loads(request.body)
+            requested_symbols = payload.get('symbols', [])
+        except Exception:
+            pass
+
+    # Resolve Zerodha credentials from request headers, payload, or server .env
+    req_key = (request.headers.get('X-Kite-API-Key') or payload.get('api_key') or '').strip().strip("'\"")
+    req_token = (request.headers.get('X-Kite-Access-Token') or payload.get('access_token') or '').strip().strip("'\"")
+
+    if req_key and req_key != 'SERVER_PRECONFIGURED':
+        api_key = req_key
+    else:
+        load_env_file(force=True)
+        api_key = os.environ.get('ZERODHA_API_KEY')
+
+    if req_token and req_token != 'SERVER_PRECONFIGURED':
+        access_token = req_token
+    else:
+        load_env_file(force=True)
+        access_token = os.environ.get('ZERODHA_ACCESS_TOKEN')
+
+    if api_key: api_key = api_key.strip("'\"")
+    if access_token: access_token = access_token.strip("'\"")
 
     if not api_key or not access_token:
         return JsonResponse({
             'status': 'error',
-            'message': 'Zerodha credentials (ZERODHA_API_KEY / ZERODHA_ACCESS_TOKEN) are missing from the server .env file.'
+            'message': 'Zerodha credentials (ZERODHA_API_KEY / ZERODHA_ACCESS_TOKEN) are missing. Please enter and verify your API Key and Access Token in the API Setup drawer first.'
         }, status=400)
 
     data_dir = os.path.join(Path(__file__).resolve().parent, 'data')
@@ -1290,15 +1361,6 @@ def admin_sync_data_dump(request):
     today_str = datetime.date.today().strftime('%Y-%m-%d')
     sync_count = 0
     updated_tickers = []
-
-    # Parse symbols list from post request
-    requested_symbols = []
-    if request.method == 'POST' and request.body:
-        try:
-            payload = json.loads(request.body)
-            requested_symbols = payload.get('symbols', [])
-        except Exception:
-            pass
 
     if not requested_symbols:
         requested_symbols = list(SYMBOL_TO_TOKEN.keys())
@@ -1374,8 +1436,20 @@ def admin_sync_data_dump(request):
                     sync_count += len(new_candles)
                     if symbol not in updated_tickers:
                         updated_tickers.append(symbol)
-        except Exception:
-            pass
+            elif response.status_code in (401, 403):
+                err_msg = ""
+                try:
+                    err_msg = response.json().get('message', '')
+                except Exception:
+                    pass
+                return JsonResponse({
+                    'status': 'error',
+                    'message': f"Zerodha Kite API Authentication Failed: {err_msg or 'Incorrect api_key or access_token'}. Daily session tokens expire every morning at 06:00 AM IST. Please verify your API Key and daily Access Token in API Setup before syncing."
+                }, status=400)
+        except requests.exceptions.RequestException as req_err:
+            logger.warning(f"Network error syncing {symbol}: {req_err}")
+        except Exception as e:
+            logger.warning(f"Error syncing {symbol}: {e}")
 
         # Save actual candles fetched directly from Zerodha
         if candles:
@@ -1394,7 +1468,7 @@ def admin_sync_data_dump(request):
 
     return JsonResponse({
         'status': 'success',
-        'message': 'Successfully completed offline historical simulation sync.',
+        'message': f'Successfully synced {sync_count} candles across {len(updated_tickers)} tickers.' if updated_tickers else 'Historical data is already up-to-date through today.',
         'sync_count': sync_count,
         'updated_tickers_count': len(updated_tickers),
         'updated_tickers': updated_tickers

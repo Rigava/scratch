@@ -1047,7 +1047,7 @@
                         </div>
                         
                         <!-- Export Screener Grid to CSV -->
-                        <button id="btn-export-screener-csv" class="guide-btn" onclick="exportScreenerTableCSV()" title="Download Screener Grid Data in CSV format" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; font-size: 12px; font-weight: 600; border-radius: var(--border-radius-sm);">
+                        <button id="btn-export-screener-csv" class="guide-btn" onclick="exportMainScreenerTableCSV()" title="Download Screener Grid Data in CSV format" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; font-size: 12px; font-weight: 600; border-radius: var(--border-radius-sm);">
                             <i class="fa-solid fa-file-csv" style="color: #10b981;"></i> <span>Export CSV</span>
                         </button>
 
@@ -2633,8 +2633,8 @@
 
     <!-- Project JS dependencies -->
     <script src="{% static 'screener/qrcode.min.js' %}"></script>
-    <script src="{% static 'screener/mockData.js' %}?v=6.2"></script>
-    <script src="{% static 'screener/app.js' %}?v=6.2"></script>
+    <script src="{% static 'screener/mockData.js' %}?v=6.3"></script>
+    <script src="{% static 'screener/app.js' %}?v=6.3"></script>
 
     <!-- Sidebar mobile drawer toggling -->
     <script>

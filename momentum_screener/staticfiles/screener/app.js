@@ -3177,18 +3177,20 @@ const App = (function() {
                         const credsDrawer = document.getElementById('credentials-drawer');
                         if (credsDrawer) credsDrawer.classList.add('hidden');
 
-                        // Switch to Zerodha mode and fetch data
-                        state.dataSource = 'zerodha';
-                        const btnSourceZerodha = document.getElementById('btn-source-zerodha');
-                        if (btnSourceZerodha) btnSourceZerodha.classList.add('active');
-                        const btnSourceSim = document.getElementById('btn-source-sim');
-                        if (btnSourceSim) btnSourceSim.classList.remove('active');
-
-                        state.stocks = {};
-                        fetchZerodhaData('RELIANCE');
-                        fetchZerodhaData('TCS');
-                        fetchZerodhaData('INFY');
-                        hydrateActiveJournalTickers();
+                        // Only switch to or re-fetch Zerodha if user is already in Zerodha mode
+                        if (state.dataSource === 'zerodha') {
+                            state.stocks = {};
+                            fetchZerodhaData('RELIANCE');
+                            fetchZerodhaData('TCS');
+                            fetchZerodhaData('INFY');
+                            hydrateActiveJournalTickers();
+                        } else {
+                            // User is currently in Historical Snapshot mode; keep them on simulation!
+                            const btnSourceSim = document.getElementById('btn-source-sim');
+                            if (btnSourceSim) btnSourceSim.classList.add('active');
+                            const btnSourceZerodha = document.getElementById('btn-source-zerodha');
+                            if (btnSourceZerodha) btnSourceZerodha.classList.remove('active');
+                        }
                     } else {
                         alert('Validation Failed: ' + (data.message || 'Invalid Zerodha credentials. Please check your API Key and daily Access Token.'));
                     }
@@ -3371,66 +3373,94 @@ const App = (function() {
         window.downloadStockHistoricalCSV = downloadStockHistoricalCSV;
 
         function exportMainScreenerTableCSV() {
-            const stocks = state.lastFilteredStocks && state.lastFilteredStocks.length > 0 
-                ? state.lastFilteredStocks 
-                : Object.values(state.stocks);
+            try {
+                const stocks = (state.lastFilteredStocks && state.lastFilteredStocks.length > 0)
+                    ? state.lastFilteredStocks 
+                    : Object.values(state.stocks);
 
-            if (!stocks || stocks.length === 0) {
-                alert("No screener records available to export.");
-                return;
+                if (!stocks || stocks.length === 0) {
+                    if (state.dataSource === 'zerodha') {
+                        alert("No Zerodha screener records available to export. Please ensure your Kite credentials are active and either add a stock ticker or run Scan Nifty 50.");
+                    } else {
+                        alert("No screener records available to export.");
+                    }
+                    return;
+                }
+
+                // Ensure all stocks have processed indicators
+                stocks.forEach(stock => {
+                    if (!stock.current && typeof processStockIndicators === 'function') {
+                        processStockIndicators(stock);
+                    }
+                });
+
+                const headers = [
+                    "Ticker",
+                    "Company Name",
+                    "LTP (INR)",
+                    "1D Change (%)",
+                    "7D Change (%)",
+                    "Milestone",
+                    "Kinematics Regime",
+                    "Drawdown (%)",
+                    "RSI (14)",
+                    "ADX (14)",
+                    "Status",
+                    "Data Source"
+                ];
+
+                const escapeCsv = (str) => {
+                    if (str === null || str === undefined) return '""';
+                    const s = String(str).replace(/"/g, '""');
+                    return `"${s}"`;
+                };
+
+                const formatNum = (val, decimals = 2) => {
+                    if (val === null || val === undefined || val === '') return '';
+                    const num = Number(val);
+                    return isNaN(num) ? String(val) : num.toFixed(decimals);
+                };
+
+                const sourceLabel = state.dataSource === 'zerodha' ? 'Zerodha Kite API' : 'Historical Snapshot';
+
+                const rows = stocks.map(s => {
+                    const p = s.current || {};
+                    const kin = p.kinematics ? p.kinematics.badgeLabel : 'Neutral';
+                    return [
+                        escapeCsv(s.ticker),
+                        escapeCsv(s.name || s.ticker),
+                        formatNum(p.price, 2),
+                        formatNum(p.pctChange, 2),
+                        formatNum(p.pctChange7d, 2),
+                        escapeCsv(p.milestone || '-'),
+                        escapeCsv(kin),
+                        formatNum(p.drawdown, 2),
+                        formatNum(p.rsi, 1),
+                        formatNum(p.adx, 1),
+                        escapeCsv(s.status || 'Safe'),
+                        escapeCsv(sourceLabel)
+                    ].join(",");
+                });
+
+                const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
+                const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+                const link = document.createElement("a");
+                const today = new Date().toISOString().slice(0, 10);
+                const sourcePrefix = state.dataSource === 'zerodha' ? 'Zerodha' : 'Historical';
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", `TradeKriya_${sourcePrefix}_Screener_Grid_${today}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            } catch (err) {
+                console.error("Export CSV error:", err);
+                alert("Failed to export CSV: " + err.message);
             }
-
-            const headers = [
-                "Ticker",
-                "Company Name",
-                "LTP (INR)",
-                "1D Change (%)",
-                "7D Change (%)",
-                "Milestone",
-                "Kinematics Regime",
-                "Drawdown (%)",
-                "RSI (14)",
-                "ADX (14)",
-                "Status"
-            ];
-
-            const escapeCsv = (str) => {
-                if (str === null || str === undefined) return '""';
-                const s = String(str).replace(/"/g, '""');
-                return `"${s}"`;
-            };
-
-            const rows = stocks.map(s => {
-                const p = s.current || {};
-                const kin = p.kinematics ? p.kinematics.badgeLabel : 'Neutral';
-                return [
-                    escapeCsv(s.ticker),
-                    escapeCsv(s.name),
-                    p.price != null ? p.price.toFixed(2) : '',
-                    p.pctChange != null ? p.pctChange.toFixed(2) : '',
-                    p.pctChange7d != null ? p.pctChange7d.toFixed(2) : '',
-                    escapeCsv(p.milestone || '-'),
-                    escapeCsv(kin),
-                    p.drawdown != null ? p.drawdown.toFixed(2) : '',
-                    p.rsi != null ? p.rsi : '',
-                    p.adx != null ? p.adx : '',
-                    escapeCsv(s.status || 'Safe')
-                ].join(",");
-            });
-
-            const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
-            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-            const link = document.createElement("a");
-            const today = new Date().toISOString().slice(0, 10);
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", `TradeKriya_Screener_Grid_${today}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
         }
         window.exportMainScreenerTableCSV = exportMainScreenerTableCSV;
+        window.exportScreenerTableCSV = exportMainScreenerTableCSV;
 
         // Search Ticker
         document.getElementById('grid-search').addEventListener('input', () => {
@@ -3558,6 +3588,17 @@ const App = (function() {
                     };
                     const csrftoken = getCookie('csrftoken');
 
+                    // Check Zerodha credentials before initiating sync
+                    const creds = getZerodhaCredentials();
+                    if (!creds || !creds.key || !creds.token) {
+                        syncStatusDiv.style.color = 'var(--color-knife)';
+                        syncStatusDiv.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Zerodha credentials missing. Please enter and verify your API Key & Access Token in the API Setup drawer first.';
+                        const credsDrawer = document.getElementById('credentials-drawer');
+                        if (credsDrawer) credsDrawer.classList.remove('hidden');
+                        btnAdminSync.disabled = false;
+                        return;
+                    }
+
                     // Compile all symbols to sync
                     const allSymbols = [...new Set([...MockDataEngine.NIFTY50_LIST, ...MockDataEngine.FO_LIST])];
                     const batchSize = 5;
@@ -3574,12 +3615,18 @@ const App = (function() {
                         const pct = Math.round(((i + 1) / batches.length) * 100);
                         syncStatusDiv.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Syncing batch ${i + 1}/${batches.length} (${pct}%)...<br><span style="font-size:9px; opacity:0.7;">[${batch.join(', ')}]</span>`;
 
+                        const reqHeaders = {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrftoken
+                        };
+                        if (creds.key && creds.key !== 'SERVER_PRECONFIGURED') {
+                            reqHeaders['X-Kite-API-Key'] = creds.key;
+                            reqHeaders['X-Kite-Access-Token'] = creds.token;
+                        }
+
                         const response = await fetch('/api/admin/sync-dump/', {
                             method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRFToken': csrftoken
-                            },
+                            headers: reqHeaders,
                             body: JSON.stringify({ symbols: batch })
                         });
 
@@ -6896,7 +6943,7 @@ const App = (function() {
                 peg,
                 pegNote,
                 ic,
-                c.price.toFixed(2),
+                c.price != null ? Number(c.price).toFixed(2) : "N/A",
                 stock.status,
                 c.milestone || "Stable",
                 c.hasMomentumShift ? "YES" : "NO",
@@ -6921,8 +6968,8 @@ const App = (function() {
                 c.pctChange7d !== null && c.pctChange7d !== undefined ? c.pctChange7d.toFixed(2) : "0.00",
                 ret30d,
                 ret1y,
-                max52w.toFixed(2),
-                min52w.toFixed(2),
+                max52w != null ? Number(max52w).toFixed(2) : "N/A",
+                min52w != null ? Number(min52w).toFixed(2) : "N/A",
                 dist52wHigh,
                 avgVol,
                 c.macdWinRate !== undefined ? c.macdWinRate + "%" : "N/A",
