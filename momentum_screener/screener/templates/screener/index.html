@@ -460,9 +460,7 @@
                     {% endif %}
                     <a href="{% url 'screener:community' %}" class="guide-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-bullhorn"></i> <span>Use Cases</span></a>
                     <button id="btn-open-guide" class="guide-btn" style="display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-circle-info"></i> <span>How it Works</span></button>
-                    {% if request.user.is_superuser or request.user.is_staff %}
-                    <button id="btn-toggle-credentials" class="guide-btn" style="display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-gears"></i> <span>API Setup</span></button>
-                    {% endif %}
+                    <button id="btn-toggle-credentials" class="guide-btn" style="display: inline-flex; align-items: center; gap: 6px;" title="Configure your personal Zerodha Kite credentials"><i class="fa-solid fa-key"></i> <span>API Setup</span></button>
                     {% if request.user.is_superuser or request.user.is_staff %}
                     <button id="btn-toggle-filters" class="guide-btn" style="display: none; align-items: center; gap: 6px;"><i class="fa-solid fa-sliders"></i> <span>Filters</span></button>
                     {% endif %}
@@ -471,42 +469,59 @@
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span class="source-label"><i class="fa-solid fa-database"></i> Source:</span>
                         <div class="toggle-container">
-                            <button id="btn-source-sim" class="toggle-btn active" {% if not request.user.is_superuser and not request.user.is_staff %}style="cursor: default;" title="Historical Snapshot Database"{% endif %}>Historical Snapshot</button>
+                            <button id="btn-source-zerodha" class="toggle-btn active" title="Use your own Zerodha Kite API credentials (SEBI Compliant)">Zerodha API</button>
                             {% if request.user.is_superuser or request.user.is_staff %}
-                            <button id="btn-source-zerodha" class="toggle-btn">Zerodha API</button>
+                            <button id="btn-source-sim" class="toggle-btn" title="Historical Snapshot Database">Historical Snapshot</button>
                             {% endif %}
                         </div>
                     </div>
+                    {% if request.user.is_superuser or request.user.is_staff %}
                     <span id="sim-last-refreshed" style="font-size: 9px; color: var(--text-muted); display: block; margin-top: 1px; font-weight: 500; text-transform: uppercase;"></span>
+                    {% endif %}
                 </div>
             </div>
         </header>
 
-        <!-- Credentials Drawer (Shown for API Configuration) -->
-        {% if request.user.is_superuser or request.user.is_staff %}
+        <!-- Credentials Drawer (Shown for API Configuration - Accessible to all users for BYOK) -->
         <section id="credentials-drawer" class="credentials-drawer hidden">
             <div class="drawer-content">
-                <h3><i class="fa-key fa-solid"></i> API Configurations</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-key fa-solid" style="color: var(--accent-indigo);"></i> Personal Zerodha API Setup (BYOK)
+                    </h3>
+                    <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 700;">SEBI COMPLIANT</span>
+                </div>
+                <p style="font-size: 12px; color: var(--text-secondary); margin: 0 0 10px 0; line-height: 1.5;">
+                    To comply with SEBI regulations, live market scans and backtests stream data directly using your personal Zerodha Kite Connect API key. Your keys are stored locally on your device in browser storage and are never saved on our servers.
+                </p>
+                <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 6px; padding: 8px 12px; margin-bottom: 14px; font-size: 11.5px; color: #bae6fd; line-height: 1.5;">
+                    <i class="fa-solid fa-circle-info" style="color: #38bdf8; margin-right: 4px;"></i>
+                    <strong>Daily Token Notice:</strong> Zerodha Kite Access Tokens expire every morning at <strong>06:00 AM IST</strong>. Paste today's active <strong>Access Token</strong> (from your daily session login exchange), not the 1-time <code>request_token</code>.
+                </div>
                 <div class="input-row">
                     <div class="input-group">
-                        <label for="zerodha-api-key">Zerodha API Key</label>
-                        <input type="password" id="zerodha-api-key" placeholder="Enter Zerodha API Key" autocomplete="off">
+                        <label for="zerodha-api-key">Zerodha API Key <span style="color: #ef4444;">*</span></label>
+                        <input type="password" id="zerodha-api-key" placeholder="Enter your Kite API Key" autocomplete="off">
                     </div>
                     <div class="input-group">
-                        <label for="zerodha-access-token">Kite Access Token</label>
-                        <input type="password" id="zerodha-access-token" placeholder="Enter Daily Access Token" autocomplete="off">
+                        <label for="zerodha-access-token">Kite Access Token <span style="color: #ef4444;">*</span></label>
+                        <input type="password" id="zerodha-access-token" placeholder="Enter daily Access Token" autocomplete="off">
                     </div>
+                    {% if request.user.is_superuser or request.user.is_staff %}
                     <div class="input-group">
-                        <label for="gemini-api-key">Gemini API Key</label>
+                        <label for="gemini-api-key">Gemini API Key (Admin)</label>
                         <input type="password" id="gemini-api-key" placeholder="Enter Gemini API Key" autocomplete="off">
                     </div>
-                    <button id="btn-auth-save" class="primary-btn">Save Settings</button>
-                    <button id="btn-auth-reset" class="primary-btn" style="background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5;">Reset to Defaults</button>
+                    {% endif %}
+                    <button id="btn-auth-save" class="primary-btn" style="height: 38px;"><i class="fa-solid fa-floppy-disk"></i> Save Credentials</button>
+                    <button id="btn-auth-reset" class="primary-btn" style="height: 38px; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5;"><i class="fa-solid fa-rotate-left"></i> Clear Keys</button>
                 </div>
-                <p class="auth-tip"><i class="fa-solid fa-circle-info"></i> Your API credentials are stored securely in session storage and are never saved on the server.</p>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; flex-wrap: wrap; gap: 8px;">
+                    <p class="auth-tip" style="margin: 0;"><i class="fa-solid fa-shield-halved" style="color: #34d399;"></i> Stored securely in your browser's LocalStorage only.</p>
+                    <a href="https://kite.trade" target="_blank" rel="noopener noreferrer" style="font-size: 11.5px; color: #38bdf8; text-decoration: none;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Get Zerodha Kite API Key</a>
+                </div>
             </div>
         </section>
-        {% endif %}
 
         <!-- Main Dashboard Content -->
         {% if has_used_trial and plan_tier == 'standard' and not request.user.is_superuser and not request.user.is_staff and not request.user.profile.is_premium %}
@@ -787,12 +802,10 @@
             <section class="screener-results">
                 <!-- Navigation Tabs -->
                 <div class="view-tabs" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 10px; font-family: var(--font-stack); flex-wrap: wrap;">
-                    {% if request.user.is_superuser or request.user.is_staff %}
                     <button id="btn-tab-screener" class="tab-btn active" onclick="switchDashboardTab('screener')" style="background: rgba(255,255,255,0.05); border: none; color: var(--text-primary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
                         <i class="fa-solid fa-list-check"></i> Screener Grid
                     </button>
-                    {% endif %}
-                    <button id="btn-tab-backtest" class="tab-btn {% if not request.user.is_superuser and not request.user.is_staff %}active{% endif %}" onclick="switchDashboardTab('backtest')" style="background: {% if not request.user.is_superuser and not request.user.is_staff %}rgba(255,255,255,0.05){% else %}transparent{% endif %}; border: none; color: {% if not request.user.is_superuser and not request.user.is_staff %}var(--text-primary){% else %}var(--text-secondary){% endif %}; font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
+                    <button id="btn-tab-backtest" class="tab-btn" onclick="switchDashboardTab('backtest')" style="background: transparent; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
                         <i class="fa-solid fa-calculator"></i> RSI Strategy & Backtest
                     </button>
                     <button id="btn-tab-journal" class="tab-btn" onclick="switchDashboardTab('journal')" style="background: transparent; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
@@ -800,9 +813,6 @@
                     </button>
                     <button id="btn-tab-advanced" class="tab-btn" onclick="switchDashboardTab('advanced')" style="background: transparent; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
                         <i class="fa-solid fa-gem" style="color: #a855f7;"></i> Advanced Strategy
-                    </button>
-                    <button id="btn-tab-orb" class="tab-btn" onclick="switchDashboardTab('orb')" style="background: transparent; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
-                        <i class="fa-solid fa-crosshairs" style="color: #38bdf8;"></i> 5M ORB Screener
                     </button>
                     {% if request.user.is_superuser or request.user.is_staff %}
                     <button id="btn-tab-admin-stats" class="tab-btn" onclick="switchDashboardTab('admin-stats')" style="background: transparent; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 600; padding: 8px 16px; cursor: pointer; border-radius: var(--border-radius-sm); transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 8px;">
@@ -815,7 +825,7 @@
                 window.switchDashboardTab = function(tabName) {
                     console.log("[Dashboard] Switching to tab:", tabName);
 
-                    const tabIds = ['btn-tab-screener', 'btn-tab-backtest', 'btn-tab-journal', 'btn-tab-advanced', 'btn-tab-orb', 'btn-tab-admin-stats'];
+                    const tabIds = ['btn-tab-screener', 'btn-tab-backtest', 'btn-tab-journal', 'btn-tab-advanced', 'btn-tab-admin-stats'];
                     tabIds.forEach(function(id) {
                         const el = document.getElementById(id);
                         if (el) {
@@ -825,22 +835,24 @@
                         }
                     });
 
-                    const cardIds = [
+                    // Hide all view panels so each tab displays its own layout individually
+                    const allViewElements = [
                         'screener-stats-bar',
                         'main-screener-grid',
+                        'market-breadth-briefing-card',
                         'backtest-view-card',
                         'journal-view-card',
                         'advanced-strategy-view-card',
-                        'orb-screener-view-card',
                         'admin-stats-view-card'
                     ];
-                    cardIds.forEach(function(id) {
+                    allViewElements.forEach(function(id) {
                         const el = document.getElementById(id);
                         if (el) {
                             el.classList.add('hidden');
                             el.style.display = 'none';
                         }
                     });
+
                     const useCases = document.querySelector('.use-cases-section');
                     if (useCases) {
                         useCases.classList.add('hidden');
@@ -850,16 +862,22 @@
                     if (tabName === 'screener') {
                         const btn = document.getElementById('btn-tab-screener');
                         if (btn) { btn.classList.add('active'); btn.style.background = 'rgba(255,255,255,0.05)'; btn.style.color = 'var(--text-primary)'; }
+                        
                         const sBar = document.getElementById('screener-stats-bar');
                         const sGrid = document.getElementById('main-screener-grid');
+                        const mbCard = document.getElementById('market-breadth-briefing-card');
                         if (sBar) { sBar.classList.remove('hidden'); sBar.style.display = ''; }
                         if (sGrid) { sGrid.classList.remove('hidden'); sGrid.style.display = ''; }
+                        if (mbCard) { mbCard.classList.remove('hidden'); mbCard.style.display = ''; }
                         if (useCases) { useCases.classList.remove('hidden'); useCases.style.display = ''; }
                     } else if (tabName === 'backtest') {
                         const btn = document.getElementById('btn-tab-backtest');
                         if (btn) { btn.classList.add('active'); btn.style.background = 'rgba(255,255,255,0.05)'; btn.style.color = 'var(--text-primary)'; }
                         const bCard = document.getElementById('backtest-view-card');
-                        if (bCard) { bCard.classList.remove('hidden'); bCard.style.display = ''; }
+                        if (bCard) {
+                            bCard.classList.remove('hidden');
+                            bCard.style.display = '';
+                        }
                         if (typeof renderBacktestDashboard === 'function') {
                             renderBacktestDashboard();
                         }
@@ -867,7 +885,10 @@
                         const btn = document.getElementById('btn-tab-journal');
                         if (btn) { btn.classList.add('active'); btn.style.background = 'rgba(255,255,255,0.05)'; btn.style.color = 'var(--text-primary)'; }
                         const jCard = document.getElementById('journal-view-card');
-                        if (jCard) { jCard.classList.remove('hidden'); jCard.style.display = ''; }
+                        if (jCard) {
+                            jCard.classList.remove('hidden');
+                            jCard.style.display = '';
+                        }
                         if (typeof renderJournalDashboard === 'function') {
                             renderJournalDashboard();
                         }
@@ -875,35 +896,46 @@
                         const isProUser = (typeof PLAN_TIER !== 'undefined' && PLAN_TIER === 'pro') || (typeof USER_STATUS !== 'undefined' && (USER_STATUS === 'premium' || USER_STATUS === 'pro')) || (typeof IS_SUPERUSER !== 'undefined' && IS_SUPERUSER === true);
                         if (!isProUser) {
                             const overlay = document.getElementById('pro-only-overlay');
-                            if (overlay) overlay.classList.remove('hidden');
+                            if (overlay) {
+                                overlay.classList.remove('hidden');
+                                overlay.style.display = 'flex';
+                            }
                             return;
                         }
                         const btn = document.getElementById('btn-tab-advanced');
                         if (btn) { btn.classList.add('active'); btn.style.background = 'rgba(255,255,255,0.05)'; btn.style.color = 'var(--text-primary)'; }
                         const aCard = document.getElementById('advanced-strategy-view-card');
-                        if (aCard) { aCard.classList.remove('hidden'); aCard.style.display = ''; }
+                        if (aCard) {
+                            aCard.classList.remove('hidden');
+                            aCard.style.display = '';
+                        }
                         if (typeof renderAdvancedStrategyDashboard === 'function') {
                             renderAdvancedStrategyDashboard();
-                        }
-                    } else if (tabName === 'orb') {
-                        const btn = document.getElementById('btn-tab-orb');
-                        if (btn) { btn.classList.add('active'); btn.style.background = 'rgba(255,255,255,0.05)'; btn.style.color = 'var(--text-primary)'; }
-                        const oCard = document.getElementById('orb-screener-view-card');
-                        if (oCard) { oCard.classList.remove('hidden'); oCard.style.display = 'block'; }
-                        if (typeof window.loadIdxOrbScreenerDashboard === 'function') {
-                            window.loadIdxOrbScreenerDashboard();
                         }
                     } else if (tabName === 'admin-stats') {
                         const btn = document.getElementById('btn-tab-admin-stats');
                         if (btn) { btn.classList.add('active'); btn.style.background = 'rgba(255,255,255,0.05)'; btn.style.color = 'var(--text-primary)'; }
                         const asCard = document.getElementById('admin-stats-view-card');
-                        if (asCard) { asCard.classList.remove('hidden'); asCard.style.display = ''; }
+                        if (asCard) {
+                            asCard.classList.remove('hidden');
+                            asCard.style.display = '';
+                        }
                         if (typeof renderAdminStatsDashboard === 'function') {
                             renderAdminStatsDashboard();
                         }
                     }
                 };
                 window.switchMainTab = window.switchDashboardTab;
+                window.closeProLockedOverlay = function() {
+                    const overlay = document.getElementById('pro-only-overlay');
+                    if (overlay) {
+                        overlay.classList.add('hidden');
+                        overlay.style.display = 'none';
+                    }
+                    if (typeof window.switchDashboardTab === 'function') {
+                        window.switchDashboardTab('screener');
+                    }
+                };
                 </script>
 
                 <!-- User Notification Banner Block -->
@@ -928,8 +960,7 @@
                 </div>
                 {% endif %}
 
-                {% if request.user.is_superuser or request.user.is_staff %}
-                <!-- Stats Overview (Admin Only) -->
+                <!-- Stats Overview -->
                 <div id="screener-stats-bar" class="stats-bar">
                     <div class="stat-card glass-card">
                         <div class="stat-icon blue"><i class="fa-solid fa-eye"></i></div>
@@ -1000,7 +1031,6 @@
                         </div>
                         
                         <!-- Zerodha Admin Scanning & Add Ticker Section (Only visible in Zerodha mode) -->
-                        {% if request.user.is_superuser or request.user.is_staff %}
                         <div id="zerodha-add-ticker-section" class="add-ticker-box hidden" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                             <button id="btn-scan-nifty-zerodha" class="primary-btn" title="Scan all Nifty 50 constituents using live Zerodha Kite API" style="background: linear-gradient(135deg, var(--accent-indigo) 0%, #c76543 100%); font-size: 12px; padding: 7px 14px; border: none; border-radius: var(--border-radius-sm); color: #fff; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-stack); white-space: nowrap;">
                                 <i class="fa-solid fa-circle-nodes"></i> Scan Nifty 50 (Zerodha)
@@ -1015,8 +1045,12 @@
                             <input type="text" id="txt-add-custom-token" placeholder="Custom Token ID" class="small-input">
                             <button id="btn-add-ticker" class="icon-btn" title="Add Single Ticker"><i class="fa-solid fa-plus"></i></button>
                         </div>
-                        {% endif %}
                         
+                        <!-- Export Screener Grid to CSV -->
+                        <button id="btn-export-screener-csv" class="guide-btn" onclick="exportScreenerTableCSV()" title="Download Screener Grid Data in CSV format" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; font-size: 12px; font-weight: 600; border-radius: var(--border-radius-sm);">
+                            <i class="fa-solid fa-file-csv" style="color: #10b981;"></i> <span>Export CSV</span>
+                        </button>
+
                         <!-- Fullscreen Grid Toggle Button -->
                         <button id="btn-fullscreen-grid" class="guide-btn" title="Toggle Fullscreen Grid" style="display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border-radius: var(--border-radius-sm); margin-left: auto; flex-shrink: 0;">
                             <i class="fa-solid fa-expand"></i>
@@ -1056,12 +1090,32 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Screener Pagination Controls -->
+                    <div id="screener-pagination-controls" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding: 12px 18px; border-top: 1px solid var(--border-color); font-family: var(--font-stack); background: rgba(0,0,0,0.15);">
+                        <div style="display: flex; align-items: center; gap: 14px;">
+                            <span id="screener-page-info" style="font-size: 12px; color: var(--text-secondary); font-weight: 500;">Showing 0–0 of 0 Stocks</span>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <label for="sel-screener-page-size" style="font-size: 11.5px; color: var(--text-muted);">Rows per page:</label>
+                                <select id="sel-screener-page-size" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); border-radius: 4px; padding: 3px 8px; font-size: 11.5px; cursor: pointer;">
+                                    <option value="15">15</option>
+                                    <option value="25" selected>25</option>
+                                    <option value="50">50</option>
+                                    <option value="all">All</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <button id="btn-screener-prev" class="guide-btn" style="padding: 5px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;"><i class="fa-solid fa-chevron-left"></i> Previous</button>
+                            <span id="screener-current-page-badge" style="font-size: 11.5px; font-weight: 700; color: #38bdf8; padding: 4px 10px; background: rgba(56, 189, 248, 0.1); border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.2);">Page 1 of 1</span>
+                            <button id="btn-screener-next" class="guide-btn" style="padding: 5px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">Next <i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                    </div>
                 </div>
-                {% endif %}
 
                 <!-- Market Breadth Daily Intelligence Briefing (Macro Summary) -->
                 {% if latest_market_briefing %}
-                <div class="market-breadth-briefing-card glass-card" style="margin-top: 24px; padding: 20px; border-left: 4px solid var(--accent-orange); background: rgba(233, 128, 93, 0.04); border-radius: var(--border-radius-md); font-family: var(--font-stack);">
+                <div id="market-breadth-briefing-card" class="market-breadth-briefing-card glass-card" style="margin-top: 24px; padding: 20px; border-left: 4px solid var(--accent-orange); background: rgba(233, 128, 93, 0.04); border-radius: var(--border-radius-md); font-family: var(--font-stack);">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px; margin-bottom: 14px;">
                         <div>
                             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
@@ -1077,9 +1131,11 @@
                                 <span style="font-size: 10px; color: var(--text-muted); display: block; text-transform: uppercase;">Health Pulse</span>
                                 <span style="font-size: 16px; font-weight: 800; color: {% if latest_market_briefing.health_score >= 60 %}#34d399{% elif latest_market_briefing.health_score <= 35 %}#f87171{% else %}#fbbf24{% endif %};">CMSI {{ latest_market_briefing.health_score|floatformat:1 }}</span>
                             </div>
+                            {% if request.user.is_superuser or request.user.is_staff %}
                             <a href="{% url 'screener:market_breadth' %}" class="primary-btn" style="padding: 6px 14px; font-size: 12px; background: linear-gradient(135deg, #e9805d, #c76543); border: none; text-decoration: none; border-radius: 6px; font-weight: 600; color: #fff; display: inline-flex; align-items: center; gap: 6px;">
                                 Timeline Comparison <i class="fa-solid fa-arrow-right"></i>
                             </a>
+                            {% endif %}
                         </div>
                     </div>
 
@@ -1143,7 +1199,7 @@
                 {% endif %}
 
                 <!-- Backtest View Card -->
-                <div id="backtest-view-card" class="screener-grid-card glass-card {% if request.user.is_superuser or request.user.is_staff %}hidden{% endif %}" style="margin-top: 0;">
+                <div id="backtest-view-card" class="screener-grid-card glass-card hidden" style="margin-top: 0;">
                     <!-- Shortlist / Recent Signals Category -->
                     <div style="margin-bottom: 25px; padding: 16px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-md);">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
@@ -1483,127 +1539,6 @@
                 </div>
             </div>
 
-        </div>
-    </div>
-
-    <!-- 5-MINUTE ORB DAY TRADING SCREENER CARD -->
-    <div id="orb-screener-view-card" class="screener-grid-card glass-card hidden" style="margin-top: 0; padding: 20px;">
-        <!-- Header -->
-        <div style="margin-bottom: 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 14px; font-family: var(--font-stack);">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                <h2 style="margin: 0; color: var(--text-primary); font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px;">
-                    <i class="fa-solid fa-crosshairs" style="color: #38bdf8;"></i> 5-Minute ORB (RVOL + ATR) Day Trading Screener
-                </h2>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 11px; padding: 4px 10px; border-radius: 12px; font-weight: 700;">
-                        PyBroker 5Y Backtested • 38.9% Win Rate • 1.49 PF • 7.3:1 Reward-to-Risk
-                    </span>
-                    <a href="/quant-terminal/" class="guide-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 11.5px; border-radius: var(--border-radius-sm); background: rgba(255,255,255,0.06); color: var(--text-primary); border: 1px solid rgba(255,255,255,0.1);">
-                        <i class="fa-solid fa-chart-line"></i> Open in Quant Terminal
-                    </a>
-                </div>
-            </div>
-            <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin: 8px 0 0 0;">
-                Automated opening volatility scanner. Filters stocks on 14-day average liquidity (&ge; 100k shares), calculates the 5-minute opening range ($H_5$ / $L_5$), monitors relative volume surges, and calculates strict 10% ATR protective stops with sized share counts for 1% account risk.
-            </p>
-        </div>
-
-        <!-- Strategy Controls & Filter Bar -->
-        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; background: rgba(0,0,0,0.25); padding: 12px 16px; border-radius: var(--border-radius-md); border: 1px solid rgba(255,255,255,0.05); margin-bottom: 16px;">
-            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                <span style="font-size: 11px; font-weight: 700; color: #a8a29e; text-transform: uppercase;">Rule Mode:</span>
-                <button class="orb-mode-btn active" id="idx_orb_btn_raw" onclick="switchIdxOrbMode('raw')" style="padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; background: rgba(56, 189, 248, 0.2); border: 1px solid #38bdf8; color: #38bdf8;">
-                    Raw User Rule (ATR > 50)
-                </button>
-                <button class="orb-mode-btn" id="idx_orb_btn_opt" onclick="switchIdxOrbMode('opt')" style="padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #d6d3d1;">
-                    Quant-Optimized (ATR% &ge; 2.0%)
-                </button>
-                <button class="orb-mode-btn" id="idx_orb_btn_all" onclick="switchIdxOrbMode('all')" style="padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #d6d3d1;">
-                    All Liquid F&O
-                </button>
-            </div>
-
-            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #a8a29e;">
-                    <span>Capital:</span>
-                    <input type="number" id="idx_orb_capital" value="1000000" step="50000" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 4px 8px; border-radius: 4px; width: 95px; font-size: 12px;" onchange="recalculateIdxOrb()">
-                </div>
-                <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #a8a29e;">
-                    <span>Risk %:</span>
-                    <input type="number" id="idx_orb_risk_pct" value="1.0" step="0.25" min="0.25" max="5.0" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 4px 8px; border-radius: 4px; width: 55px; font-size: 12px;" onchange="recalculateIdxOrb()">
-                    <span id="idx_orb_risk_badge" style="color: #38bdf8; font-weight: 700;">(₹10,000)</span>
-                </div>
-                <div class="search-box" style="margin: 0;">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="idx_orb_search" placeholder="Search ticker..." style="width: 130px; font-size: 12px; padding: 5px 8px 5px 28px;" oninput="filterIdxOrbTable()">
-                </div>
-            </div>
-        </div>
-
-        <!-- KPI Strip -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 18px;">
-            <div class="stat-card glass-card" style="padding: 12px 14px;">
-                <div class="stat-icon blue"><i class="fa-solid fa-layer-group"></i></div>
-                <div class="stat-data">
-                    <span class="stat-val" id="idx_orb_kpi_total">113</span>
-                    <span class="stat-lbl">Universe Total</span>
-                </div>
-            </div>
-            <div class="stat-card glass-card" style="padding: 12px 14px;">
-                <div class="stat-icon blue" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;"><i class="fa-solid fa-circle-check"></i></div>
-                <div class="stat-data">
-                    <span class="stat-val" style="color: #38bdf8;" id="idx_orb_kpi_qual">--</span>
-                    <span class="stat-lbl">Qualify Selected Rule</span>
-                </div>
-            </div>
-            <div class="stat-card glass-card" style="padding: 12px 14px;">
-                <div class="stat-icon green"><i class="fa-solid fa-bolt"></i></div>
-                <div class="stat-data">
-                    <span class="stat-val text-green" id="idx_orb_kpi_breakouts">--</span>
-                    <span class="stat-lbl">Live Breakout Triggers</span>
-                </div>
-            </div>
-            <div class="stat-card glass-card" style="padding: 12px 14px;">
-                <div class="stat-icon yellow" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;"><i class="fa-solid fa-shield"></i></div>
-                <div class="stat-data">
-                    <span class="stat-val" style="color: #fbbf24;" id="idx_orb_kpi_avg_sl">--</span>
-                    <span class="stat-lbl">Avg 10% ATR Stop</span>
-                </div>
-            </div>
-            <div class="stat-card glass-card" style="padding: 12px 14px;">
-                <div class="stat-icon purple" style="background: rgba(168, 85, 247, 0.15); color: #c084fc;"><i class="fa-solid fa-wallet"></i></div>
-                <div class="stat-data">
-                    <span class="stat-val" style="color: #c084fc;" id="idx_orb_kpi_capital">₹-- Cr</span>
-                    <span class="stat-lbl">Total Sized Positions</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Table Container -->
-        <div class="table-container" style="max-height: 580px; overflow-y: auto;">
-            <table class="screener-table" id="idx_orb_table" style="width: 100%;">
-                <thead>
-                    <tr>
-                        <th>Stock</th>
-                        <th>Price</th>
-                        <th>24h Chg</th>
-                        <th>14D Vol (Turnover)</th>
-                        <th>14D ATR (%)</th>
-                        <th>5M Range (H5 - L5)</th>
-                        <th>5M RVOL</th>
-                        <th>Status</th>
-                        <th>10% ATR Stop</th>
-                        <th>Sized Qty</th>
-                        <th>Capital Req</th>
-                        <th>EOD Target</th>
-                        <th>Backtest Track</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="idx_orb_tbody">
-                    <tr><td colspan="14" style="text-align: center; padding: 24px; color: var(--text-muted);">Loading 5M ORB screener data...</td></tr>
-                </tbody>
-            </table>
         </div>
     </div>
 
@@ -1998,7 +1933,12 @@
         <section id="detail-drawer" class="detail-drawer">
             <div class="detail-overlay" id="detail-overlay"></div>
             <div class="detail-panel">
-                <button id="btn-close-detail" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+                <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-bottom: 6px;">
+                    <button id="btn-detail-download-csv" onclick="downloadStockHistoricalCSV()" class="guide-btn" title="Download Historical Candle Data in CSV format" style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; font-size: 11.5px; border-radius: var(--border-radius-sm); font-family: var(--font-stack); cursor: pointer;">
+                        <i class="fa-solid fa-file-arrow-down" style="color: #38bdf8;"></i> <span>Download Candles (CSV)</span>
+                    </button>
+                    <button id="btn-close-detail" class="close-btn" style="position: static;"><i class="fa-solid fa-xmark"></i></button>
+                </div>
                 
                 <div class="detail-header">
                     <div class="title-wrap">
@@ -2093,37 +2033,59 @@
                                     <i class="fa-solid fa-building-columns" style="color: #60a5fa;"></i> 5-Year Financial Fundamentals &amp; Magic Score
                                 </h4>
                                 <div style="display: flex; align-items: center; gap: 8px;">
+                                    {% if request.user.is_superuser or request.user.is_staff %}
                                     <span class="badge" style="background: rgba(96, 165, 250, 0.15); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.3); font-size: 9.5px; font-weight: 700; padding: 2px 7px; border-radius: 4px;">
-                                        PRO ANALYST
+                                        ADMIN ANALYST
                                     </span>
                                     <button id="btn-refresh-fundamentals" class="guide-btn" title="Refresh fundamental metrics from Yahoo Finance" style="font-size: 11px; padding: 4px 8px; border-radius: 4px; cursor: pointer; display: none;">
                                         <i class="fa-solid fa-arrows-rotate"></i>
                                     </button>
+                                    {% else %}
+                                    <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 9.5px; font-weight: 700; padding: 2px 7px; border-radius: 4px;">
+                                        <i class="fa-solid fa-clock"></i> UPCOMING FEATURE
+                                    </span>
+                                    {% endif %}
                                     <button type="button" id="btn-toggle-fundamentals-card" class="guide-btn" onclick="window.toggleFundamentalCard()" title="Collapse or expand fundamentals section" style="font-size: 11px; padding: 4px 8px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
                                         <span id="text-toggle-fundamentals">Collapse</span> <i id="icon-toggle-fundamentals" class="fa-solid fa-chevron-up"></i>
                                     </button>
                                 </div>
                             </div>
 
-                            <!-- Content Dynamic Container (loaded by JS based on user tier) -->
+                            <!-- Content Dynamic Container -->
+                            {% if not request.user.is_superuser and not request.user.is_staff %}
+                            <div style="padding: 16px; background: rgba(245, 158, 11, 0.05); border: 1px dashed rgba(245, 158, 11, 0.25); border-radius: 6px; font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+                                <strong style="color: #fbbf24; display: block; margin-bottom: 4px;"><i class="fa-solid fa-scale-balanced"></i> Regulatory Notice:</strong>
+                                5-Year Balance Sheet Fundamentals, Magic Score (0–100), and Piotroski Financial Health rankings are upcoming features pending institutional SEBI Research Analyst registration.
+                            </div>
+                            {% else %}
                             <div id="drawer-fundamentals-content">
                                 <div style="text-align: center; padding: 18px; color: var(--text-secondary); font-size: 12px;">
                                     <i class="fa-solid fa-circle-notch fa-spin" style="margin-right: 6px; color: var(--accent-indigo);"></i> Loading fundamentals...
                                 </div>
                             </div>
+                            {% endif %}
                         </div>
                     </div>
 
                     <!-- Campaign Generator Section -->
                     <div class="campaign-section" style="margin-top: 24px;">
                         <div class="campaign-card" style="background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); border-radius: var(--border-radius-lg); padding: 20px;">
-                            <div class="campaign-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                            <div class="campaign-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
                                 <h4 style="font-size: 13px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; margin: 0; display: flex; align-items: center; gap: 8px;">
                                     <i class="fa-solid fa-graduation-cap" style="color: var(--accent-indigo);"></i> Quant Learning Scenario
                                 </h4>
+                                {% if request.user.is_superuser or request.user.is_staff %}
                                 <button id="btn-generate-campaign" class="primary-btn" style="font-size: 12px; padding: 6px 14px;"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate AI Dilemma</button>
+                                {% else %}
+                                <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 9.5px; font-weight: 700; padding: 2px 7px; border-radius: 4px;"><i class="fa-solid fa-clock"></i> Upcoming Feature</span>
+                                {% endif %}
                             </div>
                             
+                            {% if not request.user.is_superuser and not request.user.is_staff %}
+                            <div style="padding: 14px; background: rgba(0,0,0,0.15); border-radius: 6px; font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+                                Interactive Quant Trading Scenarios, behavioral risk dilemmas, and multi-session psychology simulations will be introduced in an upcoming release.
+                            </div>
+                            {% else %}
                             <!-- Loading Spinner -->
                             <div id="campaign-loading" class="campaign-loading-container hidden" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 0; gap: 12px;">
                                 <div class="spinner" style="width: 28px; height: 28px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent-indigo); border-radius: 50%; animation: spin 1s linear infinite;"></div>
@@ -2146,19 +2108,29 @@
                                     <p id="feedback-text" style="margin: 0;">Feedback details</p>
                                 </div>
                             </div>
+                            {% endif %}
                         </div>
                     </div>
 
                     <!-- AI Conviction Analyst Section -->
                     <div class="ai-analyst-section" style="margin-top: 24px;">
                         <div class="ai-card" style="background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); border-radius: var(--border-radius-lg); padding: 20px;">
-                            <div class="ai-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                            <div class="ai-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
                                 <h4 style="font-size: 13px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; margin: 0; display: flex; align-items: center; gap: 8px;">
                                     <i class="fa-solid fa-robot" style="color: var(--accent-indigo);"></i> AI Conviction Analyst
                                 </h4>
+                                {% if request.user.is_superuser or request.user.is_staff %}
                                 <button id="btn-analyze-conviction" class="primary-btn" style="font-size: 12px; padding: 6px 14px; background: linear-gradient(135deg, var(--accent-indigo), #5850ec); border: none;"><i class="fa-solid fa-brain"></i> Analyze Conviction</button>
+                                {% else %}
+                                <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 9.5px; font-weight: 700; padding: 2px 7px; border-radius: 4px;"><i class="fa-solid fa-clock"></i> Upcoming Feature</span>
+                                {% endif %}
                             </div>
                             
+                            {% if not request.user.is_superuser and not request.user.is_staff %}
+                            <div style="padding: 14px; background: rgba(0,0,0,0.15); border-radius: 6px; font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+                                AI Conviction Scoring and automated multi-factor setup validation will be enabled for members following regulatory licensing.
+                            </div>
+                            {% else %}
                             <!-- Loading Spinner -->
                             <div id="ai-loading" class="ai-loading-container hidden" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 0; gap: 12px;">
                                 <div class="spinner" style="width: 28px; height: 28px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent-indigo); border-radius: 50%; animation: spin 1s linear infinite;"></div>
@@ -2178,12 +2150,13 @@
                                     Rationale details...
                                 </p>
                                 <div id="ai-sources-citations" style="border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 10px; margin-top: 5px;">
-                                    <strong style="font-size: 11px; display: block; margin-bottom: 6px; color: var(--text-secondary);"><i class="fa-solid fa-link"></i> Citations & Sources:</strong>
+                                    <strong style="font-size: 11px; display: block; margin-bottom: 6px; color: var(--text-secondary);"><i class="fa-solid fa-link"></i> Citations &amp; Sources:</strong>
                                     <div id="ai-sources-list" style="display: flex; flex-direction: column; gap: 6px;">
                                         <!-- Rendered dynamically -->
                                     </div>
                                 </div>
                             </div>
+                            {% endif %}
                         </div>
                     </div>
 
@@ -2194,6 +2167,7 @@
                                 <h4 style="font-size: 13px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; margin: 0; display: flex; align-items: center; gap: 8px;">
                                     <i class="fa-solid fa-gem" style="color: #a855f7;"></i> PM Research Brief
                                 </h4>
+                                {% if request.user.is_superuser or request.user.is_staff %}
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <label style="font-size: 11px; color: var(--text-secondary);">Lookback:</label>
                                     <select id="sel-pm-brief-window" style="background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-primary); padding: 4px 8px; border-radius: 4px; font-size: 11px; outline: none; font-family: var(--font-stack);">
@@ -2203,6 +2177,9 @@
                                     </select>
                                     <button id="btn-generate-pm-brief" class="primary-btn" style="font-size: 12px; padding: 6px 14px; background: linear-gradient(135deg, #a855f7, #7c3aed); border: none;"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate Brief</button>
                                 </div>
+                                {% else %}
+                                <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 9.5px; font-weight: 700; padding: 2px 7px; border-radius: 4px;"><i class="fa-solid fa-clock"></i> Upcoming Feature</span>
+                                {% endif %}
                             </div>
                             
                             <!-- Permanent Caution Banner -->
@@ -2211,6 +2188,11 @@
                                 <span><strong>Caution:</strong> All research briefs are for educational purposes only. Trade at your own risk.</span>
                             </div>
 
+                            {% if not request.user.is_superuser and not request.user.is_staff %}
+                            <div style="padding: 14px; background: rgba(0,0,0,0.15); border-radius: 6px; font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+                                Macro portfolio manager research briefs and institutional trade notes will be published following SEBI registration.
+                            </div>
+                            {% else %}
                             <!-- Loading Spinner -->
                             <div id="pm-brief-loading" class="ai-loading-container hidden" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 0; gap: 12px;">
                                 <div class="spinner" style="width: 28px; height: 28px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #a855f7; border-radius: 50%; animation: spin 1s linear infinite;"></div>
@@ -2225,10 +2207,9 @@
                                 </div>
                                 
                                 <!-- Admin Only: Publish to Community Feed Button -->
-                                {% if request.user.is_superuser or request.user.is_staff %}
                                 <button id="btn-publish-pm-brief" class="primary-btn hidden" style="font-size: 12px; padding: 8px 16px; background: linear-gradient(135deg, #10b981, #059669); border: none; align-self: flex-start;"><i class="fa-solid fa-share-nodes"></i> Publish to Community Feed</button>
-                                {% endif %}
                             </div>
+                            {% endif %}
                         </div>
                     </div>
 
@@ -2443,7 +2424,7 @@
     </section>
 
     <!-- Pro License Access Required Overlay -->
-    <div id="pro-only-overlay" class="modal hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-modal); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 10000; display: flex; align-items: center; justify-content: center; font-family: var(--font-stack);">
+    <div id="pro-only-overlay" class="modal hidden" onclick="if(event.target === this) window.closeProLockedOverlay();" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-modal); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 10000; display: none; align-items: center; justify-content: center; font-family: var(--font-stack);">
         <div class="glass-card" style="width: 90%; max-width: 480px; padding: 35px; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); background: var(--bg-secondary); display: flex; flex-direction: column; gap: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); text-align: center;">
             <div style="font-size: 50px; color: #a855f7;"><i class="fa-solid fa-lock"></i></div>
             <h2 style="font-size: 20px; font-weight: 700; color: var(--text-primary); margin: 0;">Pro Feature Locked</h2>
@@ -2458,7 +2439,7 @@
             </div>
             <div style="display: flex; gap: 10px;">
                 <button id="btn-pro-overlay-upgrade" class="primary-btn btn-trigger-upgrade" style="flex: 1; font-size: 12px; padding: 10px; background: linear-gradient(135deg, #a855f7, #7c3aed); border: none; color: #fff; cursor: pointer; font-weight: 600; border-radius: var(--border-radius-sm);">Upgrade to Pro</button>
-                <button id="btn-pro-overlay-dismiss" style="flex: 1; font-size: 12px; padding: 10px; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: var(--text-secondary); cursor: pointer; font-weight: 600; border-radius: var(--border-radius-sm);" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">Dismiss</button>
+                <button id="btn-pro-overlay-dismiss" onclick="window.closeProLockedOverlay();" style="flex: 1; font-size: 12px; padding: 10px; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: var(--text-secondary); cursor: pointer; font-weight: 600; border-radius: var(--border-radius-sm);" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">Dismiss</button>
             </div>
         </div>
     </div>
@@ -2652,8 +2633,8 @@
 
     <!-- Project JS dependencies -->
     <script src="{% static 'screener/qrcode.min.js' %}"></script>
-    <script src="{% static 'screener/mockData.js' %}?v=5.2"></script>
-    <script src="{% static 'screener/app.js' %}?v=5.2"></script>
+    <script src="{% static 'screener/mockData.js' %}?v=6.2"></script>
+    <script src="{% static 'screener/app.js' %}?v=6.2"></script>
 
     <!-- Sidebar mobile drawer toggling -->
     <script>

@@ -454,33 +454,51 @@ def historical_proxy_view(request):
       - from: YYYY-MM-DD
       - to: YYYY-MM-DD
     """
-    if not (request.user.is_authenticated and (request.user.is_superuser or request.user.is_staff)):
+    if not request.user.is_authenticated:
         return JsonResponse({
             'status': 'error',
-            'message': 'Forbidden: Live Zerodha API mode is restricted to Administrators and Superusers only.'
-        }, status=403)
+            'message': 'Authentication required. Please sign in to connect to the Zerodha API proxy.'
+        }, status=401)
+
+    is_admin = (request.user.is_superuser or request.user.is_staff)
 
     symbol_or_token = request.GET.get('symbol', '').strip().upper()
     interval = request.GET.get('interval', 'day').strip()
     from_date = request.GET.get('from', '').strip()
     to_date = request.GET.get('to', '').strip()
 
-    # Extract auth details
+    # Extract auth details provided by client
     api_key = request.headers.get('X-Kite-API-Key') or request.GET.get('api_key')
     access_token = request.headers.get('X-Kite-Access-Token') or request.GET.get('access_token')
+    if isinstance(api_key, str):
+        api_key = api_key.strip().strip("'\"")
+    if isinstance(access_token, str):
+        access_token = access_token.strip().strip("'\"")
 
-    # Resolve from environment variables if client requests SERVER_PRECONFIGURED
-    if not api_key or api_key == 'SERVER_PRECONFIGURED' or not access_token or access_token == 'SERVER_PRECONFIGURED':
-        load_env_file(force=True)
-        if not api_key or api_key == 'SERVER_PRECONFIGURED':
-            api_key = os.environ.get('ZERODHA_API_KEY')
-        if not access_token or access_token == 'SERVER_PRECONFIGURED':
-            access_token = os.environ.get('ZERODHA_ACCESS_TOKEN')
+    # Resolve from server environment variables ONLY for administrators/superusers
+    if is_admin:
+        if not api_key or api_key == 'SERVER_PRECONFIGURED' or not access_token or access_token == 'SERVER_PRECONFIGURED':
+            load_env_file(force=True)
+            if not api_key or api_key == 'SERVER_PRECONFIGURED':
+                api_key = os.environ.get('ZERODHA_API_KEY')
+                if isinstance(api_key, str):
+                    api_key = api_key.strip().strip("'\"")
+            if not access_token or access_token == 'SERVER_PRECONFIGURED':
+                access_token = os.environ.get('ZERODHA_ACCESS_TOKEN')
+                if isinstance(access_token, str):
+                    access_token = access_token.strip().strip("'\"")
+    else:
+        # Non-admins MUST provide their own personal Zerodha API credentials (SEBI Compliance)
+        if not api_key or api_key == 'SERVER_PRECONFIGURED' or not access_token or access_token == 'SERVER_PRECONFIGURED':
+            return JsonResponse({
+                'status': 'error',
+                'message': 'SEBI Compliance Notice: To stream live market data and backtest setups, please enter your personal Zerodha Kite API Key & Access Token in API Setup.'
+            }, status=400)
 
     if not api_key or not access_token:
         return JsonResponse({
             'status': 'error',
-            'message': 'Missing API Key (X-Kite-API-Key) or Access Token (X-Kite-Access-Token) authentication'
+            'message': 'Missing API Key (X-Kite-API-Key) or Access Token (X-Kite-Access-Token) authentication. Please configure your Zerodha API details in API Setup.'
         }, status=400)
 
     if not symbol_or_token:
@@ -537,6 +555,80 @@ def historical_proxy_view(request):
         return JsonResponse({
             'status': 'error',
             'message': f"Failed to connect to Zerodha API: {str(e)}"
+        }, status=502)
+
+
+@csrf_exempt
+def validate_kite_credentials_view(request):
+    """
+    Validates user-submitted Zerodha Kite API Key & Access Token by checking against Kite API.
+    Returns JSON { status: 'success'|'error', message: '...' } with clear validation feedback.
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Authentication required. Please sign in to validate credentials.'
+        }, status=401)
+
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Only POST method is allowed'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+    except Exception:
+        data = request.POST
+
+    api_key = (data.get('api_key') or request.headers.get('X-Kite-API-Key') or '').strip().strip("'\"")
+    access_token = (data.get('access_token') or request.headers.get('X-Kite-Access-Token') or '').strip().strip("'\"")
+
+    if not api_key:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Zerodha Kite API Key is required.'
+        }, status=400)
+
+    if not access_token:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Zerodha Kite Access Token is required.'
+        }, status=400)
+
+    profile_url = "https://api.kite.trade/user/profile"
+    headers = {
+        'X-Kite-Version': '3',
+        'Authorization': f'token {api_key}:{access_token}',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+    }
+
+    try:
+        resp = requests.get(profile_url, headers=headers, timeout=8)
+        if resp.status_code == 200:
+            user_data = resp.json().get('data', {})
+            user_name = user_data.get('user_name') or user_data.get('user_id') or 'User'
+            return JsonResponse({
+                'status': 'success',
+                'message': f"Zerodha Kite credentials verified successfully for {user_name} ({user_data.get('user_id', '')})!",
+                'user_id': user_data.get('user_id', ''),
+                'user_name': user_name
+            })
+        else:
+            try:
+                err_json = resp.json()
+                kite_msg = err_json.get('message') or err_json.get('error_type') or f'HTTP {resp.status_code}'
+            except Exception:
+                kite_msg = f'Kite returned HTTP {resp.status_code}'
+            
+            detail = ""
+            if 'Incorrect' in kite_msg:
+                detail = " Note: Zerodha Kite access tokens expire daily at 06:00 AM IST. Please generate a fresh access token for today, or verify you did not enter the one-time request_token from the login redirect URL."
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Zerodha Kite verification failed: {kite_msg}.{detail}'
+            }, status=400)
+    except requests.exceptions.RequestException as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Failed to connect to Zerodha Kite API: {str(e)}'
         }, status=502)
 
 
@@ -3492,6 +3584,25 @@ def market_breadth_view(request):
     """
     if not request.user.is_authenticated:
         return redirect(f"/login/?next={request.path}")
+    if not (request.user.is_superuser or request.user.is_staff):
+        return HttpResponseForbidden(
+            """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>403 - Admin Access Required | TradeKriya</title>
+</head>
+<body style="background:#0c0a09; color:#f5f5f4; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; padding:20px; box-sizing:border-box;">
+    <div style="text-align:center; padding:36px; background:#1c1917; border:1px solid rgba(255,255,255,0.1); border-radius:12px; max-width:440px; box-shadow:0 10px 25px rgba(0,0,0,0.5);">
+        <div style="font-size:42px; margin-bottom:12px;">🔒</div>
+        <h2 style="color:#f87171; margin-top:0; margin-bottom:12px; font-size:20px;">Access Restricted</h2>
+        <p style="color:#a8a29e; font-size:13.5px; line-height:1.6; margin-bottom:24px;">The Market Breadth Terminal is an institutional module reserved exclusively for system administrators.</p>
+        <a href="/dashboard/" style="background:#e9805d; color:#fff; text-decoration:none; padding:10px 20px; border-radius:8px; font-size:13px; font-weight:600; display:inline-block;">Return to Dashboard</a>
+    </div>
+</body>
+</html>"""
+        )
     
     from .market_breadth_service import get_market_breadth_payload
     from .quant_service import NpEncoder
@@ -3547,6 +3658,9 @@ def api_market_breadth_timeline_briefings(request):
     """
     Returns historical Market Daily Briefings for side-by-side timeline comparisons.
     """
+    if not request.user.is_authenticated or not (request.user.is_superuser or request.user.is_staff):
+        return JsonResponse({'status': 'error', 'message': 'Forbidden: Administrator privilege required.'}, status=403)
+
     from .quant_service import NpEncoder
     from .models import MarketDailyBriefing
     

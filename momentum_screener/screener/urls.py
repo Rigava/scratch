@@ -63,5 +63,8 @@ urlpatterns = [
     
     # 5-Minute ORB Strategy Screener API
     path('api/orb-screener/', views.api_orb_screener_view, name='api_orb_screener'),
+    
+    # Zerodha Kite Credential Validation API
+    path('api/validate-kite/', views.validate_kite_credentials_view, name='validate_kite_credentials'),
 ]
 

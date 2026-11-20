@@ -60,8 +60,30 @@ const App = (function() {
         sort: {
             field: 'ticker',
             direction: 'asc'
-        }
+        },
+        pagination: {
+            currentPage: 1,
+            pageSize: 25,
+            totalPages: 1
+        },
+        lastFilteredStocks: []
     };
+
+    // Helper: Safely retrieve CSRF token from document cookies
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
 
     // Helper: Normalize sector names to prevent ampersand encoding mismatches (& vs &amp;)
     function normalizeSector(sec) {
@@ -1005,8 +1027,74 @@ const App = (function() {
             return 0;
         });
 
+        state.lastFilteredStocks = filteredStocks;
+
+        // Pagination slicing
+        const totalItems = filteredStocks.length;
+        const pageSize = state.pagination.pageSize === 'all' ? totalItems : (parseInt(state.pagination.pageSize, 10) || 25);
+        const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(totalItems / pageSize)) : 1;
+        state.pagination.totalPages = totalPages;
+
+        if (state.pagination.currentPage > totalPages) {
+            state.pagination.currentPage = totalPages;
+        }
+        if (state.pagination.currentPage < 1) {
+            state.pagination.currentPage = 1;
+        }
+
+        const startIdx = state.pagination.pageSize === 'all' ? 0 : (state.pagination.currentPage - 1) * pageSize;
+        const endIdx = state.pagination.pageSize === 'all' ? totalItems : Math.min(startIdx + pageSize, totalItems);
+        const paginatedStocks = filteredStocks.slice(startIdx, endIdx);
+
+        // Update pagination UI controls
+        const elPageInfo = document.getElementById('screener-page-info');
+        if (elPageInfo) {
+            if (totalItems === 0) {
+                elPageInfo.textContent = 'Showing 0 of 0 stocks';
+            } else {
+                elPageInfo.textContent = `Showing ${startIdx + 1}–${endIdx} of ${totalItems} stocks`;
+            }
+        }
+        const elCurrentPageBadge = document.getElementById('screener-current-page-badge');
+        if (elCurrentPageBadge) {
+            elCurrentPageBadge.textContent = `Page ${state.pagination.currentPage} of ${totalPages}`;
+        }
+        const btnPrev = document.getElementById('btn-screener-prev');
+        if (btnPrev) {
+            btnPrev.disabled = (state.pagination.currentPage <= 1);
+            btnPrev.style.opacity = (state.pagination.currentPage <= 1) ? '0.35' : '1';
+            btnPrev.style.cursor = (state.pagination.currentPage <= 1) ? 'default' : 'pointer';
+        }
+        const btnNext = document.getElementById('btn-screener-next');
+        if (btnNext) {
+            btnNext.disabled = (state.pagination.currentPage >= totalPages);
+            btnNext.style.opacity = (state.pagination.currentPage >= totalPages) ? '0.35' : '1';
+            btnNext.style.cursor = (state.pagination.currentPage >= totalPages) ? 'default' : 'pointer';
+        }
+
         // Render rows
-        for (const stock of filteredStocks) {
+        if (paginatedStocks.length === 0) {
+            const tr = document.createElement('tr');
+            if (state.dataSource === 'zerodha' && !getZerodhaCredentials()) {
+                tr.innerHTML = `
+                    <td colspan="12" style="text-align: center; padding: 48px 20px; color: var(--text-muted);">
+                        <div style="font-size: 32px; margin-bottom: 12px; color: var(--accent);"><i class="fa-solid fa-key"></i></div>
+                        <div style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">No Zerodha Kite Credentials Configured</div>
+                        <div style="font-size: 13px; max-width: 480px; margin: 0 auto 16px auto; line-height: 1.5;">To stream live stock prices and run quantitative strategies under SEBI compliance, configure and verify your Zerodha Kite API Key & Access Token in <strong>API Setup</strong>.</div>
+                        <button onclick="document.getElementById('btn-toggle-credentials').click()" class="guide-btn" style="margin: 0 auto; display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; background: var(--accent); color: #fff; font-weight: 600; border-radius: 6px; border: none; cursor: pointer;"><i class="fa-solid fa-key"></i> Open API Setup</button>
+                    </td>
+                `;
+            } else {
+                tr.innerHTML = `
+                    <td colspan="12" style="text-align: center; padding: 36px 20px; color: var(--text-muted); font-size: 13px;">
+                        No stocks matching current filters.
+                    </td>
+                `;
+            }
+            tbody.appendChild(tr);
+        }
+
+        for (const stock of paginatedStocks) {
             const tr = document.createElement('tr');
             tr.setAttribute('data-ticker', stock.ticker);
             if (state.activeTicker === stock.ticker) {
@@ -1409,6 +1497,15 @@ const App = (function() {
                     return;
                 }
                 showTradeLogModal(stock.ticker, stock.name, rsiRes.tradesLog);
+            };
+        }
+
+        // Bind Download Candles CSV button
+        const btnDownloadCsv = document.getElementById('btn-detail-download-csv');
+        if (btnDownloadCsv) {
+            btnDownloadCsv.onclick = (e) => {
+                e.stopPropagation();
+                downloadStockHistoricalCSV(stock.ticker);
             };
         }
 
@@ -2060,19 +2157,34 @@ const App = (function() {
         });
     }
 
+    // Helper: Safely resolve Zerodha credentials with BYOK user isolation (SEBI compliant)
+    function getZerodhaCredentials() {
+        const key = localStorage.getItem('zerodha_api_key') || sessionStorage.getItem('zerodha_api_key');
+        const token = localStorage.getItem('zerodha_access_token') || sessionStorage.getItem('zerodha_access_token');
+        if (key && token) {
+            return { key, token };
+        }
+        // Only superuser/admin can fall back to server preconfigured .env
+        if (typeof IS_SUPERUSER !== 'undefined' && IS_SUPERUSER && typeof SERVER_HAS_ZERODHA !== 'undefined' && SERVER_HAS_ZERODHA) {
+            return { key: 'SERVER_PRECONFIGURED', token: 'SERVER_PRECONFIGURED' };
+        }
+        return null;
+    }
+
     // Fetch data using the Django CORS-proxy views for Zerodha historical endpoint
     async function fetchZerodhaData(symbol, customToken = null) {
-        if (typeof IS_SUPERUSER !== 'undefined' && !IS_SUPERUSER) {
-            console.warn('Forbidden: Live Zerodha API mode is restricted to Admin / Superusers only.');
+        const creds = getZerodhaCredentials();
+        if (!creds) {
+            if (!state.zerodhaAuthErrorAlerted) {
+                state.zerodhaAuthErrorAlerted = true;
+                const credsDrawer = document.getElementById('credentials-drawer');
+                if (credsDrawer) credsDrawer.classList.remove('hidden');
+                alert('Please enter your Zerodha Kite API Key & Access Token in the top-right API Setup drawer to stream market data with your broker account (SEBI compliant).');
+            }
             return;
         }
-        const apiKey = sessionStorage.getItem('zerodha_api_key') || (typeof SERVER_HAS_ZERODHA !== 'undefined' && SERVER_HAS_ZERODHA ? 'SERVER_PRECONFIGURED' : '');
-        const accessToken = sessionStorage.getItem('zerodha_access_token') || (typeof SERVER_HAS_ZERODHA !== 'undefined' && SERVER_HAS_ZERODHA ? 'SERVER_PRECONFIGURED' : '');
-
-        if (!apiKey || !accessToken) {
-            alert('Zerodha API Key or Access Token is missing. Please authorize in the Credentials Panel first.');
-            return;
-        }
+        const apiKey = creds.key;
+        const accessToken = creds.token;
 
         // Set date range for historical candle requests based on drawdown lookback period
         const toDate = new Date();
@@ -2604,19 +2716,16 @@ const App = (function() {
             
             showScanProgress(false);
         } else {
-            // Zerodha Mode
-            if (typeof IS_SUPERUSER !== 'undefined' && !IS_SUPERUSER) {
-                alert('Forbidden: Live Zerodha API mode is restricted to Admin and Superusers only.');
-                return;
-            }
-            const apiKey = sessionStorage.getItem('zerodha_api_key') || (typeof SERVER_HAS_ZERODHA !== 'undefined' && SERVER_HAS_ZERODHA ? 'SERVER_PRECONFIGURED' : '');
-            const accessToken = sessionStorage.getItem('zerodha_access_token') || (typeof SERVER_HAS_ZERODHA !== 'undefined' && SERVER_HAS_ZERODHA ? 'SERVER_PRECONFIGURED' : '');
-            if (!apiKey || !accessToken) {
-                alert("Please configure your Zerodha Kite Credentials first in the top-right header!");
+            // Zerodha Mode (BYOK SEBI compliant)
+            const creds = getZerodhaCredentials();
+            if (!creds) {
+                alert("Please configure your Zerodha Kite API Credentials first in the top-right API Setup drawer to scan with your own broker account.");
                 const credsDrawer = document.getElementById('credentials-drawer');
                 if (credsDrawer) credsDrawer.classList.remove('hidden');
                 return;
             }
+            const apiKey = creds.key;
+            const accessToken = creds.token;
             
             state.stocks = {};
             renderScreenerGrid();
@@ -2760,10 +2869,6 @@ const App = (function() {
 
         if (btnSourceZerodha) {
             btnSourceZerodha.addEventListener('click', (e) => {
-                if (typeof IS_SUPERUSER !== 'undefined' && !IS_SUPERUSER) {
-                    alert('Forbidden: Live Zerodha API mode is restricted to Admin and Superusers only.');
-                    return;
-                }
                 state.zerodhaAuthErrorAlerted = false; // Reset auth alert flag
                 btnSourceZerodha.classList.add('active');
                 if (btnSourceSim) btnSourceSim.classList.remove('active');
@@ -2777,10 +2882,10 @@ const App = (function() {
                 // Clear simulation pool, wait for auth inputs
                 state.stocks = {};
                 
-                // Hydrate credentials inputs if already saved in session storage
-                const savedKey = sessionStorage.getItem('zerodha_api_key');
-                const savedToken = sessionStorage.getItem('zerodha_access_token');
-                const savedGemini = sessionStorage.getItem('gemini_api_key');
+                // Hydrate credentials inputs if already saved in storage
+                const savedKey = localStorage.getItem('zerodha_api_key') || sessionStorage.getItem('zerodha_api_key');
+                const savedToken = localStorage.getItem('zerodha_access_token') || sessionStorage.getItem('zerodha_access_token');
+                const savedGemini = localStorage.getItem('gemini_api_key') || sessionStorage.getItem('gemini_api_key');
                 const keyInput = document.getElementById('zerodha-api-key');
                 const tokenInput = document.getElementById('zerodha-access-token');
                 const geminiInput = document.getElementById('gemini-api-key');
@@ -2788,7 +2893,7 @@ const App = (function() {
                 if (savedToken && tokenInput) tokenInput.value = savedToken;
                 if (savedGemini && geminiInput) geminiInput.value = savedGemini;
 
-                const isPreconfigZerodha = (typeof SERVER_HAS_ZERODHA !== 'undefined' && SERVER_HAS_ZERODHA);
+                const isPreconfigZerodha = (typeof IS_SUPERUSER !== 'undefined' && IS_SUPERUSER && typeof SERVER_HAS_ZERODHA !== 'undefined' && SERVER_HAS_ZERODHA);
                 if (isPreconfigZerodha) {
                     if (keyInput) keyInput.placeholder = "Preconfigured in .env";
                     if (tokenInput) tokenInput.placeholder = "Preconfigured in .env";
@@ -3014,74 +3119,113 @@ const App = (function() {
         // Save Configurations Click (Zerodha + Gemini)
         const btnAuthSave = document.getElementById('btn-auth-save');
         if (btnAuthSave) {
-            btnAuthSave.addEventListener('click', () => {
+            btnAuthSave.addEventListener('click', async () => {
                 state.zerodhaAuthErrorAlerted = false; // Reset auth alert flag
                 const keyInput = document.getElementById('zerodha-api-key');
                 const tokenInput = document.getElementById('zerodha-access-token');
                 const geminiInput = document.getElementById('gemini-api-key');
-                const key = keyInput ? keyInput.value.trim() : '';
-                const token = tokenInput ? tokenInput.value.trim() : '';
-                const gemini = geminiInput ? geminiInput.value.trim() : '';
+                const key = keyInput ? keyInput.value.trim().replace(/^["']+|["']+$/g, '') : '';
+                const token = tokenInput ? tokenInput.value.trim().replace(/^["']+|["']+$/g, '') : '';
+                const gemini = geminiInput ? geminiInput.value.trim().replace(/^["']+|["']+$/g, '') : '';
 
-            if (key) {
-                sessionStorage.setItem('zerodha_api_key', key);
-            } else {
-                sessionStorage.removeItem('zerodha_api_key');
-            }
-
-            if (token) {
-                sessionStorage.setItem('zerodha_access_token', token);
-            } else {
-                sessionStorage.removeItem('zerodha_access_token');
-            }
-
-            if (gemini) {
-                sessionStorage.setItem('gemini_api_key', gemini);
-            } else {
-                sessionStorage.removeItem('gemini_api_key');
-            }
-
-            alert('API settings saved successfully. Empty values reverted back to preconfigured .env settings.');
-
-            // If in Zerodha API mode, reload data
-            if (state.dataSource === 'zerodha') {
-                state.stocks = {};
-                const activeKey = key || (typeof SERVER_HAS_ZERODHA !== 'undefined' && SERVER_HAS_ZERODHA);
-                const activeToken = token || (typeof SERVER_HAS_ZERODHA !== 'undefined' && SERVER_HAS_ZERODHA);
-                if (activeKey && activeToken) {
-                    fetchZerodhaData('RELIANCE');
-                    fetchZerodhaData('TCS');
-                    fetchZerodhaData('INFY');
+                if (gemini) {
+                    localStorage.setItem('gemini_api_key', gemini);
+                    sessionStorage.setItem('gemini_api_key', gemini);
                 }
-                hydrateActiveJournalTickers();
-            }
-        });
-    }
 
-        // Reset to preconfigured .env settings Click
+                // If user didn't enter Zerodha credentials
+                if (!key && !token) {
+                    if (gemini) {
+                        alert('Gemini API key saved successfully.');
+                        return;
+                    }
+                    alert('Please enter your Zerodha API Key and Access Token.');
+                    return;
+                }
+
+                if (!key || !token) {
+                    alert('Both Zerodha API Key and Access Token are required to connect to Kite.');
+                    return;
+                }
+
+                // Show loading state
+                const origBtnText = btnAuthSave.innerHTML;
+                btnAuthSave.disabled = true;
+                btnAuthSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Validating with Zerodha...';
+
+                try {
+                    const response = await fetch('/api/validate-kite/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken') || ''
+                        },
+                        body: JSON.stringify({ api_key: key, access_token: token })
+                    });
+                    const data = await response.json();
+
+                    if (response.ok && data.status === 'success') {
+                        // Persist verified credentials
+                        localStorage.setItem('zerodha_api_key', key);
+                        sessionStorage.setItem('zerodha_api_key', key);
+                        localStorage.setItem('zerodha_access_token', token);
+                        sessionStorage.setItem('zerodha_access_token', token);
+
+                        alert(data.message || 'Zerodha Kite credentials verified successfully!');
+
+                        // Close credentials drawer
+                        const credsDrawer = document.getElementById('credentials-drawer');
+                        if (credsDrawer) credsDrawer.classList.add('hidden');
+
+                        // Switch to Zerodha mode and fetch data
+                        state.dataSource = 'zerodha';
+                        const btnSourceZerodha = document.getElementById('btn-source-zerodha');
+                        if (btnSourceZerodha) btnSourceZerodha.classList.add('active');
+                        const btnSourceSim = document.getElementById('btn-source-sim');
+                        if (btnSourceSim) btnSourceSim.classList.remove('active');
+
+                        state.stocks = {};
+                        fetchZerodhaData('RELIANCE');
+                        fetchZerodhaData('TCS');
+                        fetchZerodhaData('INFY');
+                        hydrateActiveJournalTickers();
+                    } else {
+                        alert('Validation Failed: ' + (data.message || 'Invalid Zerodha credentials. Please check your API Key and daily Access Token.'));
+                    }
+                } catch (err) {
+                    console.error('Validation error:', err);
+                    alert('Network error while validating credentials: ' + err.message);
+                } finally {
+                    btnAuthSave.disabled = false;
+                    btnAuthSave.innerHTML = origBtnText;
+                }
+            });
+        }
+
+        // Reset to clear configurations Click
         const btnAuthReset = document.getElementById('btn-auth-reset');
         if (btnAuthReset) {
             btnAuthReset.addEventListener('click', () => {
                 state.zerodhaAuthErrorAlerted = false; // Reset auth alert flag
-                document.getElementById('zerodha-api-key').value = '';
-                document.getElementById('zerodha-access-token').value = '';
-                document.getElementById('gemini-api-key').value = '';
+                const keyInput = document.getElementById('zerodha-api-key');
+                const tokenInput = document.getElementById('zerodha-access-token');
+                const geminiInput = document.getElementById('gemini-api-key');
+                if (keyInput) keyInput.value = '';
+                if (tokenInput) tokenInput.value = '';
+                if (geminiInput) geminiInput.value = '';
 
+                localStorage.removeItem('zerodha_api_key');
                 sessionStorage.removeItem('zerodha_api_key');
+                localStorage.removeItem('zerodha_access_token');
                 sessionStorage.removeItem('zerodha_access_token');
+                localStorage.removeItem('gemini_api_key');
                 sessionStorage.removeItem('gemini_api_key');
 
-                alert('API configurations reset successfully. Reverted back to preconfigured .env settings.');
+                alert('API configurations cleared successfully.');
 
-                // If in Zerodha API mode, reload data
                 if (state.dataSource === 'zerodha') {
                     state.stocks = {};
-                    if (typeof SERVER_HAS_ZERODHA !== 'undefined' && SERVER_HAS_ZERODHA) {
-                        fetchZerodhaData('RELIANCE');
-                        fetchZerodhaData('TCS');
-                        fetchZerodhaData('INFY');
-                    }
-                    hydrateActiveJournalTickers();
+                    renderScreenerGrid();
                 }
             });
         }
@@ -3189,8 +3333,108 @@ const App = (function() {
             }
         });
 
+        // --- CSV Data Export Helpers (SEBI-Compliant User Downloads) ---
+        function downloadStockHistoricalCSV(symbol) {
+            const sym = symbol || state.activeTicker;
+            if (!sym || !state.stocks[sym]) {
+                alert("Please select a valid stock with loaded data first.");
+                return;
+            }
+            const stock = state.stocks[sym];
+            const candles = stock.candles || [];
+            if (candles.length === 0) {
+                alert(`No historical candle data available for ${sym}.`);
+                return;
+            }
+
+            const headers = ["Date", "Open", "High", "Low", "Close", "Volume"];
+            const rows = candles.map(c => [
+                c.date,
+                typeof c.open === 'number' ? c.open.toFixed(2) : (c.open || ''),
+                typeof c.high === 'number' ? c.high.toFixed(2) : (c.high || ''),
+                typeof c.low === 'number' ? c.low.toFixed(2) : (c.low || ''),
+                typeof c.close === 'number' ? c.close.toFixed(2) : (c.close || ''),
+                c.volume || 0
+            ].join(","));
+
+            const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `${sym}_historical_candles.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+        window.downloadStockHistoricalCSV = downloadStockHistoricalCSV;
+
+        function exportMainScreenerTableCSV() {
+            const stocks = state.lastFilteredStocks && state.lastFilteredStocks.length > 0 
+                ? state.lastFilteredStocks 
+                : Object.values(state.stocks);
+
+            if (!stocks || stocks.length === 0) {
+                alert("No screener records available to export.");
+                return;
+            }
+
+            const headers = [
+                "Ticker",
+                "Company Name",
+                "LTP (INR)",
+                "1D Change (%)",
+                "7D Change (%)",
+                "Milestone",
+                "Kinematics Regime",
+                "Drawdown (%)",
+                "RSI (14)",
+                "ADX (14)",
+                "Status"
+            ];
+
+            const escapeCsv = (str) => {
+                if (str === null || str === undefined) return '""';
+                const s = String(str).replace(/"/g, '""');
+                return `"${s}"`;
+            };
+
+            const rows = stocks.map(s => {
+                const p = s.current || {};
+                const kin = p.kinematics ? p.kinematics.badgeLabel : 'Neutral';
+                return [
+                    escapeCsv(s.ticker),
+                    escapeCsv(s.name),
+                    p.price != null ? p.price.toFixed(2) : '',
+                    p.pctChange != null ? p.pctChange.toFixed(2) : '',
+                    p.pctChange7d != null ? p.pctChange7d.toFixed(2) : '',
+                    escapeCsv(p.milestone || '-'),
+                    escapeCsv(kin),
+                    p.drawdown != null ? p.drawdown.toFixed(2) : '',
+                    p.rsi != null ? p.rsi : '',
+                    p.adx != null ? p.adx : '',
+                    escapeCsv(s.status || 'Safe')
+                ].join(",");
+            });
+
+            const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const link = document.createElement("a");
+            const today = new Date().toISOString().slice(0, 10);
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `TradeKriya_Screener_Grid_${today}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+        window.exportMainScreenerTableCSV = exportMainScreenerTableCSV;
+
         // Search Ticker
         document.getElementById('grid-search').addEventListener('input', () => {
+            state.pagination.currentPage = 1;
             renderScreenerGrid();
         });
 
@@ -3199,6 +3443,7 @@ const App = (function() {
         if (selectStatus) {
             selectStatus.addEventListener('change', () => {
                 state.filters.status = selectStatus.value;
+                state.pagination.currentPage = 1;
                 renderScreenerGrid();
             });
         }
@@ -3207,6 +3452,7 @@ const App = (function() {
         const selectPerf = document.getElementById('sel-filter-performance');
         if (selectPerf) {
             selectPerf.addEventListener('change', () => {
+                state.pagination.currentPage = 1;
                 renderScreenerGrid();
             });
         }
@@ -3242,9 +3488,48 @@ const App = (function() {
                 drawdown: { enabled: true, threshold: 30, years: 1 }
             };
 
+            state.pagination.currentPage = 1;
             renderScreenerGrid();
             if (state.activeTicker) openDetailDrawer(state.activeTicker);
         });
+
+        // Screener Pagination Controls
+        const selScreenerPageSize = document.getElementById('sel-screener-page-size');
+        if (selScreenerPageSize) {
+            selScreenerPageSize.addEventListener('change', () => {
+                state.pagination.pageSize = selScreenerPageSize.value;
+                state.pagination.currentPage = 1;
+                renderScreenerGrid();
+            });
+        }
+
+        const btnScreenerPrev = document.getElementById('btn-screener-prev');
+        if (btnScreenerPrev) {
+            btnScreenerPrev.addEventListener('click', () => {
+                if (state.pagination.currentPage > 1) {
+                    state.pagination.currentPage--;
+                    renderScreenerGrid();
+                }
+            });
+        }
+
+        const btnScreenerNext = document.getElementById('btn-screener-next');
+        if (btnScreenerNext) {
+            btnScreenerNext.addEventListener('click', () => {
+                if (state.pagination.currentPage < state.pagination.totalPages) {
+                    state.pagination.currentPage++;
+                    renderScreenerGrid();
+                }
+            });
+        }
+
+        // Screener Export CSV Button
+        const btnExportScreenerCsv = document.getElementById('btn-export-screener-csv');
+        if (btnExportScreenerCsv) {
+            btnExportScreenerCsv.addEventListener('click', () => {
+                exportMainScreenerTableCSV();
+            });
+        }
 
         // Admin Sync Controls
         const btnAdminSync = document.getElementById('btn-admin-sync-dump');
@@ -3860,8 +4145,13 @@ const App = (function() {
                     tab.style.color = 'var(--text-secondary)';
                 }
             });
+
+            // Hide all tab views so each tab displays its own layout individually
             if (screenerStats) screenerStats.classList.add('hidden');
             if (screenerGrid) screenerGrid.classList.add('hidden');
+            const mbCard = document.getElementById('market-breadth-briefing-card');
+            if (mbCard) mbCard.classList.add('hidden');
+
             if (backtestViewCard) backtestViewCard.classList.add('hidden');
             if (journalViewCard) journalViewCard.classList.add('hidden');
             if (advancedViewCard) advancedViewCard.classList.add('hidden');
@@ -3879,6 +4169,8 @@ const App = (function() {
                 
                 if (screenerStats) screenerStats.classList.remove('hidden');
                 if (screenerGrid) screenerGrid.classList.remove('hidden');
+                const mbCard = document.getElementById('market-breadth-briefing-card');
+                if (mbCard) mbCard.classList.remove('hidden');
                 if (useCasesSection) useCasesSection.classList.remove('hidden');
             });
         }
@@ -3894,7 +4186,9 @@ const App = (function() {
                 tabBacktest.style.background = 'rgba(255,255,255,0.05)';
                 tabBacktest.style.color = 'var(--text-primary)';
                 
-                if (backtestViewCard) backtestViewCard.classList.remove('hidden');
+                if (backtestViewCard) {
+                    backtestViewCard.classList.remove('hidden');
+                }
                 renderBacktestDashboard();
             });
         }
@@ -3910,7 +4204,9 @@ const App = (function() {
                 tabJournal.style.background = 'rgba(255,255,255,0.05)';
                 tabJournal.style.color = 'var(--text-primary)';
                 
-                if (journalViewCard) journalViewCard.classList.remove('hidden');
+                if (journalViewCard) {
+                    journalViewCard.classList.remove('hidden');
+                }
                 renderJournalDashboard();
             });
         }
@@ -4080,8 +4376,20 @@ const App = (function() {
         const proOverlayDismiss = document.getElementById('btn-pro-overlay-dismiss');
         if (proOverlayDismiss) {
             proOverlayDismiss.addEventListener('click', () => {
-                document.getElementById('pro-only-overlay').classList.add('hidden');
-                tabScreener.click(); // Switch back to screener grid
+                if (typeof window.closeProLockedOverlay === 'function') {
+                    window.closeProLockedOverlay();
+                } else {
+                    const overlay = document.getElementById('pro-only-overlay');
+                    if (overlay) {
+                        overlay.classList.add('hidden');
+                        overlay.style.display = 'none';
+                    }
+                    if (typeof window.switchDashboardTab === 'function') {
+                        window.switchDashboardTab('screener');
+                    } else if (tabScreener) {
+                        tabScreener.click();
+                    }
+                }
             });
         }
 
@@ -6861,10 +7169,10 @@ const App = (function() {
             }
         });
 
-        // Pre-fill fields from sessionStorage if already configured
-        const savedKey = sessionStorage.getItem('zerodha_api_key');
-        const savedToken = sessionStorage.getItem('zerodha_access_token');
-        const savedGemini = sessionStorage.getItem('gemini_api_key');
+        // Pre-fill fields from storage if already configured
+        const savedKey = localStorage.getItem('zerodha_api_key') || sessionStorage.getItem('zerodha_api_key');
+        const savedToken = localStorage.getItem('zerodha_access_token') || sessionStorage.getItem('zerodha_access_token');
+        const savedGemini = localStorage.getItem('gemini_api_key') || sessionStorage.getItem('gemini_api_key');
         const zKeyInput = document.getElementById('zerodha-api-key');
         const zTokenInput = document.getElementById('zerodha-access-token');
         const geminiInput = document.getElementById('gemini-api-key');
@@ -6873,7 +7181,7 @@ const App = (function() {
         if (savedToken && zTokenInput) zTokenInput.value = savedToken;
         if (savedGemini && geminiInput) geminiInput.value = savedGemini;
 
-        if (typeof SERVER_HAS_ZERODHA !== 'undefined' && SERVER_HAS_ZERODHA) {
+        if (typeof IS_SUPERUSER !== 'undefined' && IS_SUPERUSER && typeof SERVER_HAS_ZERODHA !== 'undefined' && SERVER_HAS_ZERODHA) {
             if (zKeyInput) zKeyInput.placeholder = "Preconfigured in .env";
             if (zTokenInput) zTokenInput.placeholder = "Preconfigured in .env";
         }
@@ -6881,25 +7189,35 @@ const App = (function() {
             if (geminiInput) geminiInput.placeholder = "Preconfigured in .env";
         }
 
-        // Always enforce simulation / historical snapshot mode for non-superusers
-        if (typeof IS_SUPERUSER !== 'undefined' && !IS_SUPERUSER) {
-            state.dataSource = 'simulation';
-        }
-
         if (USER_STATUS !== 'guest') {
             syncJournalWithBackend();
         }
 
-        // Start in Simulation / Historical Snapshot Mode
-        loadSimulationData();
+        // Initialize data source based on role:
+        // Admin / Superuser gets Historical Snapshot; regular users default strictly to Zerodha API (BYOK)
+        const hasSimButton = !!document.getElementById('btn-source-sim');
+        const isAdmin = (typeof IS_SUPERUSER !== 'undefined' && IS_SUPERUSER);
 
-        // If non-admin user (screener hidden), ensure Backtest tab is rendered initially
-        if (typeof IS_SUPERUSER !== 'undefined' && !IS_SUPERUSER) {
-            const bViewCard = document.getElementById('backtest-view-card');
-            if (bViewCard) {
-                bViewCard.classList.remove('hidden');
+        if (!isAdmin || !hasSimButton) {
+            state.dataSource = 'zerodha';
+            const btnZerodha = document.getElementById('btn-source-zerodha');
+            if (btnZerodha) btnZerodha.classList.add('active');
+            const btnSim = document.getElementById('btn-source-sim');
+            if (btnSim) btnSim.classList.remove('active');
+            const simRefreshedEl = document.getElementById('sim-last-refreshed');
+            if (simRefreshedEl) simRefreshedEl.style.display = 'none';
+
+            const creds = getZerodhaCredentials();
+            if (creds) {
+                fetchZerodhaData('RELIANCE');
+                fetchZerodhaData('TCS');
+                fetchZerodhaData('INFY');
+                hydrateActiveJournalTickers();
+            } else {
+                renderScreenerGrid();
             }
-            renderBacktestDashboard();
+        } else {
+            loadSimulationData();
         }
     }
 

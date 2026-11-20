@@ -199,30 +199,31 @@
             box-shadow: 0 4px 10px var(--accent-indigo-glow);
         }
 
-        /* Feed Grid */
+        /* Feed Grid (Multi-post responsive cards) */
         .feed-grid {
             display: grid;
-            grid-template-columns: 1fr;
-            gap: 30px;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 24px;
         }
 
         .post-card {
-            background: rgba(26, 23, 20, 0.4);
+            background: rgba(26, 23, 20, 0.5);
             border: 1px solid var(--border-color);
             border-radius: 12px;
-            padding: 30px;
+            padding: 24px;
             transition: var(--transition-smooth);
             position: relative;
             box-sizing: border-box;
-            min-height: 480px;
+            min-height: 380px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
         }
 
         .post-card:hover {
-            border-color: rgba(99, 102, 241, 0.3);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            border-color: rgba(99, 102, 241, 0.4);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transform: translateY(-2px);
         }
 
         .post-meta {
@@ -306,21 +307,27 @@
         }
 
         .post-card-title {
-            font-size: 22px;
+            font-size: 16px;
             font-weight: 700;
             margin: 0 0 10px 0;
             color: var(--text-primary);
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 44px;
         }
 
         .theme-explanation {
-            font-size: 12px;
+            font-size: 11.5px;
             color: var(--text-secondary);
-            background: rgba(0, 0, 0, 0.15);
-            padding: 10px 14px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 8px 12px;
             border-radius: 6px;
             border-left: 3px solid var(--accent-indigo);
-            margin-bottom: 25px;
-            line-height: 1.4;
+            margin-bottom: 16px;
+            line-height: 1.45;
         }
 
         /* Tabs Navigation within Card */
@@ -538,33 +545,42 @@
                 </p>
             </div>
 
-            <!-- Theme Filter Row (Admin Only) -->
-            {% if request.user.is_superuser %}
-            <div class="filter-row" style="margin-bottom: 20px;">
-                <button class="filter-badge active" data-filter="all">All Themes</button>
-                <button class="filter-badge" data-filter="patience">Patience</button>
-                <button class="filter-badge" data-filter="discipline">Discipline</button>
-                <button class="filter-badge" data-filter="fomo">FOMO</button>
-                <button class="filter-badge" data-filter="loss_aversion">Loss Aversion</button>
-                <button class="filter-badge" data-filter="failed_breakout">Failed Breakout</button>
-                <button class="filter-badge" data-filter="failed_breakdown">Failed Breakdown</button>
-                <button class="filter-badge" data-filter="sudden_reversal">Sudden Reversal</button>
-            </div>
-            {% endif %}
+            <!-- Category & Recency / Popularity Filter Controls -->
+            <div class="usecase-controls-container" style="display: flex; flex-direction: column; align-items: center; gap: 16px; margin-bottom: 35px; width: 100%;">
+                <!-- Recency / Popularity Segmented Buttons -->
+                <div style="display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.03); padding: 4px; border-radius: 100px; border: 1px solid var(--border-color);">
+                    <button class="sort-badge active" data-sort="latest" style="padding: 7px 18px; border-radius: 100px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; background: var(--accent-indigo); color: #fff;">
+                        <i class="fa-solid fa-clock"></i> Latest Setups
+                    </button>
+                    <button class="sort-badge" data-sort="popular" style="padding: 7px 18px; border-radius: 100px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; background: transparent; color: var(--text-secondary);">
+                        <i class="fa-solid fa-fire"></i> Most Popular
+                    </button>
+                </div>
 
-            <!-- Stock Filter Row (For All Users) -->
-            <div class="stock-filter-container" style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 30px; font-family: var(--font-stack);">
-                <label for="sel-stock-filter" style="font-size: 13px; font-weight: 600; color: var(--text-secondary);"><i class="fa-solid fa-filter"></i> Filter by Stock:</label>
-                <select id="sel-stock-filter" style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 6px 12px; font-size: 13px; outline: none; cursor: pointer;">
-                    <option value="all">All Stocks</option>
-                </select>
+                <!-- Theme Filter Pills (Available to all users) -->
+                <div class="filter-row" style="margin: 0; justify-content: center; gap: 8px;">
+                    <button class="filter-badge active" data-filter="all"><i class="fa-solid fa-layer-group"></i> All Themes</button>
+                    <button class="filter-badge" data-filter="patience"><i class="fa-solid fa-hourglass"></i> Patience</button>
+                    <button class="filter-badge" data-filter="discipline"><i class="fa-solid fa-shield"></i> Discipline</button>
+                    <button class="filter-badge" data-filter="fomo"><i class="fa-solid fa-bolt"></i> FOMO</button>
+                    <button class="filter-badge" data-filter="loss_aversion"><i class="fa-solid fa-heart-crack"></i> Loss Aversion</button>
+                    <button class="filter-badge" data-filter="failed_breakout"><i class="fa-solid fa-arrow-trend-down"></i> Failed Breakout</button>
+                    <button class="filter-badge" data-filter="failed_breakdown"><i class="fa-solid fa-arrow-trend-up"></i> Failed Breakdown</button>
+                    <button class="filter-badge" data-filter="sudden_reversal"><i class="fa-solid fa-arrows-rotate"></i> Reversal</button>
+                </div>
+
+                <!-- Quick Stock Search Input -->
+                <div style="position: relative; width: 100%; max-width: 360px;">
+                    <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 13px;"></i>
+                    <input type="text" id="usecase-search-input" placeholder="Search by stock (e.g. RELIANCE, TCS)..." style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 100px; padding: 8px 16px 8px 36px; color: var(--text-primary); font-size: 12px; outline: none; font-family: var(--font-stack);">
+                </div>
             </div>
 
             <!-- Use Case Posts Feed -->
             <div class="feed-grid">
                 {% if posts %}
                     {% for post in posts %}
-                        <div class="post-card" data-theme="{{ post.theme }}" data-stock="{{ post.stock_symbol }}">
+                        <div class="post-card" data-theme="{{ post.theme }}" data-stock="{{ post.stock_symbol }}" data-date="{{ post.created_at|date:'U' }}" data-id="{{ post.id }}" data-votes="{{ post.votes.count|default:0 }}">
                             <!-- Meta Row -->
                             <div class="post-meta">
                                 <div class="stock-anchor-info">
@@ -705,137 +721,152 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            const cards = document.querySelectorAll('.post-card');
-            const selStockFilter = document.getElementById('sel-stock-filter');
+            const cards = Array.from(document.querySelectorAll('.post-card'));
+            const sortBadges = document.querySelectorAll('.sort-badge');
             const filterButtons = document.querySelectorAll('.filter-row .filter-badge');
+            const searchInput = document.getElementById('usecase-search-input');
             const btnPrev = document.getElementById('btn-page-prev');
             const btnNext = document.getElementById('btn-page-next');
             const txtPageInfo = document.getElementById('txt-page-info');
             const emptyState = document.querySelector('.empty-state');
 
+            const pageSize = 6;
+            let currentSort = 'latest'; // 'latest' or 'popular'
             let currentThemeFilter = 'all';
-            let currentStockFilter = 'all';
+            let searchQuery = '';
             let currentPage = 1;
             let visibleCards = [];
 
-            // 1. Populate Stock filter options dynamically based on cards
-            const uniqueStocks = new Set();
-            cards.forEach(card => {
-                const stock = card.getAttribute('data-stock');
-                if (stock) {
-                    uniqueStocks.add(stock.trim().toUpperCase());
-                }
-            });
-
-            // Add sorted unique stocks to dropdown
-            Array.from(uniqueStocks).sort().forEach(stock => {
-                const opt = document.createElement('option');
-                opt.value = stock.toLowerCase();
-                opt.textContent = stock;
-                if (selStockFilter) selStockFilter.appendChild(opt);
-            });
-
-            // 2. Main Filtering and Rendering function with Pagination
             function applyFiltersAndRender() {
-                visibleCards = [];
-
-                cards.forEach(card => {
-                    const cardTheme = card.getAttribute('data-theme');
+                // 1. Filter cards based on theme and search
+                visibleCards = cards.filter(card => {
+                    const cardTheme = (card.getAttribute('data-theme') || '').toLowerCase();
                     const cardStock = (card.getAttribute('data-stock') || '').toLowerCase();
+                    const cardTitle = (card.querySelector('.post-card-title')?.textContent || '').toLowerCase();
 
-                    const matchesTheme = (currentThemeFilter === 'all' || cardTheme === currentThemeFilter);
-                    const matchesStock = (currentStockFilter === 'all' || cardStock === currentStockFilter.toLowerCase());
+                    const matchesTheme = (currentThemeFilter === 'all' || cardTheme === currentThemeFilter.toLowerCase());
+                    const matchesSearch = !searchQuery || cardStock.includes(searchQuery) || cardTitle.includes(searchQuery);
 
-                    if (matchesTheme && matchesStock) {
-                        visibleCards.push(card);
-                    }
-                    // Hide initially
-                    card.style.display = 'none';
+                    return matchesTheme && matchesSearch;
                 });
 
-                // Update UI state based on filtered cards
+                // 2. Sort visible cards
+                visibleCards.sort((a, b) => {
+                    if (currentSort === 'popular') {
+                        const votesA = parseInt(a.getAttribute('data-votes') || '0', 10);
+                        const votesB = parseInt(b.getAttribute('data-votes') || '0', 10);
+                        if (votesB !== votesA) return votesB - votesA;
+                    }
+                    // Default to latest (by date timestamp or id)
+                    const dateA = parseInt(a.getAttribute('data-date') || a.getAttribute('data-id') || '0', 10);
+                    const dateB = parseInt(b.getAttribute('data-date') || b.getAttribute('data-id') || '0', 10);
+                    return dateB - dateA;
+                });
+
+                // 3. Hide all cards initially
+                cards.forEach(c => { c.style.display = 'none'; });
+
                 const totalFiltered = visibleCards.length;
                 if (totalFiltered === 0) {
                     if (emptyState) emptyState.style.display = 'block';
                     if (txtPageInfo) txtPageInfo.textContent = 'No matching case studies';
-                    if (btnPrev) btnPrev.style.opacity = 0.5;
-                    if (btnNext) btnNext.style.opacity = 0.5;
+                    if (btnPrev) { btnPrev.disabled = true; btnPrev.style.opacity = 0.3; }
+                    if (btnNext) { btnNext.disabled = true; btnNext.style.opacity = 0.3; }
                     return;
                 }
 
                 if (emptyState) emptyState.style.display = 'none';
 
-                // Bounds correction for currentPage
+                const totalPages = Math.ceil(totalFiltered / pageSize);
+                if (currentPage > totalPages) currentPage = totalPages;
                 if (currentPage < 1) currentPage = 1;
-                if (currentPage > totalFiltered) currentPage = totalFiltered;
 
-                // Show only the current paginated card (1 card per page)
-                const cardToShow = visibleCards[currentPage - 1];
-                if (cardToShow) {
-                    cardToShow.style.display = 'block';
-                }
+                const startIndex = (currentPage - 1) * pageSize;
+                const endIndex = Math.min(startIndex + pageSize, totalFiltered);
+                const pageCards = visibleCards.slice(startIndex, endIndex);
 
-                // Update pagination controls text and buttons
+                // Display cards for current page
+                pageCards.forEach(card => {
+                    card.style.display = 'flex';
+                });
+
+                // Update pagination controls
                 if (txtPageInfo) {
-                    txtPageInfo.textContent = `Case Study ${currentPage} of ${totalFiltered}`;
+                    txtPageInfo.textContent = `Showing ${startIndex + 1}–${endIndex} of ${totalFiltered} Case Studies (Page ${currentPage} of ${totalPages})`;
                 }
 
-                // Enable/disable page change controls
                 if (btnPrev) {
-                    btnPrev.disabled = (currentPage === 1);
-                    btnPrev.style.opacity = (currentPage === 1) ? 0.3 : 1;
-                    btnPrev.style.cursor = (currentPage === 1) ? 'default' : 'pointer';
+                    btnPrev.disabled = (currentPage <= 1);
+                    btnPrev.style.opacity = (currentPage <= 1) ? 0.3 : 1;
+                    btnPrev.style.cursor = (currentPage <= 1) ? 'default' : 'pointer';
                 }
                 if (btnNext) {
-                    btnNext.disabled = (currentPage === totalFiltered);
-                    btnNext.style.opacity = (currentPage === totalFiltered) ? 0.3 : 1;
-                    btnNext.style.cursor = (currentPage === totalFiltered) ? 'default' : 'pointer';
+                    btnNext.disabled = (currentPage >= totalPages);
+                    btnNext.style.opacity = (currentPage >= totalPages) ? 0.3 : 1;
+                    btnNext.style.cursor = (currentPage >= totalPages) ? 'default' : 'pointer';
                 }
             }
 
-            // 3. Bind Event Listeners
-            // Theme badge filtering (Admins only, checks if elements exist)
-            if (filterButtons.length > 0) {
-                filterButtons.forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        filterButtons.forEach(b => b.classList.remove('active'));
-                        btn.classList.add('active');
-                        currentThemeFilter = btn.getAttribute('data-filter');
-                        currentPage = 1; // Reset to page 1
-                        applyFiltersAndRender();
+            // Bind Sort Badges (Latest vs Most Popular)
+            sortBadges.forEach(badge => {
+                badge.addEventListener('click', () => {
+                    sortBadges.forEach(b => {
+                        b.classList.remove('active');
+                        b.style.background = 'transparent';
+                        b.style.color = 'var(--text-secondary)';
                     });
+                    badge.classList.add('active');
+                    badge.style.background = 'var(--accent-indigo)';
+                    badge.style.color = '#fff';
+                    currentSort = badge.getAttribute('data-sort') || 'latest';
+                    currentPage = 1;
+                    applyFiltersAndRender();
                 });
-            }
+            });
 
-            // Stock dropdown filtering
-            if (selStockFilter) {
-                selStockFilter.addEventListener('change', (e) => {
-                    currentStockFilter = e.target.value;
-                    currentPage = 1; // Reset to page 1
+            // Bind Theme Filter Pills
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentThemeFilter = btn.getAttribute('data-filter') || 'all';
+                    currentPage = 1;
+                    applyFiltersAndRender();
+                });
+            });
+
+            // Bind Search Input
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    searchQuery = e.target.value.trim().toLowerCase();
+                    currentPage = 1;
                     applyFiltersAndRender();
                 });
             }
 
-            // Page navigation controls
+            // Bind Pagination Controls
             if (btnPrev) {
                 btnPrev.addEventListener('click', () => {
                     if (currentPage > 1) {
                         currentPage--;
                         applyFiltersAndRender();
+                        window.scrollTo({ top: 300, behavior: 'smooth' });
                     }
                 });
             }
 
             if (btnNext) {
                 btnNext.addEventListener('click', () => {
-                    if (currentPage < visibleCards.length) {
+                    const totalPages = Math.ceil(visibleCards.length / pageSize);
+                    if (currentPage < totalPages) {
                         currentPage++;
                         applyFiltersAndRender();
+                        window.scrollTo({ top: 300, behavior: 'smooth' });
                     }
                 });
             }
 
-            // Initial render
+            // Initial Execution
             applyFiltersAndRender();
         });
     </script>

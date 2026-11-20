@@ -1034,50 +1034,52 @@
                 <a href="{% url 'screener:login' %}" class="pricing-btn">Get Started</a>
             </div>
 
-            <!-- Tier 2: Classic (One-time 299) -->
+            <!-- Tier 2: Classic (Customizable App - One-time ₹4,950 Minimum) -->
             <div class="pricing-card featured">
-                <span class="pricing-badge">Popular</span>
+                <span class="pricing-badge">Customized Solution</span>
                 <div class="pricing-header">
                     <h3>Classic Engine</h3>
                     <div class="pricing-price">
-                        <span class="amount">₹299</span>
-                        <span class="period">/ One-time fee</span>
+                        <span class="amount">₹4,950</span>
+                        <span class="period">/ Minimum one-time cost</span>
                     </div>
                 </div>
-                <p class="pricing-description">Deepen your swing research with multi-year backtesting engines and persistent journal logs.</p>
+                <p class="pricing-description">Customizable trading application tailored to your personal rules and parameters, equipped with foundational screener features, 5-year RSI backtester, and persistent journal.</p>
                 <div class="pricing-divider"></div>
                 <ul class="pricing-features">
-                    <li><i class="fa-solid fa-circle-check"></i> Everything in Basic Screener</li>
-                    <li><i class="fa-solid fa-circle-check"></i> <strong>5-Year RSI Backtester Engine</strong></li>
-                    <li><i class="fa-solid fa-circle-check"></i> <strong>Database-persisted Trading Journal</strong></li>
-                    <li><i class="fa-solid fa-circle-check"></i> Detailed trade logs & Stop-Loss track</li>
-                    <li><i class="fa-solid fa-circle-check"></i> Lifetime access with no recurring bills</li>
-                    <li class="disabled"><i class="fa-solid fa-circle-xmark"></i> AI Conviction Analyst (Gemini 3.8)</li>
-                    <li class="disabled"><i class="fa-solid fa-circle-xmark"></i> Advanced Indicator Strategy preset builder</li>
+                    <li><i class="fa-solid fa-circle-check"></i> <strong>Customizable Application Architecture</strong> based on user input</li>
+                    <li><i class="fa-solid fa-circle-check"></i> Basic Screener Grid & Performance Heatmap</li>
+                    <li><i class="fa-solid fa-circle-check"></i> <strong>5-Year Multi-Horizon RSI Backtester Engine</strong></li>
+                    <li><i class="fa-solid fa-circle-check"></i> <strong>Database-persisted Trading Journal</strong> & SL Tracker</li>
+                    <li><i class="fa-solid fa-circle-check"></i> Zerodha Kite Connect BYOK API integration</li>
+                    <li><i class="fa-solid fa-circle-check"></i> Historical Daily Candles CSV Download</li>
+                    <li><i class="fa-solid fa-circle-check"></i> Lifetime codebase access with zero recurring subscription fees</li>
+                    <li class="disabled"><i class="fa-solid fa-circle-xmark"></i> AI Conviction Analyst (SEBI RA Pending)</li>
                 </ul>
-                <a href="{% url 'screener:login' %}?tab=signup" class="pricing-btn btn-featured">Upgrade to Classic</a>
+                <a href="{% url 'screener:login' %}?tab=signup" class="pricing-btn btn-featured">Get Customized App</a>
             </div>
 
-            <!-- Tier 3: Pro (199 / month) -->
-            <div class="pricing-card">
+            <!-- Tier 3: Pro Analyst (Upcoming Feature) -->
+            <div class="pricing-card" style="opacity: 0.95;">
+                <span class="pricing-badge" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4);">Upcoming Feature</span>
                 <div class="pricing-header">
                     <h3>Pro Analyst</h3>
                     <div class="pricing-price">
-                        <span class="amount">₹199</span>
-                        <span class="period">/ Month</span>
+                        <span class="amount" style="font-size: 26px;">Upcoming</span>
+                        <span class="period">/ Pending SEBI RA Licensing</span>
                     </div>
                 </div>
-                <p class="pricing-description">Maximize your research conviction with AI setup analysis, news sentiment, and multi-indicator strategies.</p>
+                <p class="pricing-description">Institutional AI conviction engine, 5Y fundamental magic score audits, and portfolio manager research briefs. Subject to SEBI Research Analyst licensing regulations.</p>
                 <div class="pricing-divider"></div>
                 <ul class="pricing-features">
-                    <li><i class="fa-solid fa-circle-check"></i> Everything in Classic Engine</li>
-                    <li><i class="fa-solid fa-circle-check"></i> <strong>AI Conviction Analyst (Gemini 3.8 Flash)</strong></li>
-                    <li><i class="fa-solid fa-circle-check"></i> <strong>Google News RSS sentiment analysis</strong></li>
-                    <li><i class="fa-solid fa-circle-check"></i> <strong>Advanced Indicator Strategy preset builder</strong></li>
-                    <li><i class="fa-solid fa-circle-check"></i> Multi-factor trade setup scoring</li>
-                    <li><i class="fa-solid fa-circle-check"></i> Unlimited backtest runs & priority server queues</li>
+                    <li><i class="fa-solid fa-hourglass-half" style="color: #c084fc;"></i> <strong>AI Conviction Analyst (Gemini 3.8 Flash)</strong></li>
+                    <li><i class="fa-solid fa-hourglass-half" style="color: #c084fc;"></i> <strong>5-Year Fundamental Audit & Magic Score (0–100)</strong></li>
+                    <li><i class="fa-solid fa-hourglass-half" style="color: #c084fc;"></i> <strong>Portfolio Manager Research Brief Generator</strong></li>
+                    <li><i class="fa-solid fa-hourglass-half" style="color: #c084fc;"></i> Institutional Liquidity Absorption & VCP breakout scans</li>
+                    <li><i class="fa-solid fa-hourglass-half" style="color: #c084fc;"></i> Multi-factor quantitative trade setup scoring</li>
+                    <li><i class="fa-solid fa-hourglass-half" style="color: #c084fc;"></i> Unlimited backtest runs & dedicated priority server queues</li>
                 </ul>
-                <a href="{% url 'screener:login' %}?tab=signup" class="pricing-btn">Unlock Pro Analyst</a>
+                <button type="button" class="pricing-btn" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: var(--text-secondary); cursor: default;">Notify Upon Registration</button>
             </div>
         </div>
     </section>
